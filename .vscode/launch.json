@@ -1,0 +1,14 @@
+{
+        "configurations": [
+                {
+                        "type": "java",
+                        "name": "Spring Boot-PcgearApplication<pcgear>",
+                        "request": "launch",
+                        "cwd": "${workspaceFolder}",
+                        "mainClass": "com.pcgear.complink.pcgear.PcgearApplication",
+                        "projectName": "pcgear",
+                        "args": "",
+                        "envFile": "${workspaceFolder}/.env"
+                }
+        ]
+}
