@@ -45,4 +45,10 @@ public class UserEntity extends BaseTimeEntity{
 		this.tel = tel;
 		this.address = address;
 	}
+	
+	
+	public void Memberupdate(String email, String name) {
+		this.email = email;
+		this.name = name;
+	}
 }

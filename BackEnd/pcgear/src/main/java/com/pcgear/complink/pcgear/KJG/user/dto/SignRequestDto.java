@@ -23,7 +23,8 @@ public class SignRequestDto {
 	private String username;
 	
 	@NotBlank(message = "비밀번호를 입력해 주세요.")
-	@Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*?_]).{8,16}$")
+	@Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*?_]).{8,16}$"
+			, message = "비밀번호는 영문, 숫자 , 특수문자가 포함되어야 합니다.")
 	private String password;
 	
 	@NotBlank(message = "비밀번호를 다시 한번 입력해 주세요.")
@@ -41,11 +42,11 @@ public class SignRequestDto {
 	
 	
 	
-	public UserEntity toEntity() {
+	public UserEntity toEntity(String encodedPassword) {
 		return UserEntity.builder()
 			.email(email)
 			.username(username)
-			.password(password)
+			.password(encodedPassword)
 			.name(name)
 			.tel(tel)
 			.address(address)

@@ -1,0 +1,74 @@
+package com.pcgear.complink.pcgear.KJG.user.service;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.pcgear.complink.pcgear.KJG.user.dto.LoginResponseDto;
+import com.pcgear.complink.pcgear.KJG.user.dto.SignRequestDto;
+import com.pcgear.complink.pcgear.KJG.user.entity.UserEntity;
+import com.pcgear.complink.pcgear.KJG.user.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class UserService {
+
+	private final UserRepository userRepository;
+	private final PasswordEncoder passwordEncoder;
+	
+	
+	//C : 회원가입
+	@Transactional
+	public Long createUser(SignRequestDto signRequestDto) {
+		String password1 = signRequestDto.getPassword();
+		String password2 = signRequestDto.getPasswordConfirm();
+		
+		if(!password1.equals(password2)) {
+			throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+		}
+		String encodedPassword = passwordEncoder.encode(signRequestDto.getPassword());
+		
+		UserEntity userEntity = signRequestDto.toEntity(encodedPassword);
+		
+		UserEntity saveEntity = userRepository.save(userEntity);
+		
+		
+		return saveEntity.getId();
+	}
+	
+	//R : 마이페이지 확인용
+	@Transactional(readOnly = true)
+	public LoginResponseDto MyUser(Long id) {
+	
+		UserEntity userEntity = userRepository.findById(id)
+				.orElseThrow(() -> new IllegalArgumentException("해당 유저를 찾을수 없습니다 " + id));	
+		
+		return new LoginResponseDto(userEntity);
+	}
+	
+	
+	//U : 이메일 변경, 이름 변경
+	@Transactional
+	public Long UpdateUser(LoginResponseDto loginResponseDto) {
+		UserEntity userEntity = userRepository.findById(loginResponseDto.getId())
+				.orElseThrow(() -> new IllegalArgumentException("ID값이 존재 하지 않습니다."));
+		
+		userEntity.Memberupdate(loginResponseDto.getEmail(), loginResponseDto.getUsername());
+		
+		userRepository.save(userEntity);
+				
+				return userEntity.getId();
+	}
+	
+	//D : 회원탈퇴
+	@Transactional
+	public void DeleteUser(Long id) {
+		
+		UserEntity userEntity = userRepository.findById(id)
+				.orElseThrow(() -> new IllegalArgumentException("회원 정보가 없습니다 : " +id));
+		
+		userRepository.delete(userEntity);
+	}
+}
