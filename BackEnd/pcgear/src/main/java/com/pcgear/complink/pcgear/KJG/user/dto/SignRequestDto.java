@@ -39,6 +39,8 @@ public class SignRequestDto {
 	@NotBlank(message = "주소를 입력해 주세요.")
 	private String address;
 	
+	private String recaptchaToken;
+	
 	
 	
 	
