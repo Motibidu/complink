@@ -52,8 +52,6 @@ public class MailService {
         }
     }
 
-    // ... 나머지 verifyCode, createNumber, createMail, createPasswordMail 메서드는 그대로 ...
-
     // 인증번호 검증
     public boolean verifyCode(String mail, String userNumber) {
         String storedCode = verificationCodes.get(mail);

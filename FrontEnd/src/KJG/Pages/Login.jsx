@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import './Login.css';
+import './Login.css'; // Login.css를 import 합니다.
 
 function Login() {
     const [username, setUsername] = useState('');
@@ -9,7 +9,7 @@ function Login() {
     const [message, setMessage] = useState('');
     const [isError, setIsError] = useState(false);
 
-    // ▼▼▼ 이 함수가 없어서 발생한 에러입니다. 다시 추가합니다. ▼▼▼
+    // 기존 아이디/비밀번호 로그인 처리 함수
     const handleLogin = async (e) => {
         e.preventDefault();
 
@@ -32,13 +32,12 @@ function Login() {
             if (response.status === 200) {
                 setMessage('로그인 성공!');
                 setIsError(false);
-                // 성공 시, 1초 후에 메인 페이지(홈)으로 이동합니다.
+                // 성공 시, 1초 후에 메인 페이지로 이동합니다.
                 setTimeout(() => {
-                    window.location.href = '/'; // 필요에 따라 다른 경로로 변경 가능
+                    window.location.href = '/'; // 사이트의 메인 페이지로 이동
                 }, 1000);
             }
         } catch (error) {
-            // Spring Security의 기본 실패 메시지는 401 Unauthorized 입니다.
             if (error.response && error.response.status === 401) {
                 setMessage('아이디 또는 비밀번호가 올바르지 않습니다.');
             } else {
@@ -48,10 +47,10 @@ function Login() {
             console.error('로그인 요청 에러:', error);
         }
     };
-    // ▲▲▲ 여기까지가 handleLogin 함수입니다 ▲▲▲
 
     return (
         <div className="login-container">
+            {/* 1. 기존 아이디/비밀번호 로그인 폼 */}
             <form onSubmit={handleLogin}>
                 <h2>PC Gear 로그인</h2>
                 <div className="input-group">
@@ -81,11 +80,27 @@ function Login() {
                 )}
             </form>
             
-            {/* 아이디 찾기 링크가 포함된 부분입니다. */}
+            {/* 2. 소셜 로그인 영역 */}
+            <div className="social-login-divider">
+                <span>OR</span>
+            </div>
+            
+            {/* 
+              Google 로그인 버튼
+              - href 경로는 백엔드 서버의 주소와 스프링 시큐리티의 약속된 경로를 따릅니다.
+              - /oauth2/authorization/{provider} 형식이므로 google을 사용합니다.
+            */}
+            <a href="http://localhost:8080/oauth2/authorization/google" className="social-login-btn google">
+                {/* public 폴더에 google-logo.svg 파일을 넣어두면 이미지가 보입니다. */}
+                <img src="/google-logo.svg" alt="Google" /> 
+                <span>Google 계정으로 로그인</span>
+            </a>
+
+            {/* 3. 기타 링크 영역 */}
             <div className="extra-links">
                 <Link to="/find-id">아이디 찾기</Link>
                 <span>|</span>
-                <Link to="/find-password">비밀번호 찾기</Link> {/* <-- 링크 추가 */}
+                <Link to="/find-password">비밀번호 찾기</Link>
                 <span>|</span>
                 <Link to="/signup">회원가입</Link>
             </div>
