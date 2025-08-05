@@ -71,4 +71,14 @@ public class UserService {
 		
 		userRepository.delete(userEntity);
 	}
-}	
+	
+	@Transactional(readOnly = true)
+    public String findUserIdByEmail(String email) {
+        // userRepository의 findByEmail은 Optional<UserEntity>를 반환합니다.
+        return userRepository.findByEmail(email)
+                .map(UserEntity::getUsername) // UserEntity에서 로그인 아이디(username)를 가져옵니다.
+                .orElse(null); // 사용자가 존재하지 않으면 null을 반환합니다.
+    }
+
+}
+

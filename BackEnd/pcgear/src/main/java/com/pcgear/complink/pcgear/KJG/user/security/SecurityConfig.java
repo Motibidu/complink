@@ -28,29 +28,27 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/user/signup").permitAll()
-                        .anyRequest().authenticated()
+                        // ▼▼▼ 여기에 모든 비로그인 접근 허용 경로를 추가합니다 ▼▼▼
+                        .requestMatchers(
+                                "/signup",      // 회원가입 페이지 (프론트 경로)
+                                "/register",    // 회원가입 API
+                                "/find/**"      // 아이디 찾기 관련 모든 API ('/find/send-mail', '/find/verify-code')
+                        ).permitAll()
+                        .anyRequest().authenticated() // 위 경로들을 제외한 모든 요청은 인증 필요
                 )
-
-                // 4. formLogin 설정 (세션 방식 로그인의 핵심)
                 .formLogin(form -> form
-                        // ★★★★★ 핵심 수정 사항 1 ★★★★★
-                        // Vite가 보내주는 최종 경로인 "/login"을 감시하도록 변경합니다.
-                        .loginProcessingUrl("/login")
+                        .loginProcessingUrl("/login") // 로그인 API 경로
                         .successHandler((request, response, authentication) -> {
                             response.setStatus(HttpServletResponse.SC_OK);
-                            response.getWriter().write(authentication.getName() + "님, 환영합니다.");
+                            // 성공 시 간단한 메시지 또는 사용자 정보 반환 가능
+                            response.getWriter().write(authentication.getName() + "님, 환영합니다."); 
                         })
                         .failureHandler((request, response, exception) -> {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.getWriter().write("로그인 실패: " + exception.getMessage());
                         })
                 )
-
-                // 5. 로그아웃 설정
                 .logout(logout -> logout
-                        // ★★★★★ 핵심 수정 사항 2 ★★★★★
-                        // 로그아웃 경로도 일관성을 위해 "/logout"으로 변경합니다.
                         .logoutUrl("/logout")
                         .logoutSuccessHandler((request, response, authentication) -> {
                             response.setStatus(HttpServletResponse.SC_OK);
