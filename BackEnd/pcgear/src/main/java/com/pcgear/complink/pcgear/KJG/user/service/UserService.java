@@ -79,6 +79,26 @@ public class UserService {
                 .map(UserEntity::getUsername) // UserEntity에서 로그인 아이디(username)를 가져옵니다.
                 .orElse(null); // 사용자가 존재하지 않으면 null을 반환합니다.
     }
+	
+	 @Transactional(readOnly = true)
+	    public UserEntity findByUsernameAndEmail(String username, String email) {
+	        return userRepository.findByUsernameAndEmail(username, email)
+	                .orElse(null);
+	    }
 
+
+	 @Transactional
+	    public void changePassword(String username, String tempPassword) {
+	        // 1. 아이디로 사용자를 찾습니다.
+	        UserEntity userEntity = userRepository.findByUsername(username)
+	                .orElseThrow(() -> new IllegalArgumentException("해당 아이디의 사용자를 찾을 수 없습니다: " + username));
+	        
+	        // 2. 임시 비밀번호를 암호화합니다.
+	        String encodedPassword = passwordEncoder.encode(tempPassword);
+	        
+	        // 3. UserEntity의 비밀번호를 업데이트합니다.
+	        //    (주의: UserEntity에 password 필드를 업데이트하는 메서드가 있어야 합니다. 예: setPassword)
+	        userEntity.updatePassword(encodedPassword); 
+	    }
 }
 
