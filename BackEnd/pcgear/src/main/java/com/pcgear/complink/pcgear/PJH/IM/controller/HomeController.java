@@ -1,7 +1,4 @@
-package com.pcgear.complink.pcgear.PJH;
-
-import java.util.HashMap;
-import java.util.Map;
+package com.pcgear.complink.pcgear.PJH.IM.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,9 +11,7 @@ public class HomeController {
 
         @GetMapping("init")
         public ResponseEntity<String> home() {
-                // Map<String, String> responseData = new HashMap<>();
-                // responseData.put("message", "불러옴");
-                return ResponseEntity.ok("불러옴sss");
+                return ResponseEntity.ok("불러옴");
 
         }
 }
