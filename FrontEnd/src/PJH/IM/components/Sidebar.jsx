@@ -19,7 +19,7 @@ const Sidebar = () => {
       path: "/order",
       icon: <FaTachometerAlt />,
       children: [
-        { name: "주문서 조회", path: "/order/order-search" },
+        { name: "주문서 조회", path: "/orders/search" },
         { name: "주문서 입력", path: "/orders/new" },
       ],
     },
@@ -49,70 +49,137 @@ const Sidebar = () => {
   };
 
   return (
+    // <nav className="sidebar">
+    //   <ul className="sidebar__menu">
+    //     {navItems.map((item) => (
+    //       <li key={item.name} className="sidebar__menu-item">
+    //         <div
+    //           className="sidebar__menu-link-wrapper"
+    //           onClick={() => handleItemClick(item.name)}
+    //         >
+    //           {!item.children ? (
+    //             <NavLink
+    //               to={item.path}
+    //               className={({ isActive }) =>
+    //                 isActive
+    //                   ? "sidebar__menu-link sidebar__menu-link--active"
+    //                   : "sidebar__menu-link"
+    //               }
+    //             >
+    //               <div className="sidebar__menu-icon">{item.icon}</div>
+    //               <span className="sidebar__menu-text">{item.name}</span>
+    //             </NavLink>
+    //           ) : (
+    //             // 하위 메뉴가 있는 항목은 링크 기능을 제거한 div 사용
+    //             <div
+    //               className={`sidebar__menu-link ${
+    //                 clickedItem === item.name
+    //                   ? "sidebar__menu-link--active"
+    //                   : ""
+    //               }`}
+    //             >
+    //               <div className="sidebar__menu-icon">{item.icon}</div>
+    //               <span className="sidebar__menu-text">{item.name}</span>
+    //               <div className="sidebar__submenu-toggle-icon">
+    //                 {clickedItem === item.name ? (
+    //                   <FaChevronDown />
+    //                 ) : (
+    //                   <FaChevronRight />
+    //                 )}
+    //               </div>
+    //             </div>
+    //           )}
+    //         </div>
+
+    //         {/* 하위 메뉴를 조건부로 렌더링 */}
+    //         {item.children && clickedItem === item.name && (
+    //           <ul className="sidebar__submenu">
+    //             {item.children.map((child) => (
+    //               <li key={child.name} className="sidebar__submenu-item">
+    //                 <NavLink
+    //                   to={child.path}
+    //                   className={({ isActive }) =>
+    //                     isActive
+    //                       ? "sidebar__submenu-link sidebar__submenu-link--active"
+    //                       : "sidebar__submenu-link"
+    //                   }
+    //                 >
+    //                   {child.name}
+    //                 </NavLink>
+    //               </li>
+    //             ))}
+    //           </ul>
+    //         )}
+    //       </li>
+    //     ))}
+    //   </ul>
+    // </nav>
     <nav className="sidebar">
-      <ul className="sidebar__menu">
-        {navItems.map((item) => (
-          <li key={item.name} className="sidebar__menu-item">
-            <div
-              className="sidebar__menu-link-wrapper"
-              onClick={() => handleItemClick(item.name)}
-            >
-              {/* 하위 메뉴가 없는 항목은 NavLink 사용 */}
-              {!item.children ? (
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    isActive
-                      ? "sidebar__menu-link sidebar__menu-link--active"
-                      : "sidebar__menu-link"
-                  }
-                >
-                  <div className="sidebar__menu-icon">{item.icon}</div>
-                  <span className="sidebar__menu-text">{item.name}</span>
-                </NavLink>
-              ) : (
-                // 하위 메뉴가 있는 항목은 링크 기능을 제거한 div 사용
-                <div
-                  className={`sidebar__menu-link ${
-                    clickedItem === item.name
-                      ? "sidebar__menu-link--active"
-                      : ""
-                  }`}
-                >
-                  <div className="sidebar__menu-icon">{item.icon}</div>
-                  <span className="sidebar__menu-text">{item.name}</span>
-                  <div className="sidebar__submenu-toggle-icon">
-                    {clickedItem === item.name ? (
-                      <FaChevronDown />
-                    ) : (
-                      <FaChevronRight />
-                    )}
+      <ul className="sidebar__list">
+        {navItems.map((item) => {
+          return (
+            <div key={item.name} className="sidebar__item__wrapper">
+              <li className="sidebar__item">
+                {item.children ? (
+                  <div
+                    className={`sidebar__item__link ${
+                      item.name === clickedItem
+                        ? "sidebar__item__link--active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      handleItemClick(item.name);
+                    }}
+                  >
+                    <div className="sidebar__item__icon">{item.icon}</div>
+                    <span className="sidebar__item__name">{item.name}</span>
+                    <div className="sidebar__item__arrow">
+                      {clickedItem === item.name ? (
+                        <FaChevronDown />
+                      ) : (
+                        <FaChevronRight />
+                      )}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      isActive
+                        ? "sidebar__item__navlink sidebar__item__navlink--active"
+                        : "sidebar__item__navlink"
+                    }
+                  >
+                    <div className="sidebar__item__icon">{item.icon}</div>
+                    <span className="sidebar__item__text">{item.name}</span>
+                  </NavLink>
+                )}
+              </li>
+              {item.children && clickedItem === item.name ? (
+                <ul className="submenu__list">
+                  {item.children.map((item) => {
+                    return (
+                      <li key={item.name} className="submenu__item">
+                        <NavLink
+                          to={item.path}
+                          className={({ isActive }) =>
+                            `submenu__item__navlink ${
+                              isActive ? "submenu__item__navlink--active" : ""
+                            }`
+                          }
+                        >
+                          {item.name}
+                        </NavLink>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                ""
               )}
             </div>
-
-            {/* 하위 메뉴를 조건부로 렌더링 */}
-            {item.children && clickedItem === item.name && (
-              <ul className="sidebar__submenu">
-                {item.children.map((child) => (
-                  <li key={child.name} className="sidebar__submenu-item">
-                    <NavLink
-                      to={child.path}
-                      className={({ isActive }) =>
-                        isActive
-                          ? "sidebar__submenu-link sidebar__submenu-link--active"
-                          : "sidebar__submenu-link"
-                      }
-                    >
-                      {child.name}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </li>
-        ))}
+          );
+        })}
       </ul>
     </nav>
   );

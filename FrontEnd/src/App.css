@@ -34,7 +34,6 @@ body {
   /* 사이드바와 겹치지 않도록 마진 추가 */
   margin-left: var(--sidebar-width);
 }
-
 /* --- Header Block (BEM) --- */
 .header {
   position: fixed;
@@ -62,178 +61,86 @@ body {
   text-decoration: none;
 }
 
-.header__nav {
-  display: flex;
-}
-
-.header__nav-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 25px;
-}
-
-.header__nav-link {
-  color: #6c757d;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.header__nav-link:hover {
-  color: var(--primary-color);
-}
-
-/* Dropdown specific styles */
-.header__nav-item--dropdown {
-  position: relative;
-}
-
-.header__dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  list-style: none;
-  padding: 8px 0;
-  margin-top: 1px;
-  background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 0.25rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
-  display: none;
-  z-index: 100;
-  min-width: 150px;
-}
-
-.header__nav-item--dropdown.show .header__dropdown-menu {
-  display: block;
-}
-
-.header__dropdown-item {
-  display: block;
-  width: 100%;
-  padding: 8px 16px;
-  clear: both;
-  font-weight: 400;
-  color: #212529;
-  text-align: inherit;
-  white-space: nowrap;
-  background-color: transparent;
-  border: 0;
-  text-decoration: none;
-  transition: background-color 0.2s ease;
-}
-
-.header__dropdown-item:hover {
-  color: #1e2125;
-  background-color: #e9ecef;
-}
-
-.header__actions {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.header__action-link,
-.header__action-icon {
-  color: #6c757d;
-  font-size: 1.1rem;
-}
-
-/* --- Sidebar Block (BEM) --- */
+/* sidebar */
 .sidebar {
   position: fixed;
-  top: var(--header-height); /* 헤더 아래에 위치 */
-  left: 0;
+  z-index: 99;
+
+  padding: 10px 0 0 0;
   width: var(--sidebar-width);
-  height: calc(100vh - var(--header-height)); /* 헤더를 제외한 높이 */
+  height: calc(100vh - var(--header-height));
   background-color: var(--primary-color);
-  color: #ffffff;
+  color: white;
   box-shadow: 4px 0 8px rgba(0, 0, 0, 0.15);
+
   display: flex;
   flex-direction: column;
-  z-index: 99; /* 헤더보다 낮은 z-index */
 }
 
-.sidebar__menu {
+.sidebar__list {
   list-style: none;
-  padding: 20px 0;
-  margin: 0;
+  padding: 0px;
 }
 
-.sidebar__menu-item {
-  margin-bottom: 8px;
-}
-
-.sidebar__menu-link {
+.sidebar__item__link {
   display: flex;
   align-items: center;
   gap: 15px;
-  padding: 15px 25px;
-  color: #ffffff;
-  text-decoration: none;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  font-size: 16px;
-  border-radius: 5px;
-  margin: 0 10px;
+  flex-direction: row;
+
+  width: 100%;
+  height: 50px;
+
+  cursor: pointer;
 }
 
-.sidebar__menu-link:hover {
+.sidebar__item:hover {
   background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
   transform: translateX(5px);
 }
 
-.sidebar__menu-link--active {
+.sidebar__item__link--active {
   background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
   font-weight: bold;
 }
 
-.sidebar__menu-icon {
-  width: 20px;
-  display: flex;
-  justify-content: center;
+.sidebar__item__icon {
   font-size: 18px;
+  padding: 15px;
 }
 
-.sidebar__menu-text {
-  flex-grow: 1;
-}
-
-/* --- Sidebar submenu styles --- */
-.sidebar__submenu {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  background-color: rgba(0, 0, 0, 0.1);
-}
-
-.sidebar__submenu-item {
-  margin: 0;
-}
-
-.sidebar__submenu-link {
-  display: block;
-  padding: 10px 25px 10px 40px;
-  color: #fff;
-  text-decoration: none;
-  transition: background-color 0.2s ease;
-  font-size: 15px;
-}
-
-.sidebar__submenu-link:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.sidebar__submenu-link--active {
-  font-weight: bold;
-  background-color: rgba(0, 0, 0, 0.4);
-}
-
-.sidebar__submenu-toggle-icon {
-  margin-left: auto;
+.sidebar__item__navlink {
   display: flex;
   align-items: center;
+  gap: 15px;
+  flex-direction: row;
+
+  color: white;
+  height: 50px;
+
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* submenu */
+
+.submenu__list {
+  list-style: none;
+  padding: 0px;
+}
+
+.submenu__item__navlink {
+  display: block;
+
+  padding: 10px 20px;
+  color: white;
+  text-decoration: none;
+}
+
+.submenu__item__navlink:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  transform: translateX(5px);
 }
