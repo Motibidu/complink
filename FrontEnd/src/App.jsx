@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-import SignUp from './KJG/Pages/SignUp';
-import Login from './KJG/Pages/Login';
-import FindId from './KJG/Pages/FindId';
-import FindPassword from './KJG/Pages/FindPassword'; // 1. import 추가
+import SignUp from './KJG/Pages/SignUp/SignUp';
+import Login from './KJG/Pages/Login/Login';
+import FindId from './KJG/Pages/Login/FindId';
+import FindPassword from './KJG/Pages/Login/FindPassword'; // 1. import 추가
 
 function App() {
   return (
