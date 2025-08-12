@@ -28,9 +28,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 인증 없이 접근 가능한 모든 경로를 여기에 등록합니다.
                         .requestMatchers(
-                                "/signup", "/register", 
-                                "/find/**", 
-                                "/find-password/**"
+                        		"/signup", 
+                                "/find/**",
+                                "/login",
+                                "/find-password/**",
+                                "/error"
                         ).permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 로그인 필요
                 )

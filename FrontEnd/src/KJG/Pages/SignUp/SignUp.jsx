@@ -42,12 +42,12 @@ function SignUp() {
         setErrorMessage('');
         setSuccessMessage('');
 
-        const { passwordConfirm, ...userData } = formData;
+        // const { passwordConfirm, ...userData } = formData;
         
         try {
             // 4. 서버로 보낼 데이터에 reCAPTCHA 토큰을 포함시킴
-            const response = await axios.post('/api/register', {
-                ...userData,
+            const response = await axios.post('/api/signup', {
+                 ...formData, 
                 recaptchaToken: recaptchaToken, // 서버로 토큰 전송
             });
 
