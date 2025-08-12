@@ -1,0 +1,161 @@
+/* --- Order Form Block --- */
+.order-form {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 30px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+.order-form__form h3 {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* --- Summary Element --- */
+.order-form__summary {
+  border-top: 2px solid #eee;
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
+.order-form__summary-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.order-form__summary-item--total {
+  font-weight: bold;
+  font-size: 20px;
+  color: #007bff;
+}
+
+.order-form__summary-label {
+  color: #555;
+}
+
+.order-form__summary-value {
+  font-weight: bold;
+}
+
+/* --- Buttons Elements --- */
+.order-form__button {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 18px;
+  margin-top: 20px;
+}
+
+.order-form__button--submit {
+  background-color: #007bff;
+  color: white;
+}
+
+/* --- Order Header Block --- */
+.order-header {
+  margin-bottom: 30px;
+}
+
+.order-header__title {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.order-header__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.order-header__label {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  font-weight: bold;
+  color: #555;
+}
+
+.order-header__input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 5px;
+  width: auto;
+}
+
+/* --- Order Items Block --- */
+.order-items {
+  margin-bottom: 30px;
+}
+
+.order-items__title {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.order-items__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.order-items__table th,
+.order-items__table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.order-items__cell {
+  vertical-align: middle;
+}
+
+.order-items__head {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.order-items__input {
+  width: 90%;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.order-items__button {
+  background: none;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: white;
+}
+
+.order-items__button--remove {
+  background-color: #f44336;
+}
+
+.order-items__button--add {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 15px;
+  margin-top: 10px;
+}
+
+.order-items__total {
+  font-weight: bold;
+  color: #333;
+}
