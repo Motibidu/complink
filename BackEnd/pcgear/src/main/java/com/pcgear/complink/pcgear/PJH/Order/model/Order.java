@@ -23,7 +23,7 @@ public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
-    private Integer id;
+    private Integer orderId;
 
     @Column(name = "order_date", nullable = false)
     private LocalDate orderDate;
@@ -45,8 +45,8 @@ public class Order {
     @Column(name = "vat_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal vatAmount;
 
-    @Column(name = "grand_total", nullable = false, precision = 18, scale = 2)
-    private BigDecimal grandTotal;
+    @Column(name = "grand_amount", nullable = false, precision = 18, scale = 2)
+    private BigDecimal grandAmount;
 
     @Column(nullable = false)
     private String status;
@@ -59,12 +59,12 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "orderId", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
     //== 연관관계 편의 메서드 ==//
     public void addItem(OrderItem orderItem) {
         items.add(orderItem);
-        orderItem.setOrder(this);
+        orderItem.setOrderId(this);
     }
 }

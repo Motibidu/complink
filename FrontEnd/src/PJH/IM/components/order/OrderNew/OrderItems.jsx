@@ -12,11 +12,11 @@ const OrderItems = ({
       <table className="order-items__table">
         <thead className="order-items__head">
           <tr className="order-items__row">
-            <th className="order-items__cell">품번</th>
             <th className="order-items__cell">상품명</th>
             <th className="order-items__cell">수량</th>
             <th className="order-items__cell">단가</th>
-            <th className="order-items__cell">금액</th>
+            <th className="order-items__cell">공급가액</th>
+            <th className="order-items__cell">부가세</th>
             <th className="order-items__cell"></th>
           </tr>
         </thead>
@@ -25,17 +25,7 @@ const OrderItems = ({
             <tr key={index} className="order-items__row">
               <td className="order-items__cell">
                 <input
-                  className="order-items__input"
-                  type="text"
-                  name="partNumber"
-                  value={item.partNumber}
-                  onChange={(e) => handleItemsChange(index, e)}
-                  placeholder="품번"
-                />
-              </td>
-              <td className="order-items__cell">
-                <input
-                  className="order-items__input"
+                  className="order-items__input-string"
                   type="text"
                   name="itemName"
                   value={item.itemName}
@@ -46,27 +36,31 @@ const OrderItems = ({
               <td className="order-items__cell">
                 <input
                   className="order-items__input"
-                  type="number"
                   name="quantity"
-                  value={item.quantity}
+                  value={Number(item.quantity).toLocaleString()}
                   onChange={(e) => handleItemsChange(index, e)}
                 />
               </td>
               <td className="order-items__cell">
                 <input
                   className="order-items__input"
-                  type="number"
                   name="unitPrice"
                   value={item.unitPrice}
                   onChange={(e) => handleItemsChange(index, e)}
                 />
               </td>
-              <td className="order-items__cell">
+
+              <td className="order-items__cell cell-number">
                 <span className="order-items__total">
-                  {item.total.toLocaleString()}
+                  {Number(item.totalPrice).toLocaleString()}
                 </span>
               </td>
-              <td className="order-items__cell">
+              <td className="order-items__cell cell-number">
+                <span className="order-items__input" name="vatPrice">
+                  {Math.round(item.totalPrice * 0.1).toLocaleString()}
+                </span>
+              </td>
+              <td className="order-items__cell cell-center">
                 <button
                   type="button"
                   onClick={() => handleRemoveItem(index)}
@@ -77,6 +71,46 @@ const OrderItems = ({
               </td>
             </tr>
           ))}
+          <tr className="order-items__result">
+            <td></td>
+            <td className="cell-number">
+              <span className="order-items__total">
+                {orderItems
+                  .reduce((acc, item) => {
+                    return acc + Number(item.quantity);
+                  }, 0)
+                  .toLocaleString()}
+              </span>
+            </td>
+            <td></td>
+
+            <td className="cell-number">
+              <span className="order-items__total">
+                {orderItems
+                  .reduce((acc, item) => {
+                    return acc + item.totalPrice;
+                  }, 0)
+                  .toLocaleString()}
+              </span>
+            </td>
+            <td className="cell-number">
+              <span className="order-items__total">
+                {Math.round(
+                  orderItems.reduce((acc, item) => {
+                    return acc + item.totalPrice * 0.1;
+                  }, 0)
+                ).toLocaleString()}
+              </span>
+            </td>
+            <td className="cell-number">
+              <span className="order-items__total">
+                {Math.round(
+                  orderItems.reduce((acc, item) => acc + item.totalPrice, 0) *
+                    1.1
+                ).toLocaleString()}
+              </span>
+            </td>
+          </tr>
         </tbody>
       </table>
       <button

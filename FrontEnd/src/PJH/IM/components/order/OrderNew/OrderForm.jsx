@@ -1,18 +1,26 @@
 import React, { useState } from "react";
 import OrderHeader from "./OrderHeader";
 import OrderItems from "./OrderItems";
+import NotificationComponent from "../../NotificationComponent";
 import "./OrderForm.css";
 
 const OrderForm = () => {
   const [orderHeader, setOrderHeader] = useState({
     orderDate: new Date().toISOString().slice(0, 10),
-    manager: "", // 담당자 ID를 입력받는다고 가정
-    client: "", // 고객사 ID를 입력받는다고 가정
-    deliveryDate: "",
+    managerName: "강감찬",
+    managerId: "01A",
+    customerName: "미래전자",
+    customerId: "0001A",
+    deliveryDate: new Date().toISOString().slice(0, 10),
   });
 
   const [orderItems, setOrderItems] = useState([
-    { partNumber: "", itemName: "", quantity: 1, unitPrice: 0, total: 0 },
+    {
+      itemName: "iptime 유선랜",
+      quantity: 12,
+      unitPrice: 35000,
+      totalPrice: 420000,
+    },
   ]);
 
   // 요청 상태 관리를 위한 state 추가
@@ -35,7 +43,7 @@ const OrderForm = () => {
     if (name === "quantity" || name === "unitPrice") {
       const quantity = parseFloat(newItems[index].quantity) || 0;
       const unitPrice = parseFloat(newItems[index].unitPrice) || 0;
-      newItems[index].total = quantity * unitPrice;
+      newItems[index].totalPrice = quantity * unitPrice;
     }
 
     setOrderItems(newItems);
@@ -44,7 +52,7 @@ const OrderForm = () => {
   const handleAddItem = () => {
     setOrderItems([
       ...orderItems,
-      { partNumber: "", itemName: "", quantity: 1, unitPrice: 0, total: 0 },
+      { itemName: "", quantity: 1, unitPrice: 0, totalPrice: 0 },
     ]);
   };
 
@@ -53,9 +61,12 @@ const OrderForm = () => {
     setOrderItems(newItems);
   };
 
-  const totalAmount = orderItems.reduce((acc, item) => acc + item.total, 0);
-  const vat = totalAmount * 0.1;
-  const grandTotal = totalAmount + vat;
+  const totalAmount = orderItems.reduce(
+    (acc, item) => acc + item.totalPrice,
+    0
+  );
+  const vatAmount = totalAmount * 0.1;
+  const grandAmount = totalAmount + vatAmount;
 
   // --- 백엔드 요청을 보내도록 handleSubmit 함수 수정 ---
   const handleSubmit = async (e) => {
@@ -66,24 +77,27 @@ const OrderForm = () => {
     // 1. 백엔드 DTO 형식에 맞게 데이터 가공
     const payload = {
       orderDate: orderHeader.orderDate,
-      customerId: parseInt(orderHeader.client, 10), // client -> customerId (숫자)
-      managerId: parseInt(orderHeader.manager, 10), // manager -> managerId (숫자)
+      customerName: orderHeader.customerName,
+      customerId: orderHeader.customerId,
+      managerName: orderHeader.managerName,
+      managerId: orderHeader.managerId,
       deliveryDate: orderHeader.deliveryDate,
       status: "접수", // 초기 상태를 '접수'로 지정
       items: orderItems.map((item) => ({
-        partNumber: item.partNumber,
         itemName: item.itemName,
         quantity: parseInt(item.quantity, 10),
         unitPrice: parseFloat(item.unitPrice),
-        itemTotal: item.total, // total -> itemTotal
+        totalPrice: item.totalPrice, // total -> itemTotal
       })),
       totalAmount: totalAmount,
-      vatAmount: vat, // vat -> vatAmount
-      grandTotal: grandTotal,
+      vatAmount: vatAmount, // vat -> vatAmount
+      grandAmount: grandAmount,
     };
 
     // ID 필드가 비어있거나 숫자가 아닌 경우 처리
-    if (isNaN(payload.customerId) || isNaN(payload.managerId)) {
+    if (!payload.customerName || !payload.managerName) {
+      console.log(payload.customerName);
+      console.log(payload.managerName);
       setError("고객사와 담당자 ID를 올바르게 입력해주세요.");
       setIsSubmitting(false);
       return;
@@ -133,7 +147,7 @@ const OrderForm = () => {
           handleAddItem={handleAddItem}
           handleRemoveItem={handleRemoveItem}
         />
-
+        <NotificationComponent />
         <div className="order-form__summary">
           {/* ... 총 합계, 부가세, 최종 금액 표시 ... */}
         </div>

@@ -17,20 +17,22 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Customer {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "customer_id")
-    private Integer id; // Long -> Integer
+    private String customerId;
 
     @Column(name = "customer_name", nullable = false)
     private String customerName;
 
-    @Column(name = "contact_person")
-    private String contactPerson;
+    @Column(name = "manager_name")
+    private String managerName;
 
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    private String email;
+    
     private String address;
+
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

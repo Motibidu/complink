@@ -16,9 +16,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private Integer id; // Long -> Integer
+    private String id; // Long -> Integer
 
     @Column(name = "user_name", nullable = false)
     private String userName;

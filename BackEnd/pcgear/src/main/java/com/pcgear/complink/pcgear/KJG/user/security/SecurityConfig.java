@@ -25,15 +25,18 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(auth -> auth
-                        // 인증 없이 접근 가능한 모든 경로를 여기에 등록합니다.
-                        .requestMatchers(
-                                "/signup", "/register", 
-                                "/find/**", 
-                                "/find-password/**"
-                        ).permitAll()
-                        .anyRequest().authenticated() // 그 외 모든 요청은 로그인 필요
-                )
+                // .authorizeHttpRequests(auth -> auth
+                //         // 인증 없이 접근 가능한 모든 경로를 여기에 등록합니다.
+                //         .requestMatchers(
+                //         		"/signup", 
+                //                 "/find/**",
+                //                 "/login",
+                //                 "/find-password/**",
+                //                 "/error",
+                //                 "/order/**"
+                //         ).permitAll()
+                //         .anyRequest().authenticated() // 그 외 모든 요청은 로그인 필요
+                // )
                 // 1. 기존 아이디/비밀번호 방식 로그인 설정
                 .formLogin(form -> form
                         .loginProcessingUrl("/login")
