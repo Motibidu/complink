@@ -1,0 +1,120 @@
+/* SignUp.css */
+
+/* --- 기본 스타일 (데스크톱) --- */
+.signup-container {
+    /*
+     * 너비를 화면의 60%로 설정하여 옆으로 길게 만듭니다.
+     * 아주 큰 모니터에서 폼이 무한정 커지는 것을 막기 위해 최대 너비(max-width)를 설정하고,
+     * 화면이 줄어들 때 최소 너비(min-width)를 보장합니다.
+     */
+    width: 60%;
+    max-width: 750px; /* 최대 너비 제한 */
+    min-width: 450px; /* 최소 너비 보장 */
+
+    margin: 60px auto;
+    padding: 40px 45px;
+    border: 1px solid #f0f0f0;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
+    background-color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    transition: all 0.3s ease-in-out;
+}
+
+.signup-container h2 {
+    text-align: center;
+    color: #222;
+    margin-bottom: 35px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.signup-container form div {
+    margin-bottom: 18px;
+}
+
+.signup-container input[type="text"],
+.signup-container input[type="email"],
+.signup-container input[type="password"],
+.signup-container input[type="tel"] {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-sizing: border-box;
+    font-size: 15px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.signup-container input::placeholder {
+    color: #aaa;
+}
+
+.signup-container input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+.signup-container button[type="submit"] {
+    width: 100%;
+    padding: 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 25px;
+}
+
+.signup-container button[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+.success-message, .error-message {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.success-message {
+    color: #28a745;
+}
+
+.error-message {
+    color: #dc3545;
+}
+
+
+/* --- 반응형 스타일 (모바일 & 태블릿) --- */
+/* 화면 너비가 768px 이하일 때 적용될 스타일 */
+@media (max-width: 768px) {
+    .signup-container {
+        /*
+         * 모바일에서는 % 설정을 더 높여 화면을 넓게 사용하고,
+         * 데스크톱에서 설정한 최소/최대 너비 제한을 풀어줍니다.
+         */
+        width: 90%;
+        min-width: 0; /* 최소 너비 제한 해제 */
+        margin: 40px auto;
+        padding: 30px 25px;
+    }
+
+    .signup-container h2 {
+        font-size: 22px;
+        margin-bottom: 30px;
+    }
+
+    .signup-container input[type="text"],
+    .signup-container input[type="email"],
+    .signup-container input[type="password"],
+    .signup-container input[type="tel"],
+    .signup-container button[type="submit"] {
+        font-size: 14px;
+        padding: 14px;
+    }
+}
