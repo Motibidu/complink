@@ -10,6 +10,7 @@ import {
   FaChevronDown,
   FaChevronRight,
 } from "react-icons/fa";
+import { RiBillFill } from "react-icons/ri";
 
 const Sidebar = () => {
   const [clickedItem, setClickedItem] = useState(null);
@@ -17,7 +18,7 @@ const Sidebar = () => {
     {
       name: "주문서",
       path: "/order",
-      icon: <FaTachometerAlt />,
+      icon: <RiBillFill />,
       children: [
         { name: "주문서 조회", path: "/orders/search" },
         { name: "주문서 입력", path: "/orders/new" },
