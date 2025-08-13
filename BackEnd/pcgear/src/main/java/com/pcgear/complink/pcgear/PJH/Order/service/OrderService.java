@@ -9,6 +9,8 @@ import com.pcgear.complink.pcgear.PJH.Order.repository.CustomerRepository;
 import com.pcgear.complink.pcgear.PJH.Order.repository.OrderRepository;
 import com.pcgear.complink.pcgear.PJH.Order.repository.UserRepository2;
 import jakarta.persistence.EntityNotFoundException;
+
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,11 +20,13 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository2 userRepository;
     private final CustomerRepository customerRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public OrderService(OrderRepository orderRepository, UserRepository userRepository, CustomerRepository customerRepository) {
+    public OrderService(OrderRepository orderRepository, UserRepository2 userRepository, CustomerRepository customerRepository, SimpMessagingTemplate messagingTemplate) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.customerRepository = customerRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Transactional
@@ -63,6 +67,9 @@ public class OrderService {
             order.addItem(orderItem);
         }
 
+        String message = "새로운 데이터 '" + order.toString() + "'가 추가되었습니다!";
+        // "/topic/notifications" 토픽을 구독하는 클라이언트에게 메시지를 보냄
+        messagingTemplate.convertAndSend("/topic/notifications", message);
 
         // 4. Repository를 통해 DB에 저장
         return orderRepository.save(order);
