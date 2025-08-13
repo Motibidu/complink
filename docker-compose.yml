@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    container_name: my-spring-app
+    # 이 컨테이너는 외부로 포트를 노출할 필요 없이, frontend(Nginx)와 통신합니다.
+
+  frontend:
+    build: ./frontend
+    container_name: my-react-app
+    ports:
+      # EC2 인스턴스의 80번 포트를 이 컨테이너의 80번 포트로 연결
+      - "80:80"
+    # backend 서비스가 먼저 실행된 후 frontend 서비스를 실행
+    depends_on:
+      - backend
