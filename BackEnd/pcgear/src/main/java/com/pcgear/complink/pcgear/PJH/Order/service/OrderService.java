@@ -34,7 +34,7 @@ public class OrderService {
         // 1. ID를 사용하여 User와 Customer 엔티티를 조회합니다.
         // FIXED: 중괄호와 return을 생략하여 예외 객체를 올바르게 반환합니다.
         Customer customer = customerRepository.findById(requestDto.getCustomerId())
-                .orElseThrow(() -> new EntityNotFoundException("고객 정보를 찾을 수 없습니다. ID: " + requestDto.getCustomerId()));
+                .orElseThrow(() -> new EntityNotFoundException("거래처 정보를 찾을 수 없습니다. ID: " + requestDto.getCustomerId()));
 
         User manager = null;
         if (requestDto.getManagerName() != null) {

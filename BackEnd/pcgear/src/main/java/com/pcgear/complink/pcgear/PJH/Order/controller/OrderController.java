@@ -10,7 +10,7 @@ import com.pcgear.complink.pcgear.PJH.Order.model.OrderRequestDto;
 import com.pcgear.complink.pcgear.PJH.Order.service.OrderService;
 
 @RestController
-@RequestMapping("/order") // 이 컨트롤러의 모든 경로는 '/order'로 시작
+@RequestMapping("/api/order") // 이 컨트롤러의 모든 경로는 '/order'로 시작
 public class OrderController {
 
     private final OrderService orderService;

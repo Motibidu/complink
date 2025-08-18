@@ -1,42 +1,31 @@
-version: "3.8"
-
 services:
-  # DB 서비스 추가
   db:
-    image: mysql:8.0
-    container_name: my-mysql-db
-    restart: always
+    image: mysql
     environment:
-      # .env 파일에서 정의한 변수들을 사용
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    ports:
-      # 외부 DB 관리 도구(Workbench 등)로 접속하려면 주석 해제 (선택 사항)
-      # - "3306:3306"
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: pcgear
     volumes:
-      # DB 데이터를 영구적으로 저장하기 위한 볼륨 설정
-      - mysql-data:/var/lib/mysql
+      - ./mysql_data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping"]
+      interval: 5s
+      retries: 10
 
   backend:
-    build: ./backend
-    container_name: my-spring-app
-    # .env 파일을 사용하도록 설정
-    env_file:
-      - .env
-    # backend가 db에 의존하도록 설정
+    build:
+      context: ./BackEnd/pcgear
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   frontend:
-    build: ./frontend
-    container_name: my-react-app
+    build: ./FrontEnd
     ports:
       - "80:80"
     depends_on:
       - backend
 
-# Docker 볼륨 정의
 volumes:
   mysql-data:
