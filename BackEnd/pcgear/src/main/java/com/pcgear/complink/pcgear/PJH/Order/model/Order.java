@@ -3,9 +3,14 @@ package com.pcgear.complink.pcgear.PJH.Order.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,6 +21,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
+@ToString
 @Table(name = "orders")
 @EntityListeners(AuditingEntityListener.class) // 생성/수정 시간 자동 감지를 위한 리스너
 public class Order {
@@ -59,12 +65,14 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "orderId", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    @ToString.Exclude
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
-    //== 연관관계 편의 메서드 ==//
+    // == 연관관계 편의 메서드 ==//
     public void addItem(OrderItem orderItem) {
         items.add(orderItem);
-        orderItem.setOrderId(this);
+        orderItem.setOrder(this);
     }
 }

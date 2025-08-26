@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import OrderListPanel from "../../components/order/OrderSearch/OrderListPanel";
 import OrderDetailPanel from "../../components/order/OrderSearch/OrderDetailPanel";
-import { mockUsers, mockCustomers, mockOrders } from "../../datas/mockData";
 import "./OrderSearchPage.css";
 function OrderSearchPage() {
   const [orders, setOrders] = useState([]);
@@ -11,24 +10,37 @@ function OrderSearchPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setTimeout(() => {
-      const processedOrders = mockOrders.map((order) => ({
-        ...order,
-        customer: mockCustomers.find(
-          (c) => c.customer_id === order.customer_id
-        ),
-        manager: mockUsers.find((u) => u.user_id === order.manager_id),
-      }));
-      setOrders(processedOrders);
-      // 첫 번째 주문을 기본으로 선택
-      if (processedOrders.length > 0) {
-        setSelectedOrder(processedOrders[0]);
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch("/api/order/search", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "서버에서 오류가 발생했습니다.");
+        }
+        //console.log("response: ", response);
+        const orders = await response.json();
+        setOrders(orders);
+        if (orders.length > 0) {
+          setSelectedOrder(orders[0]);
+        }
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    }, 1000);
+    };
+
+    fetchOrders();
   }, []);
 
   const filteredOrders = useMemo(() => {
+    console.log("orders: ", orders);
     return orders
       .filter(
         (order) =>

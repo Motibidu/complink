@@ -17,39 +17,39 @@ const OrderDetailView = ({ order }) => {
           {order.status}
         </span>
       </div>
-      <p className="text-muted mb-4">주문번호: {order.order_id}</p>
+      <p className="text-muted mb-4">주문번호: {order.orderId}</p>
 
       <div className="row g-4 mb-4">
         <div className="col-md-6">
-          <p className="order-detail-view__info-label">고객명</p>
+          <p className="order-detail-view__info-label">거래처명</p>
           <p className="order-detail-view__info-value">
-            {order.customer.customer_name}
+            {order.customer.customerName}
           </p>
         </div>
         <div className="col-md-6">
           <p className="order-detail-view__info-label">담당자</p>
           <p className="order-detail-view__info-value">
-            {order.customer.contact_person} ({order.customer.phone_number})
+            {order.customer.managerName} ({order.customer.phoneNumber})
           </p>
         </div>
         <div className="col-12">
           <p className="order-detail-view__info-label">주소</p>
           <p className="order-detail-view__info-value">
-            {order.customer.address}
+            {order.customer.customerAddress}
           </p>
         </div>
         <div className="col-md-4">
           <p className="order-detail-view__info-label">주문일</p>
-          <p className="order-detail-view__info-value">{order.order_date}</p>
+          <p className="order-detail-view__info-value">{order.orderDate}</p>
         </div>
         <div className="col-md-4">
           <p className="order-detail-view__info-label">납기일</p>
-          <p className="order-detail-view__info-value">{order.delivery_date}</p>
+          <p className="order-detail-view__info-value">{order.deliveryDate}</p>
         </div>
         <div className="col-md-4">
           <p className="order-detail-view__info-label">주문 담당 직원</p>
           <p className="order-detail-view__info-value">
-            {order.manager.user_name}
+            {order.manager.userName}
           </p>
         </div>
       </div>
@@ -68,15 +68,15 @@ const OrderDetailView = ({ order }) => {
           </thead>
           <tbody>
             {order.items.map((item) => (
-              <tr key={item.order_item_id}>
-                <td className="text-muted">{item.part_number}</td>
-                <td className="fw-semibold">{item.item_name}</td>
+              <tr key={item.orderItemId}>
+                <td className="text-muted">{item.orderItemId}</td>
+                <td className="fw-semibold">{item.itemName}</td>
                 <td className="text-end">{item.quantity}</td>
                 <td className="text-end">
-                  {formatCurrency(item.unit_price)}원
+                  {formatCurrency(item.unitPrice)}원
                 </td>
                 <td className="text-end fw-bold">
-                  {formatCurrency(item.item_total)}원
+                  {formatCurrency(item.totalPrice)}원
                 </td>
               </tr>
             ))}
@@ -89,15 +89,15 @@ const OrderDetailView = ({ order }) => {
           <div className="list-group list-group-flush order-detail-view__totals">
             <div className="list-group-item d-flex justify-content-between">
               <span className="text-muted">상품 총액</span>
-              <span>{formatCurrency(order.total_amount)}원</span>
+              <span>{formatCurrency(order.totalAmount)}원</span>
             </div>
             <div className="list-group-item d-flex justify-content-between">
               <span className="text-muted">부가세 (VAT)</span>
-              <span>{formatCurrency(order.vat_amount)}원</span>
+              <span>{formatCurrency(order.vatAmount)}원</span>
             </div>
             <div className="list-group-item d-flex justify-content-between fw-bold fs-5 order-detail-view__grand-total">
               <span>최종 결제 금액</span>
-              <span>{formatCurrency(order.grand_total)}원</span>
+              <span>{formatCurrency(order.grandAmount)}원</span>
             </div>
           </div>
         </div>

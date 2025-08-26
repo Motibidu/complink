@@ -4,11 +4,15 @@ import com.pcgear.complink.pcgear.PJH.Order.model.Customer;
 import com.pcgear.complink.pcgear.PJH.Order.model.Order;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderItem;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderRequestDto;
+import com.pcgear.complink.pcgear.PJH.Order.model.OrderResponseDto;
 import com.pcgear.complink.pcgear.PJH.Order.model.User;
 import com.pcgear.complink.pcgear.PJH.Order.repository.CustomerRepository;
 import com.pcgear.complink.pcgear.PJH.Order.repository.OrderRepository;
 import com.pcgear.complink.pcgear.PJH.Order.repository.UserRepository2;
 import jakarta.persistence.EntityNotFoundException;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -22,7 +26,8 @@ public class OrderService {
     private final CustomerRepository customerRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
-    public OrderService(OrderRepository orderRepository, UserRepository2 userRepository, CustomerRepository customerRepository, SimpMessagingTemplate messagingTemplate) {
+    public OrderService(OrderRepository orderRepository, UserRepository2 userRepository,
+            CustomerRepository customerRepository, SimpMessagingTemplate messagingTemplate) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.customerRepository = customerRepository;
@@ -40,7 +45,8 @@ public class OrderService {
         if (requestDto.getManagerName() != null) {
             // FIXED: 여기도 마찬가지로 수정합니다.
             manager = userRepository.findById(requestDto.getManagerId())
-                    .orElseThrow(() -> new EntityNotFoundException("담당자 정보를 찾을 수 없습니다. ID: " + requestDto.getManagerId()));
+                    .orElseThrow(
+                            () -> new EntityNotFoundException("담당자 정보를 찾을 수 없습니다. ID: " + requestDto.getManagerId()));
         }
 
         // 2. DTO -> Entity 변환
@@ -48,7 +54,7 @@ public class OrderService {
         order.setOrderDate(requestDto.getOrderDate());
         order.setDeliveryDate(requestDto.getDeliveryDate());
         order.setStatus(requestDto.getStatus());
-        
+
         order.setCustomer(customer);
         order.setManager(manager);
 
@@ -63,15 +69,22 @@ public class OrderService {
             orderItem.setQuantity(itemDto.getQuantity());
             orderItem.setUnitPrice(itemDto.getUnitPrice());
             orderItem.setTotalPrice(itemDto.getTotalPrice());
-            
+
             order.addItem(orderItem);
         }
 
-        String message = "새로운 데이터 '" + order.toString() + "'가 추가되었습니다!";
+        String message = "주문서가 성공적으로 생성되었습니다.";
         // "/topic/notifications" 토픽을 구독하는 클라이언트에게 메시지를 보냄
         messagingTemplate.convertAndSend("/topic/notifications", message);
 
         // 4. Repository를 통해 DB에 저장
         return orderRepository.save(order);
+    }
+
+    @Transactional(readOnly = true) // 이 어노테이션이 반드시 있어야 합니다.
+    public List<OrderResponseDto> findAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(OrderResponseDto::new) // 엔티티를 DTO로 변환
+                .collect(Collectors.toList());
     }
 }

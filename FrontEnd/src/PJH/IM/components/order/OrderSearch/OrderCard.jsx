@@ -21,12 +21,12 @@ const OrderCard = ({ order, isSelected, onSelect }) => {
     >
       {/* Row 1: Customer Name */}
       <div className="order-card__customer-name">
-        {order.customer.customer_name}
+        {order.customer.customerName}
       </div>
 
       {/* Row 2: Meta info (ID and Status) */}
       <div className="d-flex justify-content-between align-items-center mt-1">
-        <span className="order-card__meta">주문번호: {order.order_id}</span>
+        <span className="order-card__meta">주문번호: {order.orderId}</span>
         <span
           className={`badge rounded-pill ${badgeColors.bg} ${badgeColors.text}`}
         >
@@ -36,9 +36,9 @@ const OrderCard = ({ order, isSelected, onSelect }) => {
 
       {/* Row 3: Date and Total (with a separator) */}
       <div className="d-flex justify-content-between align-items-end mt-2 pt-2 border-top">
-        <small className="order-card__meta">{order.order_date}</small>
+        <small className="order-card__meta">주문일: {order.orderDate}</small>
         <strong className="order-card__total">
-          {formatCurrency(order.grand_total)}원
+          {formatCurrency(order.grandAmount)}원
         </strong>
       </div>
     </a>

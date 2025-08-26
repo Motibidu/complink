@@ -121,7 +121,6 @@ const OrderForm = () => {
 
       // 3. 성공 처리
       console.log("주문서 제출 성공:", payload);
-      alert("주문서가 성공적으로 제출되었습니다.");
       // TODO: 성공 후 폼 초기화 또는 페이지 이동 로직 추가
     } catch (err) {
       // 4. 실패(에러) 처리
@@ -136,10 +135,14 @@ const OrderForm = () => {
   return (
     <div className="order-form">
       <form className="order-form__form" onSubmit={handleSubmit}>
-        <OrderHeader
-          orderHeader={orderHeader}
-          handleHeaderChange={handleHeaderChange}
-        />
+        {!isSubmitting ? (
+          <OrderHeader
+            orderHeader={orderHeader}
+            handleHeaderChange={handleHeaderChange}
+          />
+        ) : (
+          ""
+        )}
 
         <OrderItems
           orderItems={orderItems}
@@ -148,9 +151,6 @@ const OrderForm = () => {
           handleRemoveItem={handleRemoveItem}
         />
         <NotificationComponent />
-        <div className="order-form__summary">
-          {/* ... 총 합계, 부가세, 최종 금액 표시 ... */}
-        </div>
 
         {/* 에러 메시지 표시 영역 */}
         {error && <div className="order-form__error-message">{error}</div>}
