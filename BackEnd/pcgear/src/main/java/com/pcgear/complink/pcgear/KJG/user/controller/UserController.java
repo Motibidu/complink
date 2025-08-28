@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -69,5 +71,19 @@ public class UserController {
     public ResponseEntity<Void> DeleteUserInfo(@PathVariable Long id) {
         userService.DeleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/login/isLoggedIn")
+    public ResponseEntity<Map<String, Boolean>> isLoggedIn(@AuthenticationPrincipal UserDetails userDetails) {
+        
+        if (userDetails != null) {
+            return ResponseEntity.ok().body(Map.of(
+                "isLoggedIn", true
+            ));
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                "isLoggedIn", false
+            ));
+        }
     }
 }

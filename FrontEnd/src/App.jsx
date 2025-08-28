@@ -8,20 +8,23 @@ import OrderFormPage from "./PJH/IM/pages/order/OrderFormPage";
 import FindPassword from "./KJG/Pages/Login/FindPassword";
 import "./App.css";
 import OrderSearchPage from "./PJH/IM/pages/order/OrderSearchPage";
+import { AuthProvider } from "./PJH/IM/contexts/AuthContext";
 
 function App() {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/find-id" element={<FindId />} />
-        <Route path="/find-password" element={<FindPassword />} />
-        <Route path="/orders/new" element={<OrderFormPage />} />
-        <Route path="/orders/search" element={<OrderSearchPage />} />
-      </Routes>
-    </Layout>
+    <AuthProvider>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/find-id" element={<FindId />} />
+          <Route path="/find-password" element={<FindPassword />} />
+          <Route path="/orders/new" element={<OrderFormPage />} />
+          <Route path="/orders/search" element={<OrderSearchPage />} />
+        </Routes>
+      </Layout>
+    </AuthProvider>
   );
 }
 
