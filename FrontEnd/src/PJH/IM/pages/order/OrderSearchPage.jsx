@@ -49,7 +49,7 @@ function OrderSearchPage() {
             order.customer.customer_name
               .toLowerCase()
               .includes(searchTerm.toLowerCase()) ||
-            String(order.order_id).includes(searchTerm))
+            String(order.orderId).includes(searchTerm))
       )
       .sort((a, b) => new Date(b.order_date) - new Date(a.order_date));
   }, [orders, searchTerm, statusFilter]);

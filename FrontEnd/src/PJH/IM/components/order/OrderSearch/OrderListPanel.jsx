@@ -55,9 +55,9 @@ const OrderListPanel = ({
       ) : orders.length > 0 ? (
         orders.map((order) => (
           <OrderCard
-            key={order.order_id}
+            key={order.orderId}
             order={order}
-            isSelected={selectedOrder?.order_id === order.order_id}
+            isSelected={selectedOrder?.orderId === order.orderId}
             onSelect={onSelectOrder}
           />
         ))

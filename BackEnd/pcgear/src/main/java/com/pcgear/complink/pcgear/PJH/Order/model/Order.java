@@ -40,7 +40,7 @@ public class Order {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manager_id")
-    private User manager;
+    private Manager manager;
 
     @Column(name = "delivery_date")
     private LocalDate deliveryDate;

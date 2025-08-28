@@ -148,3 +148,105 @@ body {
   background-color: rgba(255, 255, 255, 0.2);
   font-weight: bold;
 }
+
+/* ==========================================================================
+   1. 전역 스타일 및 디자인 시스템 (Global Styles & Design System)
+   ========================================================================== */
+:root {
+  --font-family-base: "Pretendard", sans-serif;
+  --color-bg-body: #f8f9fa;
+  --color-bg-panel: #ffffff;
+  --color-bg-subtle: #f8f9fa;
+  --color-border: #e9ecef;
+  --color-text-muted: #6c757d;
+  --color-text-dark: #212529;
+
+  /* 색상 팔레트 */
+  --color-primary: #0d6efd;
+  --color-primary-light: #e7f1ff;
+  --color-success: #198754;
+  --color-danger: #dc3545;
+
+  /* 컴포넌트 스타일 */
+  --border-radius-base: 0.75rem;
+  --border-radius-small: 0.5rem;
+  --box-shadow-base: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.04);
+}
+
+body {
+  font-family: var(--font-family-base);
+  background-color: var(--color-bg-body);
+}
+
+/* ==========================================================================
+   2. 레이아웃 및 공용 컴포넌트 (Layout & Common Components)
+   ========================================================================== */
+
+/* --- 페이지 컨테이너 --- */
+.app-container {
+  padding: 2rem 0;
+}
+@media (min-width: 992px) {
+  .app-container {
+    padding: 3rem 0;
+  }
+}
+
+/* --- 패널 (카드) 기본 스타일 --- */
+.custom-panel {
+  background-color: var(--color-bg-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-base);
+  box-shadow: var(--box-shadow-base);
+  height: 100%;
+  padding: 1.5rem;
+}
+
+/* --- 섹션 제목 --- */
+.section-title {
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+  color: var(--color-text-dark);
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+/* --- 버튼 공용 스타일 --- */
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--border-radius-small);
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn--primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+.btn--danger {
+  background-color: var(--color-danger);
+  color: white;
+}
+.btn--success {
+  background-color: var(--color-success);
+  color: white;
+}
+.btn:hover {
+  opacity: 0.85;
+}
+
+/* --- 폼 입력 요소 공용 스타일 --- */
+.form-input {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-small);
+  margin-top: 0.25rem;
+}

@@ -86,6 +86,22 @@
   color: #555;
 }
 
+.orderHeader__list {
+  cursor: pointer;
+}
+.orderHeader__list:hover {
+  /* CSS 변수에 정의된 연한 파란색 배경 추가 */
+  background-color: var(--custom-primary-light, #e7f1ff);
+
+  /* 아이콘 색상도 포인트 색으로 변경하여 가독성 확보 */
+  color: var(--custom-primary-dark, #0d6efd);
+
+  /* 배경을 원형으로 만들기 */
+  border-radius: 50%;
+
+  transition: all 0.2s ease-in-out;
+}
+
 .orderHeader__input {
   padding: 8px;
   border: 1px solid #ccc;

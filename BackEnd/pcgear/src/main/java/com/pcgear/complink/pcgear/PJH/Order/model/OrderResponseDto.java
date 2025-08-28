@@ -18,7 +18,7 @@ public class OrderResponseDto {
         private final BigDecimal grandAmount;
 
         private final CustomerDto customer;
-        private final UserDto manager;
+        private final ManagerDto manager;
         private final List<OrderItemDto> items;
 
         public OrderResponseDto(Order order) {
@@ -31,7 +31,7 @@ public class OrderResponseDto {
                 this.grandAmount = order.getGrandAmount();
 
                 this.customer = new CustomerDto(order.getCustomer());
-                this.manager = new UserDto(order.getManager());
+                this.manager = new ManagerDto(order.getManager());
                 this.items = order.getItems().stream()
                                 .map(OrderItemDto::new) // .map(orderItem -> new OrderItemDto(orderItem))과 동일
                                 .collect(Collectors.toList());

@@ -1,14 +1,14 @@
 package com.pcgear.complink.pcgear.PJH.Order.service;
 
 import com.pcgear.complink.pcgear.PJH.Order.model.Customer;
+import com.pcgear.complink.pcgear.PJH.Order.model.Manager;
 import com.pcgear.complink.pcgear.PJH.Order.model.Order;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderItem;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderRequestDto;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderResponseDto;
-import com.pcgear.complink.pcgear.PJH.Order.model.User;
 import com.pcgear.complink.pcgear.PJH.Order.repository.CustomerRepository;
 import com.pcgear.complink.pcgear.PJH.Order.repository.OrderRepository;
-import com.pcgear.complink.pcgear.PJH.Order.repository.UserRepository2;
+import com.pcgear.complink.pcgear.PJH.Order.repository.ManagerRepository;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
@@ -22,14 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final UserRepository2 userRepository;
+    private final ManagerRepository managerRepository;
     private final CustomerRepository customerRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
-    public OrderService(OrderRepository orderRepository, UserRepository2 userRepository,
+    public OrderService(OrderRepository orderRepository, ManagerRepository managerRepository,
             CustomerRepository customerRepository, SimpMessagingTemplate messagingTemplate) {
         this.orderRepository = orderRepository;
-        this.userRepository = userRepository;
+        this.managerRepository = managerRepository;
         this.customerRepository = customerRepository;
         this.messagingTemplate = messagingTemplate;
     }
@@ -41,10 +41,10 @@ public class OrderService {
         Customer customer = customerRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("거래처 정보를 찾을 수 없습니다. ID: " + requestDto.getCustomerId()));
 
-        User manager = null;
+        Manager manager = null;
         if (requestDto.getManagerName() != null) {
             // FIXED: 여기도 마찬가지로 수정합니다.
-            manager = userRepository.findById(requestDto.getManagerId())
+            manager = managerRepository.findById(requestDto.getManagerId())
                     .orElseThrow(
                             () -> new EntityNotFoundException("담당자 정보를 찾을 수 없습니다. ID: " + requestDto.getManagerId()));
         }
@@ -86,5 +86,13 @@ public class OrderService {
         return orderRepository.findAll().stream()
                 .map(OrderResponseDto::new) // 엔티티를 DTO로 변환
                 .collect(Collectors.toList());
+    }
+
+    public List<Customer> findAllCustomers(){
+        return customerRepository.findAll();
+    }
+
+    public List<Manager> findAllManagers(){
+        return managerRepository.findAll();
     }
 }

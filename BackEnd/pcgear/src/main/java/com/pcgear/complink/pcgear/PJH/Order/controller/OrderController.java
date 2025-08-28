@@ -1,6 +1,7 @@
 package com.pcgear.complink.pcgear.PJH.Order.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.pcgear.complink.pcgear.PJH.Order.model.Customer;
+import com.pcgear.complink.pcgear.PJH.Order.model.Manager;
 import com.pcgear.complink.pcgear.PJH.Order.model.Order;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderRequestDto;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderResponseDto;
@@ -40,5 +43,17 @@ public class OrderController {
     public ResponseEntity<List<OrderResponseDto>> findOrders() {
         List<OrderResponseDto> orderDtos = orderService.findAllOrders();
         return ResponseEntity.ok(orderDtos);
+    }
+
+    @GetMapping("/findAllCustomers")
+    public ResponseEntity<List<Customer>> findAllCustmers(){
+        List<Customer> customers= orderService.findAllCustomers();
+        return ResponseEntity.ok(customers);
+    }
+
+    @GetMapping("/findAllManagers")
+    public ResponseEntity<List<Manager>> findAllManagers(){
+        List<Manager> managers= orderService.findAllManagers();
+        return ResponseEntity.ok(managers);
     }
 }

@@ -7,11 +7,6 @@ import "./OrderForm.css";
 const OrderForm = () => {
   const [orderHeader, setOrderHeader] = useState({
     orderDate: new Date().toISOString().slice(0, 10),
-    managerName: "강감찬",
-    managerId: "01A",
-    customerName: "미래전자",
-    customerId: "0001A",
-    deliveryDate: new Date().toISOString().slice(0, 10),
   });
 
   const [orderItems, setOrderItems] = useState([

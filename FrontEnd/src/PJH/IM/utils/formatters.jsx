@@ -5,10 +5,10 @@
  */
 export const getStatusBadgeVariant = (status) => {
   switch (status) {
-    case "출고완료":
+    case "완료":
       // 'text-' 접두사를 추가하여 올바른 클래스 이름을 사용합니다.
       return { bg: "bg-success-subtle", text: "text-success-emphasis" };
-    case "출고대기":
+    case "처리중":
       return { bg: "bg-warning-subtle", text: "text-warning-emphasis" };
     case "재고부족":
       return { bg: "bg-danger-subtle", text: "text-danger-emphasis" };

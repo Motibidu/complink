@@ -11,16 +11,16 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @Setter
 @Entity
-@Table(name = "users")
+@Table(name = "managers")
 @EntityListeners(AuditingEntityListener.class)
-public class User {
+public class Manager {
 
     @Id
-    @Column(name = "user_id")
-    private String id; // Long -> Integer
+    @Column(name = "manager_id")
+    private String managerId; // Long -> Integer
 
-    @Column(name = "user_name", nullable = false)
-    private String userName;
+    @Column(name = "manager_name", nullable = false)
+    private String managerName;
 
     @Column(unique = true)
     private String email;
