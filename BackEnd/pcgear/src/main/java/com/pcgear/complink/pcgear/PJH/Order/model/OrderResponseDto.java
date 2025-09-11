@@ -31,7 +31,13 @@ public class OrderResponseDto {
                 this.grandAmount = order.getGrandAmount();
 
                 this.customer = new CustomerDto(order.getCustomer());
-                this.manager = new ManagerDto(order.getManager());
+                if (order.getManager() != null) {
+    // 2. null이 아닐 때만 ManagerDto를 생성합니다.
+    this.manager = new ManagerDto(order.getManager());
+} else {
+    // 3. null일 경우, manager 필드도 null로 설정합니다.
+    this.manager = null;
+}
                 this.items = order.getItems().stream()
                                 .map(OrderItemDto::new) // .map(orderItem -> new OrderItemDto(orderItem))과 동일
                                 .collect(Collectors.toList());

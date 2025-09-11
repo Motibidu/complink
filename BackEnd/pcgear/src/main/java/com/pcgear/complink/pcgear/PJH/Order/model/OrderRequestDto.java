@@ -29,6 +29,7 @@ public class OrderRequestDto {
     @Setter
     @ToString
     public static class OrderItemDto {
+        private String category;
         private String itemName;
         private int quantity;
         private BigDecimal unitPrice;

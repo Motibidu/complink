@@ -11,10 +11,22 @@ import {
   FaChevronRight,
 } from "react-icons/fa";
 import { RiBillFill } from "react-icons/ri";
+import { FaRegistered } from "react-icons/fa6";
 
 const Sidebar = () => {
   const [clickedItem, setClickedItem] = useState(null);
   const navItems = [
+    {
+      name: "기초 등록",
+      path: "/inventory",
+      icon: <FaRegistered />,
+      children: [
+        // 하위 메뉴 항목 추가
+        { name: "품목등록", path: "/registers/item" },
+        { name: "사원(담당)등록", path: "/registers/manager" },
+        { name: "거래처등록", path: "/registers/customer" },
+      ],
+    },
     {
       name: "주문서",
       path: "/order",
@@ -35,6 +47,7 @@ const Sidebar = () => {
         { name: "재고이동", path: "/inventory/stock-move" },
       ],
     },
+
     { name: "발주 관리", path: "/purchases", icon: <FaShoppingCart /> },
     { name: "입/출고 관리", path: "/shipments", icon: <FaTruck /> },
     { name: "거래처 관리", path: "/suppliers", icon: <FaUserTie /> },

@@ -19,16 +19,12 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Customer {
 
     @Id
-    @Column(name = "customer_id")
     private String customerId;
 
     @Column(name = "customer_name", nullable = false)
     private String customerName;
 
-    @Column(name = "manager_name")
-    private String managerName;
 
-    @Column(name = "phone_number")
     private String phoneNumber;
 
     private String email;
@@ -40,6 +36,5 @@ public class Customer {
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }

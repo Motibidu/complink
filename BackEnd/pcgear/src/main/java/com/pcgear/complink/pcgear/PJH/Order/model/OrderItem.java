@@ -8,7 +8,6 @@ import lombok.ToString;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Getter
 @Setter
@@ -25,8 +24,9 @@ public class OrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "order_item_id")
     private Integer orderItemId;
+
+    private String category;
 
     @Column(name = "item_name", nullable = false)
     private String itemName;

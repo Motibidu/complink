@@ -8,8 +8,13 @@ import com.pcgear.complink.pcgear.PJH.Order.model.OrderRequestDto;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderResponseDto;
 import com.pcgear.complink.pcgear.PJH.Order.repository.CustomerRepository;
 import com.pcgear.complink.pcgear.PJH.Order.repository.OrderRepository;
+import com.pcgear.complink.pcgear.PJH.Payment.PaymentRepository;
+import com.pcgear.complink.pcgear.PJH.Register.model.Item;
+import com.pcgear.complink.pcgear.PJH.Register.repository.ItemRepository;
 import com.pcgear.complink.pcgear.PJH.Order.repository.ManagerRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,25 +24,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ManagerRepository managerRepository;
     private final CustomerRepository customerRepository;
+    private final ItemRepository itemRepository;
+
+
     private final SimpMessagingTemplate messagingTemplate;
 
-    public OrderService(OrderRepository orderRepository, ManagerRepository managerRepository,
-            CustomerRepository customerRepository, SimpMessagingTemplate messagingTemplate) {
-        this.orderRepository = orderRepository;
-        this.managerRepository = managerRepository;
-        this.customerRepository = customerRepository;
-        this.messagingTemplate = messagingTemplate;
-    }
 
     @Transactional
     public Order createOrder(OrderRequestDto requestDto) {
         // 1. ID를 사용하여 User와 Customer 엔티티를 조회합니다.
         // FIXED: 중괄호와 return을 생략하여 예외 객체를 올바르게 반환합니다.
+        log.info("requestDto: {}", requestDto);
         Customer customer = customerRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("거래처 정보를 찾을 수 없습니다. ID: " + requestDto.getCustomerId()));
 
@@ -65,6 +69,7 @@ public class OrderService {
         // 3. 주문 아이템 리스트 변환 및 추가
         for (OrderRequestDto.OrderItemDto itemDto : requestDto.getItems()) {
             OrderItem orderItem = new OrderItem();
+            orderItem.setCategory(itemDto.getCategory());
             orderItem.setItemName(itemDto.getItemName());
             orderItem.setQuantity(itemDto.getQuantity());
             orderItem.setUnitPrice(itemDto.getUnitPrice());
@@ -94,5 +99,9 @@ public class OrderService {
 
     public List<Manager> findAllManagers(){
         return managerRepository.findAll();
+    }
+
+    public List<Item> findAllItems() {
+        return itemRepository.findAll();
     }
 }

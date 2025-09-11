@@ -1,6 +1,6 @@
 /* --- Order Form Block --- */
 .order-form {
-  max-width: 900px;
+  max-width: 2000px;
   margin: 40px auto;
   padding: 30px;
   background-color: #fff;
@@ -161,7 +161,10 @@
   text-align: right;
 }
 .order-items__input-string {
+  width: 100%;
   border: none;
+  font-size: 14px;
+  text-overflow: ellipsis;
 }
 
 .order-items__button {
@@ -188,10 +191,27 @@
   font-weight: bold;
   color: #333;
 }
+
 .cell-number {
   text-align: right;
 }
 
 .cell-center {
   text-align: center;
+}
+
+.col-category {
+  width: 13%;
+} /* 부품 종류 */
+.col-itemName {
+  width: 34%;
+} /* 상품명 (가장 넓게) */
+.col-quantity {
+  width: 8%;
+} /* 수량 (좁게) */
+.col-price {
+  width: 12%;
+} /* 단가, 공급가액, 부가세 */
+.col-delete {
+  width: 8%;
 }

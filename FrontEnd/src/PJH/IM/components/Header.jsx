@@ -1,11 +1,9 @@
 import { IoPerson } from "react-icons/io5";
 import { useAuth } from "../contexts/AuthContext";
-import { useState } from "react";
 import axios from "axios"; // axios 사용을 권장합니다 (fetch보다 편리)
 
 const Header = () => {
   const { isLoggedIn, logout } = useAuth();
-  const [billingKey, setBillingKey] = useState(null);
   const handleLogout = (e) => {
     e.preventDefault(); // a 태그의 기본 동작 방지
     logout();
@@ -17,10 +15,13 @@ const Header = () => {
       .join("");
   }
 
-  const PORTONE_API_SECRET =
-    "FkLCYZzsKhVsoZxz8aZEWXTiRsRYisWO9CBuzCUuooCjBU78TCMCEmdt3NydMvlG63zysLVjQMLAsdA1";
-  const CHANNEL_KEY = "channel-key-d425a2bd-5e2c-4bf8-84c6-9c4713b7c6bb";
-  const STORE_ID = "store-95cd6283-735d-4eae-9128-9b804b0b5048";
+  const STORE_ID = import.meta.env.VITE_PORTONE_STORE_ID;
+  const TOSSPAY_CHANNEL_KEY = import.meta.env.VITE_PORTONE_TOSSPAY_CHANNEL_KEY;
+
+  console.log(`[ENV] STORE_ID: "${STORE_ID}" (Type: ${typeof STORE_ID})`);
+  console.log(
+    `[ENV] CHANNEL_KEY: "${TOSSPAY_CHANNEL_KEY}" (Type: ${typeof TOSSPAY_CHANNEL_KEY})`
+  );
 
   // axios 인스턴스 설정 (App.js에서 사용한 axiosInstance가 있다면 그것을 가져와도 좋습니다)
   const api = axios.create({
@@ -28,112 +29,68 @@ const Header = () => {
     withCredentials: true, // 세션 쿠키 전송을 위해 필수
   });
 
-  // useEffect(() => {
-  //   async function issueBillingKey() {
-  //     try {
-  //       const issueResponse = await axios({
-  //         url: "https://api.portone.io/billing-keys",
-  //         method: "post",
-  //         headers: { Authorization: `PortOne ${PORTONE_API_SECRET}` },
-  //         data: {
-  //           channelKey: CHANNEL_KEY, // 콘솔 결제 연동 화면에서 채널 연동 시 생성된 채널 키를 입력해주세요.
-  //           customer: {
-  //             id: "jack981109",
-  //             name: {
-  //               full: "박지훈",
-  //             },
-  //             phoneNumber: "010-6230-1825",
-  //             email: "jack981109@naver.com", // 고객사에서 관리하는 고객 고유번호
-  //           },
-  //           method: {
-  //             card: {
-  //               credential: {
-  //                 number: "5376990016734664",
-  //                 expiryMonth: "08",
-  //                 expiryYear: "29",
-  //                 birthOrBusinessRegistrationNumber: "981109",
-  //                 passwordTwoDigits: "00",
-  //               },
-  //             },
-  //           },
-  //         },
-  //       });
-  //       // console.log(
-  //       //   "issueResponse.data.billingKeyInfo.billingKey: ",
-  //       //   issueResponse.data.billingKeyInfo.billingKey
-  //       // );
-  //       setBillingKey(issueResponse.data.billingKeyInfo.billingKey); // Access billingKey from response data
-  //     } catch (error) {
-  //       console.error(error);
-  //     }
-  //   }
-
-  //   // Call the async function when the component mounts
-  //   issueBillingKey();
-  // }, []);
-
   async function requestPayment() {
-    const PAYMENT_ID_HERE = randomId();
-    //console.log('billingKey: ', billingKey);
-    // try {
-    //   const issueResponse = await axios({
-    //     url: `https://api.portone.io/payments/${PAYMENT_ID_HERE}/schedule`,
-    //     method: "post",
-    //     headers: { Authorization: `PortOne ${PORTONE_API_SECRET}` },
-    //     data: {
-    //       payment: {
-    //         billingKey: billingKey, // 빌링키 발급 API를 통해 발급받은 빌링키
-    //         orderName: "월간 이용권 정기결제",
-    //         customer: {
-    //           id: "customer-1234",
-    //           phoneNumber: "010-6230-1825",
-    //           email: "jack981109@naver.com",
-    //           name: {
-    //             full: "ParkJiHoon",
-    //           }, // 고객사에서 관리하는 고객 고유번호
-    //         },
-    //         amount: {
-    //           total: 1000,
-    //         },
-    //         currency: "KRW",
-    //       },
-    //       timeToPay: "2025-08-30T08:55:00.000Z", // 결제를 시도할 시각
-    //     },
-    //   });
-    //   console.log("issueResponse: ", issueResponse);
-    // } catch (e) {
-    //   console.error(e);
-    // }
-    try {
-      // --- 항상 단건 결제를 먼저 요청 ---
-      const response = await window.PortOne.requestPayment({
-        storeId: STORE_ID, // 고객사 storeId
-        channelKey: CHANNEL_KEY, // 채널 키
-        paymentId: `payment-${randomId()}`,
-        orderName: "PCGEAR 단건결제",
-        totalAmount: 1000,
-        currency: "KRW",
-        payMethod: "CARD",
-        customer: {
-          fullName: "박지훈",
-          email: "jack981109@naver.com",
-          phoneNumber: "010-6230-1825",
-        },
-      });
+    const paymentModalEl = document.getElementById("paymentModal");
+    const paymentModal = window.bootstrap.Modal.getInstance(paymentModalEl);
+    const successModalEl = document.getElementById("paymentSuccessModal");
+    const successModal = new window.bootstrap.Modal(successModalEl);
 
-      if (response.code) {
-        return alert(`결제 오류: ${response.message}`);
-      }
+    console.log(TOSSPAY_CHANNEL_KEY);
+    console.log(STORE_ID);
 
-      console.log(response);
+    // 토스페이 빌링키 발급 요청
+    const response = await window.PortOne.requestIssueBillingKey({
+      storeId: STORE_ID, // 고객사 storeId로 변경해주세요.
+      channelKey: TOSSPAY_CHANNEL_KEY, // 콘솔 결제 연동 화면에서 채널 연동 시 생성된 채널 키를 입력해주세요.
+      billingKeyMethod: "EASY_PAY",
+      issueId: `issue-${randomId()}`,
+      issueName: "test-issueName",
+      customer: {
+        customerId: `customer-${randomId()}`,
+      },
+      redirectUrl: "http://localhost",
+      noticeUrls: ["https://c2216c116dba.ngrok-free.app"],
+    });
 
-      // --- 3. 결제 성공 후, 자체 백엔드에 완료 처리 요청 ---
-      //await processPaymentOnServer(response.paymentId);
-    } catch (error) {
-      console.error("결제 처리 중 오류:", error);
-      alert("결제 중 오류가 발생했습니다.");
+    if (response.code) {
+      return alert(`결제 오류: ${response.message}`);
+    }
+
+    console.log(response);
+
+    // --- 3. 결제 성공 후, 자체 백엔드에 완료 처리 요청 ---
+    const isServerProcessSuccess = await processPaymentOnServer(
+      response.billingKey
+    );
+    if (isServerProcessSuccess) {
+      if (paymentModal) paymentModal.hide(); // 기존 모달 닫기
+      successModal.show(); // 새로운 성공 모달 열기
+      // 여기서 모달을 닫는 로직을 추가할 수도 있습니다.
+    } else {
+      // processPaymentOnServer 내부에서 이미 에러 알림/로깅을 했을 수 있음
+      alert(
+        "결제는 성공했으나 서버에 기록하는 중 문제가 발생했습니다. 관리자에게 문의하세요."
+      );
+      paymentModal.hide();
     }
   }
+  const processPaymentOnServer = async (billingKey) => {
+    try {
+      const response = await api.post("/payment/subscribe", {
+        billingKey: billingKey,
+        orderName: "pcgear 정기결제",
+        amount: 1000,
+      });
+      if (response.status === 200) {
+        console.log("서버 처리 성공:", response.data);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("서버 처리중 오류: ", err);
+      return false;
+    }
+  };
 
   return (
     <>
@@ -253,8 +210,65 @@ const Header = () => {
           </div>
         </div>
       </div>
+      <div className="modal fade" id="paymentSuccessModal">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-body text-center py-5">
+              <h3 className="mt-3">결제 완료!</h3>
+              <p className="text-muted">결제가 성공적으로 처리되었습니다.</p>
+              <button
+                type="button"
+                className="btn btn-primary mt-3"
+                data-bs-dismiss="modal"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 };
 
 export default Header;
+
+//const INICIS_CHANNEL_KEY = "channel-key-d425a2bd-5e2c-4bf8-84c6-9c4713b7c6bb";
+//const TOSSPAYMENTS_CHANNEL_KEY ="channel-key-9ae5df13-cd44-4b88-8605-e1eedb878ff9";
+// 토스페이 간편결제
+// const response = await window.PortOne.requestPayment({
+//   storeId: STORE_ID, // 고객사 storeId로 변경해주세요.
+//   channelKey: TOSSPAY_CHANNEL_KEY, // 콘솔 결제 연동 화면에서 채널 연동 시 생성된 채널 키를 입력해주세요.
+//   paymentId: `payment${Math.random().toString(36).slice(2)}`,
+//   orderName: "나이키 와플 트레이너 2 SD",
+//   totalAmount: 1000,
+//   currency: "CURRENCY_KRW",
+//   payMethod: "EASY_PAY",
+// });
+
+// 이니시스 결제요청
+// const response = await window.PortOne.requestPayment({
+//   storeId: STORE_ID, // 고객사 storeId
+//   channelKey: INICIS_CHANNEL_KEY, // 채널 키
+//   paymentId: `payment-${randomId()}`,
+//   orderName: "PCGEAR 단건결제",
+//   totalAmount: 1000,
+//   currency: "KRW",
+//   payMethod: "EASY_PAY",
+//   issueBillingKey: true,
+//   customer: {
+//     fullName: "박지훈",
+//     email: "jack981109@naver.com",
+//     phoneNumber: "010-6230-1825",
+//   },
+//   easyPay: {
+//     easyPayProvider: "APPLEPAY",
+//   },
+// });
+
+// 토스페이먼츠 빌링키 발급
+// const response = await window.PortOne.requestIssueBillingKey({
+//   storeId: STORE_ID, // 고객사 storeId로 변경해주세요.
+//   channelKey: TOSSPAYMENTS_CHANNEL_KEY, // 콘솔 결제 연동 화면에서 채널 연동 시 생성된 채널 키를 입력해주세요.
+//   billingKeyMethod: "CARD",
+// });

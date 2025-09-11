@@ -16,8 +16,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Manager {
 
     @Id
-    @Column(name = "manager_id")
-    private String managerId; // Long -> Integer
+    private String managerId;
 
     @Column(name = "manager_name", nullable = false)
     private String managerName;
@@ -25,12 +24,12 @@ public class Manager {
     @Column(unique = true)
     private String email;
 
+    private String phoneNumber;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }
-

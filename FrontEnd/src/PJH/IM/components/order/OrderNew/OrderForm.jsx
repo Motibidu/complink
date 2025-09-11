@@ -11,10 +11,25 @@ const OrderForm = () => {
 
   const [orderItems, setOrderItems] = useState([
     {
-      itemName: "iptime 유선랜",
-      quantity: 12,
-      unitPrice: 35000,
-      totalPrice: 420000,
+      category: "CPU",
+      itemName: "인텔 코어 울트라5 시리즈2 245K (애로우레이크) (정품)",
+      quantity: 1,
+      unitPrice: 387630,
+      totalPrice: 387630,
+    },
+    {
+      category: "메인보드",
+      itemName: "MSI MAG X870 토마호크 WIFI",
+      quantity: 1,
+      unitPrice: 465470,
+      totalPrice: 465470,
+    },
+    {
+      category: "메모리",
+      itemName: "SK하이닉스 DDR5-5600 (16GB)",
+      quantity: 1,
+      unitPrice: 91460,
+      totalPrice: 91460,
     },
   ]);
 
@@ -41,6 +56,22 @@ const OrderForm = () => {
       newItems[index].totalPrice = quantity * unitPrice;
     }
 
+    setOrderItems(newItems);
+  };
+
+  const handleItemSelect = (index, selectedItem) => {
+    const newItems = [...orderItems];
+
+    // 선택한 품목의 정보로 해당 행의 데이터를 업데이트합니다.
+    const updatedRow = {
+      ...newItems[index], // 기존 행의 다른 값(예: 수량)은 유지될 수 있도록
+      category: selectedItem.category,
+      itemName: selectedItem.itemName,
+      unitPrice: selectedItem.sellingPrice * newItems[index].quantity, // 출고단가(sellingPrice)를 단가로 설정
+      totalPrice: (newItems[index].quantity || 1) * selectedItem.sellingPrice,
+    };
+
+    newItems[index] = updatedRow;
     setOrderItems(newItems);
   };
 
@@ -79,6 +110,7 @@ const OrderForm = () => {
       deliveryDate: orderHeader.deliveryDate,
       status: "접수", // 초기 상태를 '접수'로 지정
       items: orderItems.map((item) => ({
+        category: item.category,
         itemName: item.itemName,
         quantity: parseInt(item.quantity, 10),
         unitPrice: parseFloat(item.unitPrice),
@@ -141,6 +173,7 @@ const OrderForm = () => {
 
         <OrderItems
           orderItems={orderItems}
+          handleItemSelect={handleItemSelect}
           handleItemsChange={handleItemsChange}
           handleAddItem={handleAddItem}
           handleRemoveItem={handleRemoveItem}

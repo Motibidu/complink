@@ -9,7 +9,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import java.math.BigDecimal;
@@ -28,7 +27,6 @@ public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "order_id")
     private Integer orderId;
 
     @Column(name = "order_date", nullable = false)
@@ -42,7 +40,6 @@ public class Order {
     @JoinColumn(name = "manager_id")
     private Manager manager;
 
-    @Column(name = "delivery_date")
     private LocalDate deliveryDate;
 
     @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)

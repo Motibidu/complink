@@ -1,0 +1,18 @@
+/* 테이블 컨테이너에 최대 높이를 설정하고,
+   내용이 넘칠 경우 세로 스크롤바가 생기도록 합니다. */
+.table-container-scrollable {
+  max-height: 700px; /* 원하는 최대 높이로 조절하세요. */
+  overflow-y: auto;
+}
+
+/* 테이블 헤더(thead)가 스크롤될 때 
+  본문(tbody) 내용 위로 사라지지 않고 상단에 고정되도록 하는 스타일입니다. (선택 사항)
+  이 기능을 사용하면 사용자 경험이 훨씬 좋아집니다.
+*/
+.table-container-scrollable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  /* thead의 배경색이 투명해지지 않도록 명시적으로 지정합니다. */
+  background-color: #f8f9fa; /* Bootstrap의 .table-light 배경색 */
+}

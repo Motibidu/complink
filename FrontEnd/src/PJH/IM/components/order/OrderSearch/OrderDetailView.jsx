@@ -23,13 +23,13 @@ const OrderDetailView = ({ order }) => {
         <div className="col-md-6">
           <p className="order-detail-view__info-label">거래처명</p>
           <p className="order-detail-view__info-value">
-            {order.customer.customerName}
+            {order.customer.customerName} ({order.customer.phoneNumber})
           </p>
         </div>
         <div className="col-md-6">
           <p className="order-detail-view__info-label">담당자</p>
           <p className="order-detail-view__info-value">
-            {order.customer.managerName} ({order.customer.phoneNumber})
+            {order.manager.managerName} ({order.manager.managerPhoneNumber})
           </p>
         </div>
         <div className="col-12">
@@ -45,12 +45,6 @@ const OrderDetailView = ({ order }) => {
         <div className="col-md-4">
           <p className="order-detail-view__info-label">납기일</p>
           <p className="order-detail-view__info-value">{order.deliveryDate}</p>
-        </div>
-        <div className="col-md-4">
-          <p className="order-detail-view__info-label">주문 담당 직원</p>
-          <p className="order-detail-view__info-value">
-            {order.manager.userName}
-          </p>
         </div>
       </div>
 
@@ -72,9 +66,7 @@ const OrderDetailView = ({ order }) => {
                 <td className="text-muted">{item.orderItemId}</td>
                 <td className="fw-semibold">{item.itemName}</td>
                 <td className="text-end">{item.quantity}</td>
-                <td className="text-end">
-                  {formatCurrency(item.unitPrice)}원
-                </td>
+                <td className="text-end">{formatCurrency(item.unitPrice)}원</td>
                 <td className="text-end fw-bold">
                   {formatCurrency(item.totalPrice)}원
                 </td>

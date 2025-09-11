@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState, useMemo } from "react";
 import { IoReorderThree, IoReorderFourOutline } from "react-icons/io5";
 const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
@@ -22,10 +23,8 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
   const fetchManagers = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/order/findAllManagers");
-      const data = await response.json();
-      console.log(data);
-      setManagers(data);
+      const response = await axios.get("/api/order/findAllManagers");
+      setManagers(response.data);
     } catch (err) {
       console.err("담당자 목록 로드 실패: ", err);
     } finally {
@@ -106,7 +105,7 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               name="managerId"
               value={orderHeader.managerId}
               onChange={handleHeaderChange}
-              placeholder="담당자Id"
+              placeholder="담당자 코드"
               onClick={fetchManagers}
               data-bs-toggle="modal"
               data-bs-target="#managerListModal"

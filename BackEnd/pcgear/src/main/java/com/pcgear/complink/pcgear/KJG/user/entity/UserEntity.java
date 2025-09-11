@@ -9,9 +9,13 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity(name = "user")
 @Getter
+@Setter
+@ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserEntity extends BaseTimeEntity{
 
@@ -36,6 +40,9 @@ public class UserEntity extends BaseTimeEntity{
 	
 	@Column(nullable = false)
 	private String address;
+
+	@Column(name= "billing_key", nullable = false)
+	private String billingKey;
 	
 	
 	@Builder
