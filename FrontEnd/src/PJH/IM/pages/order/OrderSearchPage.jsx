@@ -10,6 +10,32 @@ function OrderSearchPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
 
+  const handleDeleteOrder = async (orderIdToDelete) => {
+    if (window.confirm("정말로 주문을 삭제하시겠습니까?")) {
+      try {
+        const response = await axios.delete(`/api/orders/${orderIdToDelete}`);
+
+        if (response.status === 204) {
+          alert("선택된 주문서가 성공적으로 삭제되었습니다.");
+
+          setOrders(
+            orders.filter((order) => order.orderId !== orderIdToDelete)
+          );
+
+          // 2. 현재 선택된 주문이 삭제된 주문이라면, 선택을 해제합니다.
+          if (selectedOrder?.orderId === orderIdToDelete) {
+            setSelectedOrder(null);
+          }
+        } else {
+          throw new Error("삭제에 실패했습니다.");
+        }
+      } catch (err) {
+        alert("주문서 삭제 중 오류가 발생했습니다.");
+        console.error(err);
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -79,7 +105,10 @@ function OrderSearchPage() {
             />
           </div>
           <div className="col-lg-8">
-            <OrderDetailPanel order={selectedOrder} />
+            <OrderDetailPanel
+              order={selectedOrder}
+              onDeleteOrder={handleDeleteOrder}
+            />
           </div>
         </main>
       </div>

@@ -1,21 +1,63 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   getStatusBadgeVariant,
   formatCurrency,
 } from "../../../utils/formatters";
+import axios from "axios";
 
-const OrderDetailView = ({ order }) => {
+const OrderDetailView = ({ order, onDeleteOrder, onSubmit }) => {
   const badgeColors = getStatusBadgeVariant(order.status);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await onSubmit(order.orderId);
+      alert("판매입력이 성공적으로 완료되었습니다.");
+    } catch (error) {
+      alert("판매입력 처리 중 오류가 발생했습니다.");
+      console.error("Submission error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const deleteOrder = async (orderId) => {
+    if (window.confirm("정말로 주문을 삭제하시겠습니까?")) {
+      try {
+        const response = await axios.delete("/api/orders/" + orderId);
+        if (response.status === 204) {
+          alert("선택된 주문서가 성공적으로 삭제되었습니다.");
+        }
+      } catch (e) {
+        alert("주문서 삭제에 실패했습니다.");
+        console.error(e);
+      }
+    }
+  };
 
   return (
     <div className="order-detail-view">
-      <div className="pb-3 mb-3 order-detail-view__header">
+      <div className="pb-3 mb-3 order-detail-view__header d-flex align-items-center">
         <h2 className="h4 mb-0 fw-bold">주문 상세 정보</h2>
         <span
           className={`badge fs-6 rounded-pill ${badgeColors.bg} ${badgeColors.text}`}
         >
           {order.status}
         </span>
+        {onDeleteOrder ? (
+          <div className="ms-auto d-flex gap-2">
+            <button
+              className={`badge fs-6 rounded-pill ${badgeColors.text}`}
+              onClick={() => onDeleteOrder(order.orderId)}
+            >
+              삭제
+            </button>
+          </div>
+        ) : (
+          ""
+        )}
       </div>
       <p className="text-muted mb-4">주문번호: {order.orderId}</p>
 
@@ -38,11 +80,11 @@ const OrderDetailView = ({ order }) => {
             {order.customer.customerAddress}
           </p>
         </div>
-        <div className="col-md-4">
+        <div className="col-md-6">
           <p className="order-detail-view__info-label">주문일</p>
           <p className="order-detail-view__info-value">{order.orderDate}</p>
         </div>
-        <div className="col-md-4">
+        <div className="col-md-6">
           <p className="order-detail-view__info-label">납기일</p>
           <p className="order-detail-view__info-value">{order.deliveryDate}</p>
         </div>
@@ -94,6 +136,19 @@ const OrderDetailView = ({ order }) => {
           </div>
         </div>
       </div>
+      {onSubmit ? (
+        <div className="card-footer text-end">
+          <button
+            className="btn btn-success"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "저장 중..." : "판매입력 저장"}
+          </button>
+        </div>
+      ) : (
+        ""
+      )}
     </div>
   );
 };

@@ -1,16 +1,15 @@
 package com.pcgear.complink.pcgear.PJH.Order.service;
 
-import com.pcgear.complink.pcgear.PJH.Order.model.Customer;
-import com.pcgear.complink.pcgear.PJH.Order.model.Manager;
+import com.pcgear.complink.pcgear.PJH.Customer.Customer;
+import com.pcgear.complink.pcgear.PJH.Customer.CustomerRepository;
+import com.pcgear.complink.pcgear.PJH.Item.Item;
+import com.pcgear.complink.pcgear.PJH.Item.ItemRepository;
+import com.pcgear.complink.pcgear.PJH.Manager.Manager;
 import com.pcgear.complink.pcgear.PJH.Order.model.Order;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderItem;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderRequestDto;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderResponseDto;
-import com.pcgear.complink.pcgear.PJH.Order.repository.CustomerRepository;
 import com.pcgear.complink.pcgear.PJH.Order.repository.OrderRepository;
-import com.pcgear.complink.pcgear.PJH.Payment.PaymentRepository;
-import com.pcgear.complink.pcgear.PJH.Register.model.Item;
-import com.pcgear.complink.pcgear.PJH.Register.repository.ItemRepository;
 import com.pcgear.complink.pcgear.PJH.Order.repository.ManagerRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -33,9 +32,7 @@ public class OrderService {
     private final CustomerRepository customerRepository;
     private final ItemRepository itemRepository;
 
-
     private final SimpMessagingTemplate messagingTemplate;
-
 
     @Transactional
     public Order createOrder(OrderRequestDto requestDto) {
@@ -93,15 +90,7 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    public List<Customer> findAllCustomers(){
-        return customerRepository.findAll();
-    }
-
-    public List<Manager> findAllManagers(){
-        return managerRepository.findAll();
-    }
-
-    public List<Item> findAllItems() {
-        return itemRepository.findAll();
+    public void deleteOrder(Long orderId) {
+        orderRepository.deleteById(orderId);
     }
 }
