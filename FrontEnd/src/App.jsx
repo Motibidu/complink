@@ -12,6 +12,9 @@ import { AuthProvider } from "./PJH/IM/contexts/AuthContext";
 import RegisterCustomerPage from "./PJH/IM/components/register/RegisterCustomerPage";
 import RegisterItemPage from "./PJH/IM/components/register/RegisterItemPage";
 import RegisterManagerPage from "./PJH/IM/components/register/RegisterManagerPage";
+import InventoryStatus from "./PJH/IM/components/Inventory/InventoryStatus";
+import SalesEntryForm from "./PJH/IM/components/sales/SalesEntryForm";
+import SalesEntryPage from "./PJH/IM/components/sales/SalesEntryPage";
 
 function App() {
   return (
@@ -31,6 +34,8 @@ function App() {
             element={<RegisterCustomerPage />}
           />
           <Route path="/registers/manager" element={<RegisterManagerPage />} />
+          <Route path="/inventory/status" element={<InventoryStatus />} />
+          <Route path="/sales/new" element={<SalesEntryPage />} />
         </Routes>
       </Layout>
     </AuthProvider>

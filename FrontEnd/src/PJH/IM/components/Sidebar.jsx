@@ -42,7 +42,18 @@ const Sidebar = () => {
       icon: <FaBoxes />,
       children: [
         // 하위 메뉴 항목 추가
-        { name: "창고등록", path: "/inventory/warehouse-register" },
+        { name: "창고등록", path: "/inventory/status" },
+        { name: "재고조회", path: "/inventory/stock-search" },
+        { name: "재고이동", path: "/inventory/stock-move" },
+      ],
+    },
+    {
+      name: "판매 관리",
+      path: "/sales",
+      icon: <FaBoxes />,
+      children: [
+        // 하위 메뉴 항목 추가
+        { name: "판매입력", path: "/sales/new" },
         { name: "재고조회", path: "/inventory/stock-search" },
         { name: "재고이동", path: "/inventory/stock-move" },
       ],
