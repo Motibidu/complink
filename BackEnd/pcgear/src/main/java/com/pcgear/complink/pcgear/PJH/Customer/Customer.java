@@ -1,8 +1,11 @@
-package com.pcgear.complink.pcgear.PJH.Order.model;
+package com.pcgear.complink.pcgear.PJH.Customer;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
+
 import java.time.LocalDateTime;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -11,23 +14,24 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @Setter
 @Entity
-@Table(name = "managers")
+@ToString
+@NoArgsConstructor
+@Table(name = "customers")
 @EntityListeners(AuditingEntityListener.class)
-public class Manager {
+public class Customer {
 
     @Id
-    private String managerId;
+    private String customerId;
 
-    @Column(name = "manager_name", nullable = false)
-    private String managerName;
-
-    @Column(unique = true)
-    private String email;
+    private String customerName;
 
     private String phoneNumber;
 
+    private String email;
+
+    private String address;
+
     @CreatedDate
-    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate

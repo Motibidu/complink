@@ -1,4 +1,4 @@
-package com.pcgear.complink.pcgear.PJH.Order.model;
+package com.pcgear.complink.pcgear.PJH.Manager;
 
 import lombok.Getter;
 

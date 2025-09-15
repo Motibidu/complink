@@ -1,4 +1,4 @@
-package com.pcgear.complink.pcgear.PJH.Register.model;
+package com.pcgear.complink.pcgear.PJH.Item;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -28,8 +28,10 @@ public class Item {
         @NotBlank(message = "카테고리는 필수 입력 항목입니다.")
         private String category;
 
+        private Integer QuantityOnHand;
+
         @NotNull(message = "입고단가는 필수 입력 항목입니다.")
-        @PositiveOrZero(message = "입고단가는 0 또는 양수여야 합니다.") // 4. 0 또는 양수만 허용
+        @PositiveOrZero(message = "입고단가는 0 또는 양수여야 합니다.")
         private Integer purchasePrice;
 
         @NotNull(message = "출고단가는 필수 입력 항목입니다.")

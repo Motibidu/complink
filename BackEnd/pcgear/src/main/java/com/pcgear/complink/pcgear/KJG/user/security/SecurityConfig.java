@@ -37,8 +37,9 @@ public class SecurityConfig {
                                 "/swagger-resources/**", // Swagger 리소스
                                 "/find-password/**",
                                 "/error",
-                                "/order/**",
-                                "/registers/**")
+                                "/orders/**",
+                                "/registers/**",
+                                "/topic/**", "/managers/**", "/customers/**", "/items/**")
                         .permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 로그인 필요
                 )

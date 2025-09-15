@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./RegisterManagerPage.css";
 import axios from "axios";
+import qs from "qs";
 
 const ManagerPage = () => {
   const [managers, setManagers] = useState([]);
@@ -30,7 +31,7 @@ const ManagerPage = () => {
   const fetchManagers = useCallback(async () => {
     setTableLoading(true);
     try {
-      const response = await axios.get("/api/order/findAllManagers");
+      const response = await axios.get("/api/managers");
       setManagers(response.data);
     } catch (error) {
       console.error("담당자 목록을 불러오는 데 실패했습니다.", error);
@@ -84,8 +85,14 @@ const ManagerPage = () => {
     ) {
       try {
         // 백엔드에 삭제 API(POST /api/managers/delete) 요청
-        await axios.delete("/api/registers/managers", {
-          data: { ids: selectedManagers },
+        await axios.delete("/api/managers", {
+          params: {
+            ids: selectedManagers
+          },
+          // 2. paramsSerializer 옵션을 추가합니다.
+          paramsSerializer: params => {
+            return qs.stringify(params, { arrayFormat: 'comma' })
+          }
         });
 
         alert("선택된 담당자가 삭제되었습니다.");
@@ -121,9 +128,8 @@ const ManagerPage = () => {
     setMessage({ type: "", text: "" });
 
     try {
-      // POST /api/managers/new API 필요
-      const response = await axios.post("/api/registers/manager", newFormData);
-      if (response.status === 200) {
+      const response = await axios.post("/api/managers", newFormData);
+      if (response.status === 201 || response.status===200) {
         alert("담당자가 성공적으로 등록되었습니다.");
         // 성공 시, 목록을 새로고침하고 폼을 초기화합니다.
         fetchManagers();
@@ -162,7 +168,7 @@ const ManagerPage = () => {
 
     try {
       const response = await axios.put(
-        "/api/registers/manager/" + editFormData.managerId,
+        "/api/managers/" + editFormData.managerId,
         editFormData
       );
       if (response.status === 200) {
@@ -204,6 +210,9 @@ const ManagerPage = () => {
 
   return (
     <>
+      <header className="mb-3">
+        <h3>담당자등록 리스트</h3>
+      </header>
       <div className="table-responsive table-container-scrollable">
         <table className="table table-hover align-middle">
           <thead>

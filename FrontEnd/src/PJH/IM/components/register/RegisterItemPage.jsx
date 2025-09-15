@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios"; // 데이터 전송을 위해 axios 사용
+import qs from "qs";
 
 const RegisterItemPage = () => {
   // 폼 데이터를 한 번에 관리하기 위한 state
@@ -27,7 +28,7 @@ const RegisterItemPage = () => {
   const fetchItems = useCallback(async () => {
     setTableLoading(true);
     try {
-      const response = await axios.get("/api/order/findAllItems");
+      const response = await axios.get("/api/items");
       setItems(response.data);
     } catch (error) {
       console.error("품목 목록을 불러오는 데 실패했습니다.", error);
@@ -72,9 +73,16 @@ const RegisterItemPage = () => {
       )
     ) {
       try {
-        await axios.delete("/api/registers/items", {
-          data: { ids: selectedItems },
+        await axios.delete("/api/items", {
+          params: {
+            ids: selectedItems
+          },
+          paramsSerializer: params => {
+            return qs.stringify(params, { arrayFormat: 'comma' })
+          }
+
         });
+
 
         alert("선택된 품목들이 삭제되었습니다.");
         fetchItems(); // 목록 새로고침
@@ -117,7 +125,7 @@ const RegisterItemPage = () => {
     setMessage({ type: "", text: "" });
 
     try {
-      const response = await axios.post("/api/registers/item", {
+      const response = await axios.post("/api/items", {
         ...newFormData,
         purchasePrice: Number(newFormData.purchasePrice),
         sellingPrice: Number(newFormData.sellingPrice),
@@ -164,7 +172,7 @@ const RegisterItemPage = () => {
 
     try {
       const response = await axios.put(
-        "/api/registers/item/" + editFormData.itemId, // Corrected URL concatenation
+        "/api/items/" + editFormData.itemId, // Corrected URL concatenation
         {
           ...editFormData,
           // BUG FIX: Changed newFormData to editFormData
@@ -192,16 +200,16 @@ const RegisterItemPage = () => {
     } catch (error) {
       let errorMsg = "품목 수정 중 오류가 발생했습니다.";
       if (error.response?.data) {
-          console.error(error); 
-          // 백엔드가 { fieldName: "error message" } 형태로 보낸 경우
-          if (typeof error.response.data === 'object') {
-              errorMsg = Object.values(error.response.data).join(', ');
-          } 
-          // 백엔드가 문자열로 보낸 경우
-          else if (typeof error.response.data === 'string') {
-              errorMsg = error.response.data;
-          }
-          setMessage({type: "danger", text: errorMsg});
+        console.error(error);
+        // 백엔드가 { fieldName: "error message" } 형태로 보낸 경우
+        if (typeof error.response.data === "object") {
+          errorMsg = Object.values(error.response.data).join(", ");
+        }
+        // 백엔드가 문자열로 보낸 경우
+        else if (typeof error.response.data === "string") {
+          errorMsg = error.response.data;
+        }
+        setMessage({ type: "danger", text: errorMsg });
       }
     } finally {
       setLoading(false);
@@ -220,6 +228,9 @@ const RegisterItemPage = () => {
 
   return (
     <>
+      <header className="mb-3">
+        <h3>품목등록 리스트</h3>
+      </header>
       <div className="table-responsive table-container-scrollable">
         <table className="table table-hover align-middle">
           <thead>

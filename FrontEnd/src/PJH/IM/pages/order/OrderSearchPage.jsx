@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import OrderListPanel from "../../components/order/OrderSearch/OrderListPanel";
 import OrderDetailPanel from "../../components/order/OrderSearch/OrderDetailPanel";
 import "./OrderSearchPage.css";
+import axios from "axios";
 function OrderSearchPage() {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -12,7 +13,7 @@ function OrderSearchPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch("/api/order/search", {
+        const response = await fetch("/api/orders", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

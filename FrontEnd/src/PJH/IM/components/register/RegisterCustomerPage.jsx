@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import axios from "axios"; // axios import 추가
+import qs from "qs";
 
 const CustomerFormPage = () => {
   // 폼 데이터를 한 번에 관리하기 위한 state
@@ -28,7 +29,7 @@ const CustomerFormPage = () => {
 
   const fetchCustomers = useCallback(async () => {
     try {
-      const response = await axios.get("/api/order/findAllCustomers");
+      const response = await axios.get("/api/customers");
       setCustomers(response.data);
     } catch (error) {
       console.error("거래처 목록을 불러오는 데 실패했습니다.", error);
@@ -75,8 +76,14 @@ const CustomerFormPage = () => {
       )
     ) {
       try {
-        await axios.delete("/api/registers/customers", {
-          data: { ids: selectedCustomers },
+        await axios.delete("/api/customers", {
+          params: {
+            ids: selectedCustomers
+          },
+          paramsSerializer: params => {
+            return qs.stringify(params, { arrayFormat: 'comma' })
+          }
+
         });
 
         alert("선택된 거래처가 삭제되었습니다.");
@@ -118,13 +125,10 @@ const CustomerFormPage = () => {
     setMessage({ type: "", text: "" });
 
     try {
-      const response = await axios.post("/api/registers/customer", newFormData);
+      console.log(newFormData);
+      const response = await axios.post("/api/customers", newFormData);
 
       if (response.status === 201 || response.status === 200) {
-        setMessage({
-          type: "success",
-          text: "거래처가 성공적으로 등록되었습니다.",
-        });
         setNewFormData({
           customerId: "",
           customerName: "",
@@ -132,6 +136,12 @@ const CustomerFormPage = () => {
           email: "",
           address: "",
         });
+        fetchCustomers();
+        const modalElement = document.getElementById("editFormModal");
+        const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+          modalInstance.hide();
+        }
       }
     } catch (error) {
       const errorMsg =
@@ -147,9 +157,7 @@ const CustomerFormPage = () => {
     e.preventDefault();
 
     if (
-      !editFormData.customerName ||
-      !editFormData.purchasePrice ||
-      !editFormData.sellingPrice
+      !editFormData.customerName || !editFormData.phoneNumber|| !editFormData.email|| !editFormData.address
     ) {
       setMessage({ type: "danger", text: "필수 항목(*)을 모두 입력해주세요." });
       return;
@@ -160,20 +168,11 @@ const CustomerFormPage = () => {
 
     try {
       const response = await axios.put(
-        "/api/registers/item/" + editFormData.itemId, // Corrected URL concatenation
-        {
-          ...editFormData,
-          // BUG FIX: Changed newFormData to editFormData
-          purchasePrice: Number(editFormData.purchasePrice),
-          sellingPrice: Number(editFormData.sellingPrice),
-        }
+        "/api/customers/" + editFormData.customerId,
+        editFormData
       );
 
-      if (response.status === 200) {
-        setMessage({
-          type: "success",
-          text: `품목 '${editFormData.itemName}'이(가) 성공적으로 수정되었습니다.`,
-        });
+      if (response.status === 201 || response.status===200) {
         // This resets the edit form, which might not be needed if the modal closes.
         setEditFormData({
           customerName: "",
@@ -210,6 +209,9 @@ const CustomerFormPage = () => {
   };
   return (
     <>
+      <header className="mb-3">
+        <h3>거래처등록 리스트</h3>
+      </header>
       <div className="table-responsive table-container-scrollable">
         <table className="table table-hover align-middle">
           <thead>
@@ -294,21 +296,7 @@ const CustomerFormPage = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                <div className="mb-3">
-                  <label htmlFor="customerName" className="form-label">
-                    거래처아이디 <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="customerId"
-                    name="customerId"
-                    value={newFormData.customerId}
-                    onChange={handleNewFormChange}
-                    required
-                    readOnly
-                  />
-                </div>
+                
                 <div className="col-md-6">
                   <label htmlFor="customerName" className="form-label">
                     거래처명 <span className="text-danger">*</span>
@@ -419,20 +407,7 @@ const CustomerFormPage = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                <div className="mb-3">
-                  <label htmlFor="customerName" className="form-label">
-                    거래처아이디 <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="customerId"
-                    name="customerId"
-                    value={editFormData.customerId}
-                    onChange={handleEditFormChange}
-                    readOnly
-                  />
-                </div>
+                
                 <div className="col-md-6">
                   <label htmlFor="customerName" className="form-label">
                     거래처명 <span className="text-danger">*</span>

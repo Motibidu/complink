@@ -132,7 +132,7 @@ const OrderForm = () => {
 
     // 2. fetch API를 사용하여 POST 요청 보내기
     try {
-      const response = await fetch("/api/order/new", {
+      const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,10 +145,8 @@ const OrderForm = () => {
         const errorText = await response.text();
         throw new Error(errorText || "서버에서 오류가 발생했습니다.");
       }
-
-      // 3. 성공 처리
-      console.log("주문서 제출 성공:", payload);
-      // TODO: 성공 후 폼 초기화 또는 페이지 이동 로직 추가
+      setOrderItems([]);
+      setOrderHeader({});
     } catch (err) {
       // 4. 실패(에러) 처리
       console.error("주문서 제출 실패:", err);

@@ -10,6 +10,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.pcgear.complink.pcgear.PJH.Customer.Customer;
+import com.pcgear.complink.pcgear.PJH.Manager.Manager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

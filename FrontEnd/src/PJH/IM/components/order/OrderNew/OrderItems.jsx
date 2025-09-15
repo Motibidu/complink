@@ -26,7 +26,7 @@ const OrderItems = ({
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("/api/order/findAllItems");
+      const response = await axios.get("/api/items");
       console.log(response.data);
       setItems(response.data);
     } catch (err) {
@@ -62,8 +62,8 @@ const OrderItems = ({
             <th className="order-items__cell col-itemList"></th>
             <th className="order-items__cell col-category">부품 종류</th>
             <th className="order-items__cell col-itemName">상품명</th>
-            <th className="order-items__cel col-quantity">수량</th>
             <th className="order-items__cell col-price">단가</th>
+            <th className="order-items__cel col-quantity">수량</th>
             <th className="order-items__cell col_price">공급가액</th>
             <th className="order-items__cell col_price">부가세</th>
             <th className="order-items__cell col-delete"></th>
@@ -107,19 +107,20 @@ const OrderItems = ({
                   placeholder="상품명"
                 />
               </td>
+
               <td className="order-items__cell">
                 <input
                   className="order-items__input"
-                  name="quantity"
-                  value={Number(orderItem.quantity).toLocaleString()}
+                  name="unitPrice"
+                  value={orderItem.unitPrice}
                   onChange={(e) => handleItemsChange(index, e)}
                 />
               </td>
               <td className="order-items__cell">
                 <input
                   className="order-items__input"
-                  name="unitPrice"
-                  value={orderItem.unitPrice}
+                  name="quantity"
+                  value={Number(orderItem.quantity).toLocaleString()}
                   onChange={(e) => handleItemsChange(index, e)}
                 />
               </td>
@@ -146,6 +147,8 @@ const OrderItems = ({
             </tr>
           ))}
           <tr className="order-items__result">
+            <td></td>
+            <td></td>
             <td></td>
             <td></td>
             <td className="cell-number">
