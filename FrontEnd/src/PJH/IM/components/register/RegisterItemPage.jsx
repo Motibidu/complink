@@ -138,7 +138,9 @@ const RegisterItemPage = () => {
           purchasePrice: "",
           sellingPrice: "",
         });
+
         fetchItems();
+        alert("품목 등록이 성공적으로 완료되었습니다.");
         const modalElement = document.getElementById("newFormModal");
         const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) {

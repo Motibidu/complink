@@ -172,7 +172,7 @@ const ManagerPage = () => {
         editFormData
       );
       if (response.status === 200) {
-        alert("담당자 정보 수정이 정상적으로 등록되었습니다.");
+        alert("담당자 정보 수정이 성공적으로 등록되었습니다.");
         // 성공 시, 목록을 새로고침하고 폼을 초기화합니다.
         fetchManagers();
         setEditFormData({
