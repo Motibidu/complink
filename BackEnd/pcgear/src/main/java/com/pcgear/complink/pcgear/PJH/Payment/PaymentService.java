@@ -32,8 +32,8 @@ import java.util.UUID;
 @Slf4j
 public class PaymentService {
 
-    @Value("${portone.api.secret}")
-    private String portoneApiSecret;
+    //@Value("${portone.api.secret}")
+    private String portoneApiSecret= "whsec_JLpNT1u+qOJbJ8zFwa2Ff8Fn0MAiG8HpgoJFL+ZFL1I=";
 
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;

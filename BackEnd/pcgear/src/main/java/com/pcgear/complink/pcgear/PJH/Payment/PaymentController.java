@@ -26,8 +26,8 @@ import java.util.Map;
 @RequestMapping("/api/payment") // 이 컨트롤러의 모든 API는 /api/payment로 시작합니다.
 public class PaymentController {
 
-    @Value("${portone.webhook.secret}")
-    private String portoneApiSecret;
+    // @Value("${portone.webhook.secret}")
+    private String portoneApiSecret = "FkLCYZzsKhVsoZxz8aZEWXTiRsRYisWO9CBuzCUuooCjBU78TCMCEmdt3NydMvlG63zysLVjQMLAsdA1";
     private final PaymentService paymentService;
     private final UserRepository userRepository; // 사용자 ID를 조회하기 위해 필요합니다.
 
