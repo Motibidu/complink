@@ -23,20 +23,6 @@ const OrderDetailView = ({ order, onDeleteOrder, onSubmit }) => {
     }
   };
 
-  const deleteOrder = async (orderId) => {
-    if (window.confirm("정말로 주문을 삭제하시겠습니까?")) {
-      try {
-        const response = await axios.delete("/api/orders/" + orderId);
-        if (response.status === 204) {
-          alert("선택된 주문서가 성공적으로 삭제되었습니다.");
-        }
-      } catch (e) {
-        alert("주문서 삭제에 실패했습니다.");
-        console.error(e);
-      }
-    }
-  };
-
   return (
     <div className="order-detail-view">
       <div className="pb-3 mb-3 order-detail-view__header d-flex align-items-center">

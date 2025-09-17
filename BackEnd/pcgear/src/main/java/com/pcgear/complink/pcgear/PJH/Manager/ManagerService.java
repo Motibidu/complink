@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.pcgear.complink.pcgear.PJH.Item.ItemRepository;
-import com.pcgear.complink.pcgear.PJH.Order.repository.ManagerRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
