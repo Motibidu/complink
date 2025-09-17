@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import SalesEntryForm from "./SalesEntryForm";
+import SalesEntryForm from "./SellsEntryForm";
 import axios from "axios";
 import OrderDetailView from "../order/OrderSearch/OrderDetailView";
 
-function SalesEntryPage() {
+function SellsEntryPage() {
   const [pendingOrders, setPendingOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -13,7 +13,7 @@ function SalesEntryPage() {
     setIsLoading(true);
     try {
       // API 엔드포인트는 실제 환경에 맞게 수정해야 합니다.
-      const response = await axios.get("/api/orders");
+      const response = await axios.get("/api/orders?status=접수");
       setPendingOrders(response.data);
     } catch (error) {
       console.error("주문서 목록을 불러오는 데 실패했습니다.", error);
@@ -27,11 +27,21 @@ function SalesEntryPage() {
     setSelectedOrder(order);
   };
 
-  // 최종 판매입력을 서버에 전송하는 함수
   const handleSubmitSalesEntry = async (orderId) => {
-    // API 엔드포인트는 실제 환경에 맞게 수정해야 합니다.
-    await axios.post("/api/sales/create-from-order", { orderId });
-    // 성공 후, 목록을 새로고침하고 선택을 초기화합니다.
+    const payload = {
+      orderId: selectedOrder.orderId,
+      sellDate: new Date().toISOString(),
+      customerId: selectedOrder.customer.customerId,
+      customerName: selectedOrder.customer.customerName,
+      managerId: selectedOrder.manager.managerId,
+      managerName: selectedOrder.manager.managerName,
+      paymentStatus: '미납',
+      totalAmount: selectedOrder.totalAmount,
+      vatAmount: selectedOrder.vatAmount,
+      grandAmount: selectedOrder.grandAmount,
+    };
+    const response = await axios.post("/api/sells", payload);
+    console.log(response.data);
     setSelectedOrder(null);
     fetchPendingOrders();
   };
@@ -125,4 +135,4 @@ function SalesEntryPage() {
   );
 }
 
-export default SalesEntryPage;
+export default SellsEntryPage;

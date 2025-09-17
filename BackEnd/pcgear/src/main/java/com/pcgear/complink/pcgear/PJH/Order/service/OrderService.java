@@ -2,15 +2,15 @@ package com.pcgear.complink.pcgear.PJH.Order.service;
 
 import com.pcgear.complink.pcgear.PJH.Customer.Customer;
 import com.pcgear.complink.pcgear.PJH.Customer.CustomerRepository;
-import com.pcgear.complink.pcgear.PJH.Item.Item;
 import com.pcgear.complink.pcgear.PJH.Item.ItemRepository;
 import com.pcgear.complink.pcgear.PJH.Manager.Manager;
+import com.pcgear.complink.pcgear.PJH.Manager.ManagerRepository;
 import com.pcgear.complink.pcgear.PJH.Order.model.Order;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderItem;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderRequestDto;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderResponseDto;
 import com.pcgear.complink.pcgear.PJH.Order.repository.OrderRepository;
-import com.pcgear.complink.pcgear.PJH.Order.repository.ManagerRepository;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,6 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ManagerRepository managerRepository;
     private final CustomerRepository customerRepository;
-    private final ItemRepository itemRepository;
 
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -92,5 +91,11 @@ public class OrderService {
 
     public void deleteOrder(Long orderId) {
         orderRepository.deleteById(orderId);
+    }
+
+    public List<OrderResponseDto> findOrdersByStatus(String status) {
+        return orderRepository.findByStatus(status).stream()
+                .map(OrderResponseDto::new)
+                .collect(Collectors.toList());
     }
 }

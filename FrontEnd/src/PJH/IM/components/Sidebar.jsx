@@ -12,6 +12,7 @@ import {
 } from "react-icons/fa";
 import { RiBillFill } from "react-icons/ri";
 import { FaRegistered } from "react-icons/fa6";
+import { MdSell } from "react-icons/md";
 
 const Sidebar = () => {
   const [clickedItem, setClickedItem] = useState(null);
@@ -42,26 +43,19 @@ const Sidebar = () => {
       icon: <FaBoxes />,
       children: [
         // 하위 메뉴 항목 추가
-        { name: "창고등록", path: "/inventory/status" },
-        { name: "재고조회", path: "/inventory/stock-search" },
-        { name: "재고이동", path: "/inventory/stock-move" },
+        { name: "재고조회", path: "/inventory/status" },
       ],
     },
     {
       name: "판매 관리",
       path: "/sales",
-      icon: <FaBoxes />,
+      icon: <MdSell />,
       children: [
         // 하위 메뉴 항목 추가
-        { name: "판매입력", path: "/sales/new" },
-        { name: "재고조회", path: "/inventory/stock-search" },
-        { name: "재고이동", path: "/inventory/stock-move" },
+        { name: "판매입력", path: "/sells/new" },
+        { name: "판매조회", path: "/sells/search" },
       ],
     },
-
-    { name: "발주 관리", path: "/purchases", icon: <FaShoppingCart /> },
-    { name: "입/출고 관리", path: "/shipments", icon: <FaTruck /> },
-    { name: "거래처 관리", path: "/suppliers", icon: <FaUserTie /> },
   ];
   const handleItemClick = (itemName) => {
     // 이미 열려있는 메뉴를 다시 클릭하면 닫기

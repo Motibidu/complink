@@ -13,32 +13,28 @@ import RegisterCustomerPage from "./PJH/IM/components/register/RegisterCustomerP
 import RegisterItemPage from "./PJH/IM/components/register/RegisterItemPage";
 import RegisterManagerPage from "./PJH/IM/components/register/RegisterManagerPage";
 import InventoryStatus from "./PJH/IM/components/Inventory/InventoryStatus";
-import SalesEntryForm from "./PJH/IM/components/sales/SalesEntryForm";
-import SalesEntryPage from "./PJH/IM/components/sales/SalesEntryPage";
+import SellsSearchPage from "./PJH/IM/components/sells/SellsSearchPage";
+import SellsEntryPage from "./PJH/IM/components/sells/SellsEntryPage";
 
 function App() {
   return (
-    <AuthProvider>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/find-id" element={<FindId />} />
-          <Route path="/find-password" element={<FindPassword />} />
-          <Route path="/orders/new" element={<OrderFormPage />} />
-          <Route path="/orders/search" element={<OrderSearchPage />} />
-          <Route path="/registers/item" element={<RegisterItemPage />} />
-          <Route
-            path="/registers/customer"
-            element={<RegisterCustomerPage />}
-          />
-          <Route path="/registers/manager" element={<RegisterManagerPage />} />
-          <Route path="/inventory/status" element={<InventoryStatus />} />
-          <Route path="/sales/new" element={<SalesEntryPage />} />
-        </Routes>
-      </Layout>
-    </AuthProvider>
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/find-id" element={<FindId />} />
+        <Route path="/find-password" element={<FindPassword />} />
+        <Route path="/orders/new" element={<OrderFormPage />} />
+        <Route path="/orders/search" element={<OrderSearchPage />} />
+        <Route path="/registers/item" element={<RegisterItemPage />} />
+        <Route path="/registers/customer" element={<RegisterCustomerPage />} />
+        <Route path="/registers/manager" element={<RegisterManagerPage />} />
+        <Route path="/inventory/status" element={<InventoryStatus />} />
+        <Route path="/sells/new" element={<SellsEntryPage />} />
+        <Route path="/sells/search" element={<SellsSearchPage />} />
+      </Routes>
+    </Layout>
   );
 }
 

@@ -37,6 +37,7 @@ const OrderListPanel = ({
           >
             <option value="all">전체 상태</option>
             <option value="접수">접수</option>
+            <option value="처리중">처리중</option>
             <option value="출고대기">출고대기</option>
             <option value="출고완료">출고완료</option>
             <option value="재고부족">재고부족</option>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-const SalesEntryForm = ({ order, onSubmit }) => {
+const SellsEntryForm = ({ order, onSubmit }) => {
   if (!order) return null;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -106,4 +106,4 @@ const SalesEntryForm = ({ order, onSubmit }) => {
   );
 };
 
-export default SalesEntryForm;
+export default SellsEntryForm;
