@@ -29,7 +29,11 @@ const RegisterItemPage = () => {
     setTableLoading(true);
     try {
       const response = await axios.get("/api/items");
-      setItems(response.data);
+      console.log("response: ", response);
+      console.log("response.data: ", response.data);
+
+      const itemsData = Array.isArray(response.data) ? response.data : [];
+      setItems(itemsData);
     } catch (error) {
       console.error("품목 목록을 불러오는 데 실패했습니다.", error);
     } finally {
@@ -75,14 +79,12 @@ const RegisterItemPage = () => {
       try {
         await axios.delete("/api/items", {
           params: {
-            ids: selectedItems
+            ids: selectedItems,
           },
-          paramsSerializer: params => {
-            return qs.stringify(params, { arrayFormat: 'comma' })
-          }
-
+          paramsSerializer: (params) => {
+            return qs.stringify(params, { arrayFormat: "comma" });
+          },
         });
-
 
         alert("선택된 품목들이 삭제되었습니다.");
         fetchItems(); // 목록 새로고침
@@ -254,31 +256,33 @@ const RegisterItemPage = () => {
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => (
-              <tr key={item.itemId}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.includes(item.itemId)}
-                    onChange={() => handleSelectItem(item.itemId)}
-                  />
-                </td>
-                <td>{item.itemId}</td>
-                <td>
-                  <a
-                    onClick={() => handleEditClick(item)}
-                    href="#"
-                    data-bs-toggle="modal"
-                    data-bs-target="#editFormModal"
-                  >
-                    {item.itemName}
-                  </a>
-                </td>
-                <td>{item.category}</td>
-                <td>{item.purchasePrice}</td>
-                <td>{item.sellingPrice}</td>
-              </tr>
-            ))}
+            {items
+              ? items.map((item) => (
+                  <tr key={item.itemId}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.includes(item.itemId)}
+                        onChange={() => handleSelectItem(item.itemId)}
+                      />
+                    </td>
+                    <td>{item.itemId}</td>
+                    <td>
+                      <a
+                        onClick={() => handleEditClick(item)}
+                        href="#"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editFormModal"
+                      >
+                        {item.itemName}
+                      </a>
+                    </td>
+                    <td>{item.category}</td>
+                    <td>{item.purchasePrice}</td>
+                    <td>{item.sellingPrice}</td>
+                  </tr>
+                ))
+              : ""}
           </tbody>
         </table>
       </div>

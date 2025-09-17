@@ -39,7 +39,7 @@ public class SecurityConfig {
                                 "/error",
                                 "/orders/**",
                                 "/registers/**",
-                                "/topic/**", "/managers/**", "/customers/**", "/items/**")
+                                "/topic/**", "/managers/**", "/customers/**", "/items/**", "/", "/api/items/**", "/api/customers/**", "/assets/**", "/api/**")
                         .permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 로그인 필요
                 )

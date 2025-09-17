@@ -23,7 +23,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/payment") // 이 컨트롤러의 모든 API는 /api/payment로 시작합니다.
+@RequestMapping("/api/payment") // 이 컨트롤러의 모든 API는 /api/payment로 시작합니다.
 public class PaymentController {
 
     @Value("${portone.webhook.secret}")

@@ -32,7 +32,8 @@ const ManagerPage = () => {
     setTableLoading(true);
     try {
       const response = await axios.get("/api/managers");
-      setManagers(response.data);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setManagers(data);
     } catch (error) {
       console.error("담당자 목록을 불러오는 데 실패했습니다.", error);
       setMessage({
@@ -87,12 +88,12 @@ const ManagerPage = () => {
         // 백엔드에 삭제 API(POST /api/managers/delete) 요청
         await axios.delete("/api/managers", {
           params: {
-            ids: selectedManagers
+            ids: selectedManagers,
           },
           // 2. paramsSerializer 옵션을 추가합니다.
-          paramsSerializer: params => {
-            return qs.stringify(params, { arrayFormat: 'comma' })
-          }
+          paramsSerializer: (params) => {
+            return qs.stringify(params, { arrayFormat: "comma" });
+          },
         });
 
         alert("선택된 담당자가 삭제되었습니다.");
@@ -129,7 +130,7 @@ const ManagerPage = () => {
 
     try {
       const response = await axios.post("/api/managers", newFormData);
-      if (response.status === 201 || response.status===200) {
+      if (response.status === 201 || response.status === 200) {
         alert("담당자가 성공적으로 등록되었습니다.");
         // 성공 시, 목록을 새로고침하고 폼을 초기화합니다.
         fetchManagers();

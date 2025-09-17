@@ -28,7 +28,8 @@ const OrderItems = ({
     try {
       const response = await axios.get("/api/items");
       console.log(response.data);
-      setItems(response.data);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setItems(data);
     } catch (err) {
       console.error("아이템 목록 로드 실패:", err);
     } finally {

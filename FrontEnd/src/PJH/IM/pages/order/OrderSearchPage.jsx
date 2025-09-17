@@ -39,20 +39,9 @@ function OrderSearchPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch("/api/orders", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || "서버에서 오류가 발생했습니다.");
-        }
-        //console.log("response: ", response);
-        const orders = await response.json();
-        setOrders(orders);
+        const response = await axios.get("/api/orders");
+        const data = Array.isArray(response.data) ? response.data : [];
+        setOrders(data);
         if (orders.length > 0) {
           setSelectedOrder(orders[0]);
         }

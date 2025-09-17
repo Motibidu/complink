@@ -3,10 +3,10 @@ import { useAuth } from "../contexts/AuthContext";
 import axios from "axios"; // axios 사용을 권장합니다 (fetch보다 편리)
 
 const Header = () => {
-  const { isLoggedIn, logout } = useAuth();
+  //const { isLoggedIn, logout } = useAuth();
   const handleLogout = (e) => {
     e.preventDefault(); // a 태그의 기본 동작 방지
-    logout();
+    //logout();
     // 필요하다면 홈페이지로 리디렉션
   };
   function randomId() {
@@ -18,10 +18,10 @@ const Header = () => {
   const STORE_ID = import.meta.env.VITE_PORTONE_STORE_ID;
   const TOSSPAY_CHANNEL_KEY = import.meta.env.VITE_PORTONE_TOSSPAY_CHANNEL_KEY;
 
-  console.log(`[ENV] STORE_ID: "${STORE_ID}" (Type: ${typeof STORE_ID})`);
-  console.log(
-    `[ENV] CHANNEL_KEY: "${TOSSPAY_CHANNEL_KEY}" (Type: ${typeof TOSSPAY_CHANNEL_KEY})`
-  );
+  //console.log(`[ENV] STORE_ID: "${STORE_ID}" (Type: ${typeof STORE_ID})`);
+  // console.log(
+  //   `[ENV] CHANNEL_KEY: "${TOSSPAY_CHANNEL_KEY}" (Type: ${typeof TOSSPAY_CHANNEL_KEY})`
+  // );
 
   // axios 인스턴스 설정 (App.js에서 사용한 axiosInstance가 있다면 그것을 가져와도 좋습니다)
   const api = axios.create({
@@ -29,68 +29,68 @@ const Header = () => {
     withCredentials: true, // 세션 쿠키 전송을 위해 필수
   });
 
-  async function requestPayment() {
-    const paymentModalEl = document.getElementById("paymentModal");
-    const paymentModal = window.bootstrap.Modal.getInstance(paymentModalEl);
-    const successModalEl = document.getElementById("paymentSuccessModal");
-    const successModal = new window.bootstrap.Modal(successModalEl);
+  // async function requestPayment() {
+  //   const paymentModalEl = document.getElementById("paymentModal");
+  //   const paymentModal = window.bootstrap.Modal.getInstance(paymentModalEl);
+  //   const successModalEl = document.getElementById("paymentSuccessModal");
+  //   const successModal = new window.bootstrap.Modal(successModalEl);
 
-    console.log(TOSSPAY_CHANNEL_KEY);
-    console.log(STORE_ID);
+  //   console.log(TOSSPAY_CHANNEL_KEY);
+  //   console.log(STORE_ID);
 
-    // 토스페이 빌링키 발급 요청
-    const response = await window.PortOne.requestIssueBillingKey({
-      storeId: STORE_ID, // 고객사 storeId로 변경해주세요.
-      channelKey: TOSSPAY_CHANNEL_KEY, // 콘솔 결제 연동 화면에서 채널 연동 시 생성된 채널 키를 입력해주세요.
-      billingKeyMethod: "EASY_PAY",
-      issueId: `issue-${randomId()}`,
-      issueName: "test-issueName",
-      customer: {
-        customerId: `customer-${randomId()}`,
-      },
-      redirectUrl: "http://localhost",
-      noticeUrls: ["https://c2216c116dba.ngrok-free.app"],
-    });
+  //   // 토스페이 빌링키 발급 요청
+  //   const response = await window.PortOne.requestIssueBillingKey({
+  //     storeId: STORE_ID, // 고객사 storeId로 변경해주세요.
+  //     channelKey: TOSSPAY_CHANNEL_KEY, // 콘솔 결제 연동 화면에서 채널 연동 시 생성된 채널 키를 입력해주세요.
+  //     billingKeyMethod: "EASY_PAY",
+  //     issueId: `issue-${randomId()}`,
+  //     issueName: "test-issueName",
+  //     customer: {
+  //       customerId: `customer-${randomId()}`,
+  //     },
+  //     redirectUrl: "http://localhost",
+  //     noticeUrls: ["https://c2216c116dba.ngrok-free.app"],
+  //   });
 
-    if (response.code) {
-      return alert(`결제 오류: ${response.message}`);
-    }
+  //   if (response.code) {
+  //     return alert(`결제 오류: ${response.message}`);
+  //   }
 
-    console.log(response);
+  //   console.log(response);
 
-    // --- 3. 결제 성공 후, 자체 백엔드에 완료 처리 요청 ---
-    const isServerProcessSuccess = await processPaymentOnServer(
-      response.billingKey
-    );
-    if (isServerProcessSuccess) {
-      if (paymentModal) paymentModal.hide(); // 기존 모달 닫기
-      successModal.show(); // 새로운 성공 모달 열기
-      // 여기서 모달을 닫는 로직을 추가할 수도 있습니다.
-    } else {
-      // processPaymentOnServer 내부에서 이미 에러 알림/로깅을 했을 수 있음
-      alert(
-        "결제는 성공했으나 서버에 기록하는 중 문제가 발생했습니다. 관리자에게 문의하세요."
-      );
-      paymentModal.hide();
-    }
-  }
-  const processPaymentOnServer = async (billingKey) => {
-    try {
-      const response = await api.post("/payment/subscribe", {
-        billingKey: billingKey,
-        orderName: "pcgear 정기결제",
-        amount: 1000,
-      });
-      if (response.status === 200) {
-        console.log("서버 처리 성공:", response.data);
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error("서버 처리중 오류: ", err);
-      return false;
-    }
-  };
+  //   // --- 3. 결제 성공 후, 자체 백엔드에 완료 처리 요청 ---
+  //   const isServerProcessSuccess = await processPaymentOnServer(
+  //     response.billingKey
+  //   );
+  //   if (isServerProcessSuccess) {
+  //     if (paymentModal) paymentModal.hide(); // 기존 모달 닫기
+  //     successModal.show(); // 새로운 성공 모달 열기
+  //     // 여기서 모달을 닫는 로직을 추가할 수도 있습니다.
+  //   } else {
+  //     // processPaymentOnServer 내부에서 이미 에러 알림/로깅을 했을 수 있음
+  //     alert(
+  //       "결제는 성공했으나 서버에 기록하는 중 문제가 발생했습니다. 관리자에게 문의하세요."
+  //     );
+  //     paymentModal.hide();
+  //   }
+  // }
+  // const processPaymentOnServer = async (billingKey) => {
+  //   try {
+  //     const response = await api.post("/payment/subscribe", {
+  //       billingKey: billingKey,
+  //       orderName: "pcgear 정기결제",
+  //       amount: 1000,
+  //     });
+  //     if (response.status === 200) {
+  //       console.log("서버 처리 성공:", response.data);
+  //       return true;
+  //     }
+  //     return false;
+  //   } catch (err) {
+  //     console.error("서버 처리중 오류: ", err);
+  //     return false;
+  //   }
+  // };
 
   return (
     <>
@@ -108,8 +108,7 @@ const Header = () => {
             </a>
 
             <ul className="dropdown-menu dropdown-menu-end">
-              {/* isLoggedIn이 true일 때만 '마이페이지'와 '설정'을 보여줌 */}
-              {isLoggedIn && (
+              {/* {isLoggedIn && (
                 <>
                   <li>
                     <a className="dropdown-item" href="#">
@@ -122,7 +121,6 @@ const Header = () => {
                     </a>
                   </li>
                   <li>
-                    {/* 1. 모달을 열기 위한 data-bs-* 속성 추가 */}
                     <a
                       className="dropdown-item"
                       href="#"
@@ -138,7 +136,6 @@ const Header = () => {
                 </>
               )}
 
-              {/* 로그인 상태에 따라 '로그인' 또는 '로그아웃'을 보여줌 */}
               {isLoggedIn ? (
                 <li>
                   <a className="dropdown-item" href="#" onClick={handleLogout}>
@@ -151,7 +148,17 @@ const Header = () => {
                     로그인
                   </a>
                 </li>
-              )}
+              )} */}
+              <li>
+                <a className="dropdown-item" href="/login">
+                  로그인
+                </a>
+              </li>
+              <li>
+                <a className="dropdown-item" href="#" onClick={handleLogout}>
+                  로그아웃
+                </a>
+              </li>
             </ul>
           </div>
         </div>
@@ -200,7 +207,7 @@ const Header = () => {
                 취소
               </button>
               <button
-                onClick={requestPayment}
+                // onClick={requestPayment}
                 type="button"
                 className="btn btn-primary"
               >

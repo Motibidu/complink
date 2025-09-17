@@ -10,8 +10,8 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/customers");
-      const data = await response.json();
+      const response = await axios.get("/api/customers");
+      const data = Array.isArray(response.data) ? response.data : [];
       setCustomers(data);
     } catch (err) {
       console.error("거래처 목록 로드 실패:", err);
@@ -24,7 +24,8 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
     setLoading(true);
     try {
       const response = await axios.get("/api/managers");
-      setManagers(response.data);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setManagers(data);
     } catch (err) {
       console.err("담당자 목록 로드 실패: ", err);
     } finally {

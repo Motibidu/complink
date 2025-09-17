@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@RequestMapping("/api")
 @RestController
 @RequiredArgsConstructor
 public class UserController {
@@ -73,7 +74,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/login/isLoggedIn")
+    @GetMapping("/api/login/isLoggedIn")
     public ResponseEntity<Map<String, Boolean>> isLoggedIn(@AuthenticationPrincipal UserDetails userDetails) {
         
         if (userDetails != null) {

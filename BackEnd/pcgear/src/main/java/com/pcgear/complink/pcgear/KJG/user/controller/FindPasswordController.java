@@ -14,7 +14,7 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/find-password")
+@RequestMapping("/api/find-password")
 public class FindPasswordController {
 
     private final UserService userService;

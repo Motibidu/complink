@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderRequestDto;
@@ -21,7 +22,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "주문서 API", description = "주문서를 관리하는 API")
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/api/orders")
 public class OrderController {
 
     private final OrderService orderService;
@@ -43,8 +44,14 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<List<OrderResponseDto>> readOrders() {
-        List<OrderResponseDto> orderDtos = orderService.findAllOrders();
-        return ResponseEntity.ok(orderDtos);
+    public ResponseEntity<List<OrderResponseDto>> readOrders(
+            @RequestParam(name = "status", required = false) String status) {
+        if (status != null) {
+            // status 파라미터가 있다면 해당 상태의 주문만 조회
+            return ResponseEntity.ok(orderService.findOrdersByStatus(status));
+        } else {
+            // status 파라미터가 없다면 전체 주문 조회
+            return ResponseEntity.ok(orderService.findAllOrders());
+        }
     }
 }

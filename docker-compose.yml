@@ -12,10 +12,19 @@ services:
       test: ["CMD", "mysqladmin", "ping"]
       interval: 5s
       retries: 10
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
 
   backend:
     build:
       context: ./BackEnd/pcgear
+    ports:
+      - "8080:8080" # 포트 노출
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/pcgear?allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=1234
     depends_on:
       db:
         condition: service_healthy

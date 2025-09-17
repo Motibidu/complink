@@ -30,6 +30,7 @@ const CustomerFormPage = () => {
   const fetchCustomers = useCallback(async () => {
     try {
       const response = await axios.get("/api/customers");
+      console.log("response.data: ", response.data);
       setCustomers(response.data);
     } catch (error) {
       console.error("거래처 목록을 불러오는 데 실패했습니다.", error);
@@ -78,12 +79,11 @@ const CustomerFormPage = () => {
       try {
         await axios.delete("/api/customers", {
           params: {
-            ids: selectedCustomers
+            ids: selectedCustomers,
           },
-          paramsSerializer: params => {
-            return qs.stringify(params, { arrayFormat: 'comma' })
-          }
-
+          paramsSerializer: (params) => {
+            return qs.stringify(params, { arrayFormat: "comma" });
+          },
         });
 
         alert("선택된 거래처가 삭제되었습니다.");
@@ -158,7 +158,10 @@ const CustomerFormPage = () => {
     e.preventDefault();
 
     if (
-      !editFormData.customerName || !editFormData.phoneNumber|| !editFormData.email|| !editFormData.address
+      !editFormData.customerName ||
+      !editFormData.phoneNumber ||
+      !editFormData.email ||
+      !editFormData.address
     ) {
       setMessage({ type: "danger", text: "필수 항목(*)을 모두 입력해주세요." });
       return;
@@ -173,7 +176,7 @@ const CustomerFormPage = () => {
         editFormData
       );
 
-      if (response.status === 201 || response.status===200) {
+      if (response.status === 201 || response.status === 200) {
         // This resets the edit form, which might not be needed if the modal closes.
         setEditFormData({
           customerName: "",
@@ -297,7 +300,6 @@ const CustomerFormPage = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                
                 <div className="col-md-6">
                   <label htmlFor="customerName" className="form-label">
                     거래처명 <span className="text-danger">*</span>
@@ -408,7 +410,6 @@ const CustomerFormPage = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                
                 <div className="col-md-6">
                   <label htmlFor="customerName" className="form-label">
                     거래처명 <span className="text-danger">*</span>
