@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "담당자 API", description = "담당자 정보를 관리하는 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/managers")
+@RequestMapping("/managers")
 public class ManagerController {
 
         private final ManagerService managerService;

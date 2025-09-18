@@ -12,7 +12,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/find")
+@RequestMapping("/find")
 public class FindIdController {
 
     private final UserService userService;

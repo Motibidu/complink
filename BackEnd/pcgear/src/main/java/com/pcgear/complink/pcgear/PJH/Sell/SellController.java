@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Tag(name = "판매서 API", description = "판매서를 관리하는 API")
 @RestController
-@RequestMapping("/api/sells")
+@RequestMapping("/sells")
 @RequiredArgsConstructor
 @Slf4j
 public class SellController {
