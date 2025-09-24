@@ -25,8 +25,7 @@ function FindId() {
         setMessage('');
 
         try {
-            // 백엔드의 /api/find/send-mail 엔드포인트로 요청
-            const response = await axios.post('/api/find/send-mail', { email });
+            const response = await axios.post('/api/email-verifications/users/ids/request', { email });
             setMessage(response.data.message);
             setCurrentStep(2); // 성공 시, 다음 단계로 이동
         } catch (error) {
@@ -49,7 +48,7 @@ function FindId() {
 
         try {
             // 백엔드의 /api/find/verify-code 엔드포인트로 요청
-            const response = await axios.post('/api/find/verify-code', { email, code });
+            const response = await axios.post('/api/email-verifications/users/ids/verify', { email, code });
             setFoundUserId(response.data.userId); // 마스킹된 아이디 저장
             setCurrentStep(3); // 성공 시, 결과 표시 단계로 이동
         } catch (error) {

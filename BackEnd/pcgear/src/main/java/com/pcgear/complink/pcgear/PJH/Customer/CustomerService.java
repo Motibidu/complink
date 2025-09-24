@@ -51,7 +51,6 @@ public class CustomerService {
         public void deleteCustomers(List<String> customerIds) {
                 // customerRepository.deleteAllByCustomerIdIn(customerIds);
                 for (String customerId : customerIds) {
-                        // ✅ 삭제 전, 해당 거래처를 사용하는 주문서가 있는지 확인
                         if (orderRepository.existsByCustomerCustomerId(customerId)) {
                                 throw new EntityExistsException(
                                                 "해당 거래처가 사용된 주문서가 있어 삭제할 수 없습니다. (ID: " + customerId + ")");

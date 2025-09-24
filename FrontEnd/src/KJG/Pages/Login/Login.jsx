@@ -25,7 +25,7 @@ function Login() {
 
         try {
             axios.defaults.withCredentials = true;
-            const response = await axios.post('/api/login', formData, {
+            const response = await axios.post('/api/login-process', formData, {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
 
@@ -81,20 +81,20 @@ function Login() {
             </form>
             
             {/* 2. 소셜 로그인 영역 */}
-            <div className="social-login-divider">
+            {/* <div className="social-login-divider">
                 <span>OR</span>
-            </div>
+            </div> */}
             
             {/* 
               Google 로그인 버튼
               - href 경로는 백엔드 서버의 주소와 스프링 시큐리티의 약속된 경로를 따릅니다.
               - /oauth2/authorization/{provider} 형식이므로 google을 사용합니다.
             */}
-            <a href="http://localhost:8080/oauth2/authorization/google" className="social-login-btn google">
                 {/* public 폴더에 google-logo.svg 파일을 넣어두면 이미지가 보입니다. */}
+            {/* <a href="http://localhost:8080/oauth2/authorization/google" className="social-login-btn google">
                 <img src="/google-logo.svg" alt="Google" /> 
                 <span>Google 계정으로 로그인</span>
-            </a>
+            </a> */}
 
             {/* 3. 기타 링크 영역 */}
             <div className="extra-links">

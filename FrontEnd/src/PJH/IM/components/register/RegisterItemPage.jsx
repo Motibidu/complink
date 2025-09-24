@@ -2,6 +2,14 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios"; // 데이터 전송을 위해 axios 사용
 import qs from "qs";
 
+
+// useCallback이 fetchItems라는 함수를 한 번만 만듭니다 (의존성 배열이 []이므로).
+
+// useEffect는 fetchItems 함수를 감시하고 있습니다.
+
+// 하지만 fetchItems 함수는 useCallback 덕분에 절대 변하지 않는 고정된 값이 되었습니다.
+
+// 따라서 useEffect는 컴포넌트가 맨 처음 화면에 나타날 때 fetchItems를 한 번 실행한 뒤, 그 이후로는 fetchItems가 변하지 않으니 다시는 실행되지 않습니다.
 const RegisterItemPage = () => {
   // 폼 데이터를 한 번에 관리하기 위한 state
   const [items, setItems] = useState([]);
@@ -24,13 +32,11 @@ const RegisterItemPage = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // post요청이 완료된 후 다시 fetchItems를 호출해주기 위해 useEffect 바깥에 함수를 정의
   const fetchItems = useCallback(async () => {
     setTableLoading(true);
     try {
       const response = await axios.get("/api/items");
-      console.log("response: ", response);
-      console.log("response.data: ", response.data);
+      //console.log("response.data: ", response.data);
 
       const itemsData = Array.isArray(response.data) ? response.data : [];
       setItems(itemsData);

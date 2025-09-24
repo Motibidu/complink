@@ -14,6 +14,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
@@ -32,8 +34,8 @@ import java.util.UUID;
 @Slf4j
 public class PaymentService {
 
-    //@Value("${portone.api.secret}")
-    private String portoneApiSecret= "whsec_JLpNT1u+qOJbJ8zFwa2Ff8Fn0MAiG8HpgoJFL+ZFL1I=";
+    // @Value("${portone.api.secret}")
+    private String portoneApiSecret = "FkLCYZzsKhVsoZxz8aZEWXTiRsRYisWO9CBuzCUuooCjBU78TCMCEmdt3NydMvlG63zysLVjQMLAsdA1";
 
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
@@ -58,22 +60,14 @@ public class PaymentService {
 
         if (user.getBillingKey() == null) {
             user.setBillingKey(request.getBillingKey());
+            userRepository.save(user);
             log.info("사용자 ID {}의 빌링키 저장 완료.", userId);
         }
 
-        userRepository.save(user);
-        log.info("user: " + user);
-
-        // 2. 저장된 빌링키로 즉시 첫 결제 실행
         executeImmediatePayment(user, request);
-
-        // 3. 첫 결제 성공 후, 다음 회차 결제 예약
-        // scheduleNextPayment(user, request);
+        // scheduleNextPayment(user, request, 5);
     }
 
-    /**
-     * 빌링키로 즉시 결제를 요청하는 private 메서드
-     */
     private void executeImmediatePayment(UserEntity user, SubscriptionRequest request) {
         RestTemplate restTemplate = new RestTemplate();
         String paymentId = "payment-" + UUID.randomUUID().toString();
@@ -81,7 +75,7 @@ public class PaymentService {
 
         Map<String, Object> requestBody = Map.of(
                 "billingKey", request.getBillingKey(),
-                "orderName", request.getOrderName() + " (첫 결제)",
+                "orderName", request.getOrderName(),
                 "customer", createCustomerMap(user),
                 "amount", Map.of("total", request.getAmount()),
                 "currency", "KRW");
@@ -134,7 +128,7 @@ public class PaymentService {
     /**
      * 다음 정기결제를 예약하는 private 메서드
      */
-    private void scheduleNextPayment(UserEntity user, SubscriptionRequest request) {
+    private void scheduleNextPayment(UserEntity user, SubscriptionRequest request, int seconds) {
         RestTemplate restTemplate = new RestTemplate();
         String paymentId = "payment-" + UUID.randomUUID().toString();
         String url = "https://api.portone.io/payments/" + paymentId + "/schedule";
@@ -142,7 +136,7 @@ public class PaymentService {
         // 다음 결제일 설정 (예: 한 달 뒤)
         // LocalDateTime nextPaymentTime = LocalDateTime.now().plusMonths(1);
 
-        LocalDateTime nextPaymentTime = LocalDateTime.now().plusSeconds(5);
+        LocalDateTime nextPaymentTime = LocalDateTime.now().plusSeconds(seconds);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
         // 2. 서울 시간 기준으로 ZonedDateTime 생성 후 포맷 적용
         String formattedNextPaymentTime = nextPaymentTime.atZone(ZoneId.of("Asia/Seoul")).format(formatter);
@@ -194,32 +188,33 @@ public class PaymentService {
                 "email", user.getEmail());
     }
 
-    public void processWebhook(String payload, String webhookId, String webhookSignature, String webhookTimestamp) {
+    public void processWebhook(String payload, String webhookId, String webhookSignature, String webhookTimestamp,
+            @AuthenticationPrincipal UserDetails userDetails) {
         WebhookVerifier verifier = new WebhookVerifier(portoneApiSecret);
         try {
             verifier.verify(payload, webhookId, webhookSignature, webhookTimestamp);
         } catch (WebhookVerificationException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        log.info("웹훅 서명 검증 성공. ID: {}", webhookId);
 
         ObjectMapper objectMapper = new ObjectMapper();
-        // JSON 문자열을 Map<String, Object> 타입으로 변환합니다.
-        Map<String, Object> payloadMap = null;
+        String paymentId = null;
         try {
-            payloadMap = objectMapper.readValue(payload, new TypeReference<>() {
+            // 2. webhookTimestamp에 담겨온 JSON 문자열을 Map<String, Object> 타입으로 변환
+            Map<String, Object> payloadMap = objectMapper.readValue(webhookTimestamp, new TypeReference<>() {
             });
+
+            // 3. 중첩된 구조에서 'data' 객체를 먼저 추출
+            Map<String, Object> data = (Map<String, Object>) payloadMap.get("data");
+            log.info("추출된 data 객체: {}", data);
+
+            // 4. 'data' 객체 안에서 'paymentId'를 최종적으로 추출
+            paymentId = (String) data.get("paymentId");
+            log.info("✅ 최종 추출된 paymentId: {}", paymentId);
+
         } catch (JsonProcessingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error("웹훅 JSON 파싱 중 오류가 발생했습니다.", e);
         }
-
-        // 중첩된 구조에서 'data' 객체를 먼저 추출합니다.
-        Map<String, Object> data = (Map<String, Object>) payloadMap.get("data");
-
-        // 'data' 객체 안에서 'paymentId'를 최종적으로 추출합니다.
-        String paymentId = (String) data.get("paymentId");
 
         WebClient webClient = WebClient.create();
         Map<String, Object> paymentDetail = webClient
@@ -230,18 +225,20 @@ public class PaymentService {
                 .bodyToMono(Map.class)
                 .block();
 
-        log.info("조회된 결제 상세 정보 (paymentId: {}): {}", paymentId, paymentDetail);
+        log.info("paymentDetail: {}", paymentDetail);
 
-        // String status = (String) paymentDetail.get("status");
+        Object billingKeyValueObject = paymentDetail.get("billingKey");
+        String billingKey = null;
+        if (billingKeyValueObject != null) {
+            billingKey = (String) billingKeyValueObject;
+        }
+        UserEntity user = userRepository.findByUsername(userDetails.getUsername()).get();
 
-        // // 포트원에서 전달된 결제 금액 확인
-        // BigDecimal totalPrice = new BigDecimal((Integer)
-        // paymentDetail.get("amount"));
+        SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
+        subscriptionRequest.setAmount(1000);
+        subscriptionRequest.setOrderName("정기결제");
+        subscriptionRequest.setBillingKey(billingKey);
 
-        // // 데이터베이스에서 주문 금액 조회
-        // BigDecimal orderPrice = paymentRepository.findById(paymentId);
-
-        // 포트원에게 "알림을 잘 받았다"고 HTTP 200 OK 응답을 보내줍니다.
-        throw new UnsupportedOperationException("Unimplemented method 'processWebhook'");
+        scheduleNextPayment(user, subscriptionRequest, 3000);
     }
 }

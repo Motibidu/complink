@@ -14,7 +14,7 @@ public class RecaptchaService {
     private final RestTemplate restTemplate;
 
     // @Value("${recaptcha.secret-key}")
-    private String secretKey = "6LdEUJYrAAAAAEjQn0gP-RWlWcZP4E_W6GsecpFS";
+    private String secretKey = "6LfEFNIrAAAAAPC_kAnhZ1heNPqKSexPsoFFxUg7";
 
     // @Value("${recaptcha.verify-url}")
     private String verifyUrl = "https://www.google.com/recaptcha/api/siteverify";

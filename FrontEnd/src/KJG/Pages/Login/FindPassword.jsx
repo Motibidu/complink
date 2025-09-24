@@ -29,8 +29,7 @@ function FindPassword() {
         setMessage('');
 
         try {
-            // 백엔드의 /api/find-password/send-mail 엔드포인트로 요청
-            const response = await axios.post('/api/find-password/send-mail', { username, email });
+            const response = await axios.post('/api/email-verifications/users/passwords/request', { username, email });
             setMessage(response.data.message);
             setCurrentStep(2); // 성공 시, 2단계로 이동
         } catch (error) {
@@ -52,8 +51,7 @@ function FindPassword() {
         setMessage('');
 
         try {
-            // 백엔드의 /api/find-password/reset 엔드포인트로 요청
-            const response = await axios.post('/api/find-password/reset', { username, email, code });
+            const response = await axios.put('/api/email-verifications/users/passwords/reset', { username, email, code });
             setMessage(response.data.message);
             setCurrentStep(3); // 성공 시, 완료 단계로 이동
         } catch (error) {

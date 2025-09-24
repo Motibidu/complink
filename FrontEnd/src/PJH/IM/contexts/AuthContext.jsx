@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const fetchIsLoggedIn = async () => {
       try {
-        const response = await fetch("/api/login/isLoggedIn", {
+        const response = await fetch("/api/users/isLoggedIn", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

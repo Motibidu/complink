@@ -23,11 +23,11 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/payment") // 이 컨트롤러의 모든 API는 /api/payment로 시작합니다.
+@RequestMapping("/payment") // 이 컨트롤러의 모든 API는 /api/payment로 시작합니다.
 public class PaymentController {
 
     // @Value("${portone.webhook.secret}")
-    private String portoneApiSecret = "FkLCYZzsKhVsoZxz8aZEWXTiRsRYisWO9CBuzCUuooCjBU78TCMCEmdt3NydMvlG63zysLVjQMLAsdA1";
+    private String portoneWebHookSecret = "whsec_JLpNT1u+qOJbJ8zFwa2Ff8Fn0MAiG8HpgoJFL+ZFL1I=";
     private final PaymentService paymentService;
     private final UserRepository userRepository; // 사용자 ID를 조회하기 위해 필요합니다.
 
@@ -61,13 +61,18 @@ public class PaymentController {
             @RequestBody String payload, // 1. 원본 Body를 String으로 받습니다.
             @RequestHeader("webhook-id") String webhookId, // 2. 헤더 값을 받아옵니다.
             @RequestHeader("webhook-signature") String webhookSignature,
-            @RequestHeader("webhook-timestamp") String webhookTimestamp) {
-        log.info("포트원 웹훅 원본(Raw) 데이터 수신: {}", payload);
+            @RequestHeader("webhook-timestamp") String webhookTimestamp,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("payload: {}", payload);
+        log.info("webhook-id: {}", webhookId);
+        log.info("webhook-signature: {}", webhookSignature);
+        log.info("ebhook-timestamp: {}", webhookTimestamp);
+        log.info("userDetails: {}", userDetails);
 
         try {
             // 실제 비즈니스 로직은 서비스 계층에 위임합니다.
             //
-            paymentService.processWebhook(webhookId, webhookSignature, webhookTimestamp, payload);
+            paymentService.processWebhook(webhookId, webhookSignature, webhookTimestamp, payload, userDetails);
 
             return ResponseEntity.ok("Webhook processed successfully.");
 

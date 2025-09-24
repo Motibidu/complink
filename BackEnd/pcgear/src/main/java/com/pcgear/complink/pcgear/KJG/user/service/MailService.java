@@ -17,13 +17,13 @@ public class MailService {
 
     private final JavaMailSender javaMailSender;
     private final Map<String, String> verificationCodes = new ConcurrentHashMap<>();
-    private static final String senderEmail = "jungi77777@gmail.com";
+    private static final String senderEmail = "jack981109@gmail.com";
 
     // 인증 메일 발송
     public void sendVerificationMail(String mail) {
         log.info("인증 메일 발송 요청 시작. 수신자: {}", mail); // 1. 로그 추가
         String number = createNumber();
-        verificationCodes.put(mail, number); 
+        verificationCodes.put(mail, number);
 
         MimeMessage message = createMail(mail, number);
 
@@ -67,7 +67,7 @@ public class MailService {
         int num = (int) (Math.random() * 90000) + 100000; // 100000 ~ 189999
         return String.valueOf(num);
     }
-    
+
     // 메일 내용 생성
     private MimeMessage createMail(String mail, String number) {
         MimeMessage message = javaMailSender.createMimeMessage();

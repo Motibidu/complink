@@ -46,7 +46,7 @@ function SignUp() {
         
         try {
             // 4. 서버로 보낼 데이터에 reCAPTCHA 토큰을 포함시킴
-            const response = await axios.post('/api/signup', {
+            const response = await axios.post('/api/users/register', {
                  ...formData, 
                 recaptchaToken: recaptchaToken, // 서버로 토큰 전송
             });
@@ -92,7 +92,7 @@ function SignUp() {
                 {/* 5. ReCAPTCHA 컴포넌트 추가 */}
                 <div style={{ margin: '20px 0', display: 'flex', justifyContent: 'center' }}>
                     <ReCAPTCHA
-                        sitekey="6LdEUJYrAAAAAKyv4NfvYcWJcPAEMnZ6Gz4jCm87"
+                        sitekey="6LfEFNIrAAAAAClFR_7VR3Js_LBkerQdrbVNIlg9"
                         onChange={(token) => setRecaptchaToken(token)}
                         onExpired={() => setRecaptchaToken(null)}
                     />
