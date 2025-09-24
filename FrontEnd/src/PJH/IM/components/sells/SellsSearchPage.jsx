@@ -21,7 +21,7 @@ const SellsSearchPage = () => {
     setError(null);
     try {
       const response = await axios.get("/api/sells");
-      console.log(response.data);
+      console.log("response.data: ", response.data);
       setsells(response.data);
     } catch (err) {
       setError("판매 데이터를 불러오는 데 실패했습니다.");
