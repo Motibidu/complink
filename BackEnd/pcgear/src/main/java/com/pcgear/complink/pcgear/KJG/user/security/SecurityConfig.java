@@ -115,8 +115,8 @@ public class SecurityConfig {
                                                         response.getWriter()
                                                                         .write(authentication.getName() + "님, 환영합니다.");
                                                         // 로그인 성공 시, 프론트엔드 URL로 리다이렉션
-                                                        response.sendRedirect("http://localhost:5173/dashboard"); // 또는
-                                                                                                                  // "/"
+                                                        response.sendRedirect("http://15.165.161.150"); // 또는
+                                                                                                        // "/"
                                                 })
                                                 .failureHandler((request, response, exception) -> {
                                                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
