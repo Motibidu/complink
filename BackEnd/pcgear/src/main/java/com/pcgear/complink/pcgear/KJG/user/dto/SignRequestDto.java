@@ -1,6 +1,7 @@
 package com.pcgear.complink.pcgear.KJG.user.dto;
 
 import com.pcgear.complink.pcgear.KJG.user.entity.UserEntity;
+import com.pcgear.complink.pcgear.KJG.user.entity.UserRole;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -53,6 +54,7 @@ public class SignRequestDto {
 				.name(name)
 				.tel(tel)
 				.address(address)
+				.role(UserRole.USER)
 				.build();
 	}
 

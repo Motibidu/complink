@@ -18,6 +18,7 @@ import SellsEntryPage from "./PJH/IM/components/sells/SellsEntryPage";
 
 function App() {
   return (
+    <AuthProvider>
     <Layout>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -35,6 +36,7 @@ function App() {
         <Route path="/sells/search" element={<SellsSearchPage />} />
       </Routes>
     </Layout>
+    </AuthProvider>
   );
 }
 

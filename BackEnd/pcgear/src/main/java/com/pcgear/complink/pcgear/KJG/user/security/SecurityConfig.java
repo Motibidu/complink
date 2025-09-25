@@ -59,9 +59,9 @@ public class SecurityConfig {
                                                 // 실제 로그인 폼 제출 처리 URL: /login-process (POST)
                                                 // OAuth2 로그인 시작 URL: /oauth2/authorization/{provider}
                                                 // OAuth2 콜백 URL: /login/oauth2/code/{provider}
+                                                .requestMatchers("/login-process").permitAll()
                                                 .requestMatchers(
-                                                                new AntPathRequestMatcher("/login-process"), // 폼 로그인
-                                                                                                             // POST 처리
+                                                                // POST 처리
                                                                 new AntPathRequestMatcher("/logout"), // 로그아웃 POST/GET
                                                                                                       // 처리
                                                                 new AntPathRequestMatcher("/oauth2/**"), // OAuth2 로그인
