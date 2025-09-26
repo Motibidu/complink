@@ -31,7 +31,7 @@ function Login() {
             // axios가 302 응답을 받으면 그 응답 헤더의 Location을 따라갑니다.
             // 따라서 여기서는 `response.status`로 성공 여부를 확인하기보다는,
             // 리다이렉션이 발생하여 페이지가 전환되었는지 여부를 확인하는 것이 더 적절할 수 있습니다.
-            const response = await axios.post('/api/login', formData, {
+            const response = await axios.post('/api/login-process', formData, {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 // maxRedirects를 설정하지 않거나 5로 설정하여 axios가 리다이렉션을 자동으로 따라가도록 합니다.
                 // maxRedirects: 5, // 기본값은 5입니다.

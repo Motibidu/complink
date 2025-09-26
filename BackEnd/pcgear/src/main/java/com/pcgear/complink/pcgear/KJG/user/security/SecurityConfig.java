@@ -109,7 +109,7 @@ public class SecurityConfig {
                                                 .anyRequest().authenticated())
                                 .formLogin(form -> form
                                                 .loginPage("/login")
-                                                .loginProcessingUrl("/login")
+                                                .loginProcessingUrl("/login-process")
                                                 .successHandler((request, response, authentication) -> {
                                                         response.setStatus(HttpServletResponse.SC_OK);
                                                         response.getWriter()
