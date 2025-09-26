@@ -21,7 +21,7 @@ function App() {
     <AuthProvider>
     <Layout>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<RegisterItemPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/find-id" element={<FindId />} />
