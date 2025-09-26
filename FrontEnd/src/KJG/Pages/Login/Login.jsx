@@ -62,7 +62,7 @@ function Login() {
             setTimeout(() => {
                 // Spring Security의 successHandler가 이미 리다이렉트 URL을 보냈으므로,
                 // 이 URL은 백엔드의 `SecurityConfig.java`에 설정된 URL과 일치해야 합니다.
-                window.location.href = '/dashboard'; // 또는 백엔드에서 설정한 리다이렉트 최종 경로
+                window.location.href = '/'; // 또는 백엔드에서 설정한 리다이렉트 최종 경로
             }, 100); // 1초는 길 수 있으니 0.1초로 줄입니다.
 
         } catch (error) {
