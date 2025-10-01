@@ -29,96 +29,29 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 // 1. **가장 먼저 permitAll() 해야 할 정적 리소스 및 SPA 진입점 (index.html)**
                                                 // AntPathRequestMatcher 사용으로 좀 더 명확하게 패턴 매칭
+                                                .requestMatchers("/").permitAll()
+
                                                 .requestMatchers(
-                                                                new AntPathRequestMatcher("/"), // 루트 경로
-                                                                new AntPathRequestMatcher("/index.html"), // SPA의 기본 진입점
-                                                                new AntPathRequestMatcher("/*.js"), // JS 파일
-                                                                new AntPathRequestMatcher("/*.json"), // JSON 파일 (예:
-                                                                                                      // manifest.json)
-                                                                new AntPathRequestMatcher("/*.ico"), // favicon.ico
-                                                                new AntPathRequestMatcher("/*.css"), // CSS 파일
-                                                                new AntPathRequestMatcher("/static/**"), // 정적 리소스 (CRA
-                                                                                                         // 스타일)
-                                                                new AntPathRequestMatcher("/assets/**"), // **Vite 빌드
-                                                                                                         // 결과물 (가장
-                                                                                                         // 중요)**
-                                                                new AntPathRequestMatcher("/manifest.json"),
-                                                                new AntPathRequestMatcher("/logo*.*"),
-                                                                new AntPathRequestMatcher("/favicon.ico"))
+                                                                "/users/**",
+                                                                "/email-verifications/**")
                                                 .permitAll()
 
-                                                // 2. **백엔드에서 처리하지만 인증이 필요 없는 API 경로**
                                                 .requestMatchers(
-                                                                new AntPathRequestMatcher("/users/**"), // 사용자 관련 비인증
-                                                                                                        // API (ex:
-                                                                                                        // 회원가입, 이메일 인증)
-                                                                new AntPathRequestMatcher("/email-verifications/**"))
+                                                                "/login",
+                                                                "/login-process",
+                                                                "/logout")
                                                 .permitAll()
 
-                                                // 3. **Spring Security의 인증/인가 로직에서 제외되어야 할 경로**
-                                                // 실제 로그인 폼 제출 처리 URL: /login-process (POST)
-                                                // OAuth2 로그인 시작 URL: /oauth2/authorization/{provider}
-                                                // OAuth2 콜백 URL: /login/oauth2/code/{provider}
-                                                .requestMatchers("/login-process").permitAll()
-                                                .requestMatchers(
-                                                                // POST 처리
-                                                                new AntPathRequestMatcher("/logout"), // 로그아웃 POST/GET
-                                                                                                      // 처리
-                                                                new AntPathRequestMatcher("/oauth2/**"), // OAuth2 로그인
-                                                                                                         // 시작
-                                                                new AntPathRequestMatcher("/login/oauth2/code/**") // OAuth2
-                                                                                                                   // 콜백
-                                                ).permitAll()
-                                                .requestMatchers(
-                                                                new AntPathRequestMatcher("/login"), // React 라우터의
-                                                                                                     // /login 경로
-                                                                new AntPathRequestMatcher("/signup"),
-                                                                new AntPathRequestMatcher("/items"), // 이전에 에러가 났던
-                                                                                                     // /items
-                                                                // ... 여기에 React 라우터가 처리하는 모든 최상위 경로를 추가
-
-                                                                // 더 일반적인 SPA 클라이언트 라우팅 처리:
-                                                                // /api/로 시작하지 않는 모든 경로 (단일 경로 세그먼트)를 permitAll
-                                                                new AntPathRequestMatcher("/{path:[^\\.]*}"), // 예:
-                                                                                                              // /test,
-                                                                                                              // /my-page
-                                                                                                              // (파일 확장자
-                                                                                                              // 없는 경로)
-                                                                // /api/로 시작하지 않는 모든 경로 (다중 경로 세그먼트)를 permitAll
-                                                                // 이 패턴은 `/api/`로 시작하는 실제 백엔드 API와 충돌하지 않도록 주의해야 합니다.
-                                                                new AntPathRequestMatcher("/{path:^(?!api$).*$}/**") // 예:
-                                                                                                                     // /my-page/sub-page
-                                                ).permitAll()
-
-                                                // 5. **기타 permitAll()이 필요한 경로**
-                                                .requestMatchers(
-                                                                new AntPathRequestMatcher("/swagger-ui/**"),
-                                                                new AntPathRequestMatcher("/v3/api-docs/**"),
-                                                                new AntPathRequestMatcher("/swagger-resources/**"))
-                                                .permitAll() // Swagger
-                                                .requestMatchers(
-                                                                new AntPathRequestMatcher("/topic/**"),
-                                                                new AntPathRequestMatcher("/ws/**"))
-                                                .permitAll() // WebSocket
-                                                .requestMatchers(
-                                                                new AntPathRequestMatcher("/error"))
-                                                .permitAll() // 에러 페이지는 인증 없이 접근 가능
-
-                                                // 6. **나머지 모든 요청 (주로 백엔드 API)은 인증 필요**
-                                                // 이 규칙은 항상 맨 마지막에 와야 합니다.
+                                                .requestMatchers("/swagger-ui/**",
+                                                                "/v3/api-docs/**",
+                                                                "/swagger-resources/**")
+                                                .permitAll()
                                                 .anyRequest().authenticated())
                                 .formLogin(form -> form
-                                                .loginPage("/login")
-                                                .loginProcessingUrl("/login-process")
-                                                .successHandler((request, response, authentication) -> {
-                                                        response.setStatus(HttpServletResponse.SC_OK);
-                                                        response.getWriter()
-                                                                        .write(authentication.getName() + "님, 환영합니다.");
-
-                                                })
-                                                .failureHandler((request, response, exception) -> {
+                                                .loginProcessingUrl("/login-process"))
+                                .exceptionHandling(exceptionHandling -> exceptionHandling
+                                                .authenticationEntryPoint((request, response, authException) -> {
                                                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                                                        response.getWriter().write("로그인 실패: " + exception.getMessage());
                                                 }))
                                 // .oauth2Login(oauth2 -> oauth2
                                 // .loginPage("/login")

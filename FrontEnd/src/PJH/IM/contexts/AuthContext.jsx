@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
+import axios from "axios";
 
 // 1. Context 객체 생성
 const AuthContext = createContext();
@@ -12,25 +13,19 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   // 로그인 상태를 저장할 state (기본값은 false)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchIsLoggedIn = async () => {
       try {
-        const response = await fetch("/api/users/isLoggedIn", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setIsLoggedIn(data.isLoggedIn);
-        } else {
-          setIsLoggedIn(false);
-        }
+        const response = await axios.get("/api/users/isLoggedIn");
+        setIsLoggedIn(response.data.isLoggedIn);
+
       } catch (err) {
-        console.log("에러 발생:", err);
+        console.log("로그인 상태 확인 에러:", err);
         setIsLoggedIn(false);
+      } finally {
+        setLoading(false); // 요청 완료 후 로딩 상태 변경
       }
     };
     fetchIsLoggedIn();
