@@ -26,9 +26,10 @@ public class SecurityConfig {
                 http
                                 .csrf(csrf -> csrf.disable())
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .formLogin(form -> form.successHandler((request, response, authentication) -> {
+                                        response.setStatus(HttpServletResponse.SC_OK);
+                                }))
                                 .authorizeHttpRequests(auth -> auth
-                                                // 1. **가장 먼저 permitAll() 해야 할 정적 리소스 및 SPA 진입점 (index.html)**
-                                                // AntPathRequestMatcher 사용으로 좀 더 명확하게 패턴 매칭
                                                 .requestMatchers("/").permitAll()
 
                                                 .requestMatchers(
@@ -47,8 +48,6 @@ public class SecurityConfig {
                                                                 "/swagger-resources/**")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
-                                .formLogin(form -> form
-                                                .loginProcessingUrl("/login-process"))
                                 .exceptionHandling(exceptionHandling -> exceptionHandling
                                                 .authenticationEntryPoint((request, response, authException) -> {
                                                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

@@ -22,11 +22,11 @@ public class SignRequestDto {
 
 	@Schema(description = "사용자 아이디", example = "testuser")
 	@NotBlank(message = "아이디를 입력해 주세요.")
-	@Size(min = 8, max = 12, message = "아이디를 8자이상 12자이하로 입력해주세요.")
+	@Size(min = 3, max = 12, message = "아이디를 8자이상 12자이하로 입력해주세요.")
 	private String username;
 
 	@NotBlank(message = "비밀번호를 입력해 주세요.")
-	@Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*?_]).{8,16}$", message = "비밀번호는 영문, 숫자 , 특수문자가 포함되어야 합니다.")
+	@Pattern(regexp = "^\\d{3}$", message = "비밀번호는 3자리 숫자여야 합니다.")
 	@Schema(description = "사용자 비밀번호", example = "P@ssword1")
 	private String password;
 
