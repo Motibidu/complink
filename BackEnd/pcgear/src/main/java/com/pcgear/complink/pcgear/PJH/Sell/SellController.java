@@ -23,11 +23,11 @@ public class SellController {
 
     private final SellService sellService;
 
-    @PostMapping
-    public ResponseEntity<Sell> createSell(@RequestBody Sell sell) {
-        Sell createdSell = sellService.createSell(sell);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdSell);
-    }
+    // @PostMapping
+    // public ResponseEntity<Sell> createSell(@RequestBody Sell sell) {
+    // Sell createdSell = sellService.createSell(sell);
+    // return ResponseEntity.status(HttpStatus.CREATED).body(createdSell);
+    // }
 
     @GetMapping
     public ResponseEntity<List<Sell>> readSells() {

@@ -1,10 +1,12 @@
 package com.pcgear.complink.pcgear.PJH.Sell;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
 import com.pcgear.complink.pcgear.PJH.Order.model.Order;
+import com.pcgear.complink.pcgear.PJH.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.PJH.Order.repository.OrderRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -18,24 +20,42 @@ public class SellService {
         private final SellRepository sellRepository;
         private final OrderRepository orderRepository;
 
-        public Sell createSell(Sell sell) {
-                Long orderId = sell.getOrderId();
-
+        public Sell createSellAndUpdateToPaid(Integer orderId) {
                 Order order = orderRepository.findById(orderId)
                                 .orElseThrow(() -> new EntityNotFoundException("해당 ID의 주문서를 찾을 수 없습니다: " + orderId));
 
-                // 3. 찾아온 주문서 객체의 상태를 '처리중'으로 변경합니다.
-                order.setStatus("처리중");
-
-                // 4. 변경된 주문서 상태를 데이터베이스에 저장(업데이트)합니다.
-                // (@Transactional에 의해 메소드 종료 시 자동 반영되지만, 명시적으로 save 호출 가능)
+                order.setOrderStatus(OrderStatus.PAID);
                 orderRepository.save(order);
 
-                return sellRepository.save(sell);
+                Sell newSell = mapOrderToSell(order);
+
+                return sellRepository.save(newSell);
         }
 
         public List<Sell> readSells() {
                 return sellRepository.findAll();
+        }
+
+        private Sell mapOrderToSell(Order order) {
+                return Sell.builder()
+                                .orderId(order.getOrderId())
+
+                                // 고객 및 담당자 ID/Name
+                                .customerId(order.getCustomer().getCustomerId())
+                                .customerName(order.getCustomer().getCustomerName())
+                                .managerId(order.getManager().getManagerId())
+                                .managerName(order.getManager().getManagerName())
+
+                                // 금액 정보 (Integer로 형 변환)
+                                .totalAmount(order.getTotalAmount())
+                                .vatAmount(order.getVatAmount())
+                                .grandAmount(order.getGrandAmount())
+
+                                // 판매 관련 고유 값 설정
+                                .sellDate(LocalDateTime.now()) // 판매가 완료된 시점 (현재 시간)
+                                .memo(null) // 초기 메모는 비워둠
+
+                                .build();
         }
 
 }

@@ -1,5 +1,6 @@
 package com.pcgear.complink.pcgear.PJH.Sell;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.CreatedDate;
@@ -11,7 +12,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -19,6 +23,9 @@ import lombok.ToString;
 @Setter
 @ToString
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "sells")
 @EntityListeners(AuditingEntityListener.class)
 public class Sell {
@@ -29,7 +36,7 @@ public class Sell {
 
         private LocalDateTime sellDate;
 
-        private Long orderId;
+        private Integer orderId;
 
         private String customerId;
 
@@ -39,13 +46,11 @@ public class Sell {
 
         private String managerName;
 
-        private Integer totalAmount;
+        private BigDecimal totalAmount;
 
-        private Integer vatAmount;
+        private BigDecimal vatAmount;
 
-        private Integer grandAmount;
-
-        private String paymentStatus;
+        private BigDecimal grandAmount;
 
         private String memo;
 
