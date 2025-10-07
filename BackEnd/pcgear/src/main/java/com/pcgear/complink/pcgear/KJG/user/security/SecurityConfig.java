@@ -31,6 +31,7 @@ public class SecurityConfig {
                                 }))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/").permitAll()
+                                                .requestMatchers("/payment/webhook/verify/paymentLink").permitAll()
 
                                                 .requestMatchers(
                                                                 "/users/**",

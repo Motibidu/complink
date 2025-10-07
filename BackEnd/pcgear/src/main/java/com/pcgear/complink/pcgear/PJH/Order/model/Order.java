@@ -12,6 +12,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.pcgear.complink.pcgear.PJH.Customer.Customer;
 import com.pcgear.complink.pcgear.PJH.Manager.Manager;
+import com.pcgear.complink.pcgear.PJH.Payment.model.PaymentStatus;
+import com.pcgear.complink.pcgear.PJH.Payment.model.PaymentStatusConverter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -42,6 +44,12 @@ public class Order {
     @JoinColumn(name = "manager_id")
     private Manager manager;
 
+    private String paymentLink;
+
+    private String merchantUid;
+
+    private String impUid;
+
     private LocalDate deliveryDate;
 
     @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
@@ -52,9 +60,7 @@ public class Order {
 
     @Column(name = "grand_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal grandAmount;
-
-    @Column(nullable = false)
-    private String status;
+    private OrderStatus orderStatus;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

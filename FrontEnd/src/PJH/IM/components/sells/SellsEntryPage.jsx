@@ -13,7 +13,7 @@ function SellsEntryPage() {
     setIsLoading(true);
     try {
       // API 엔드포인트는 실제 환경에 맞게 수정해야 합니다.
-      const response = await axios.get("/api/orders?status=접수");
+      const response = await axios.get("/api/orders?orderStatus=PAID");
       setPendingOrders(response.data);
     } catch (error) {
       console.error("주문서 목록을 불러오는 데 실패했습니다.", error);

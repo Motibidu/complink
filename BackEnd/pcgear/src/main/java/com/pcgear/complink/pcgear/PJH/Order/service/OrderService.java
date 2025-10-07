@@ -9,7 +9,10 @@ import com.pcgear.complink.pcgear.PJH.Order.model.Order;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderItem;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderRequestDto;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderResponseDto;
+import com.pcgear.complink.pcgear.PJH.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.PJH.Order.repository.OrderRepository;
+import com.pcgear.complink.pcgear.PJH.Payment.PaymentLinkService;
+import com.pcgear.complink.pcgear.PJH.Payment.model.PaymentStatus;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -30,20 +33,18 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ManagerRepository managerRepository;
     private final CustomerRepository customerRepository;
+    private final PaymentLinkService paymentLinkService;
 
     private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public Order createOrder(OrderRequestDto requestDto) {
-        // 1. ID를 사용하여 User와 Customer 엔티티를 조회합니다.
-        // FIXED: 중괄호와 return을 생략하여 예외 객체를 올바르게 반환합니다.
         log.info("requestDto: {}", requestDto);
         Customer customer = customerRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("거래처 정보를 찾을 수 없습니다. ID: " + requestDto.getCustomerId()));
 
         Manager manager = null;
         if (requestDto.getManagerName() != null) {
-            // FIXED: 여기도 마찬가지로 수정합니다.
             manager = managerRepository.findById(requestDto.getManagerId())
                     .orElseThrow(
                             () -> new EntityNotFoundException("담당자 정보를 찾을 수 없습니다. ID: " + requestDto.getManagerId()));
@@ -53,7 +54,7 @@ public class OrderService {
         Order order = new Order();
         order.setOrderDate(requestDto.getOrderDate());
         order.setDeliveryDate(requestDto.getDeliveryDate());
-        order.setStatus(requestDto.getStatus());
+        order.setOrderStatus(OrderStatus.PENDING_PAYMENT);
 
         order.setCustomer(customer);
         order.setManager(manager);
@@ -61,6 +62,19 @@ public class OrderService {
         order.setTotalAmount(requestDto.getTotalAmount());
         order.setVatAmount(requestDto.getVatAmount());
         order.setGrandAmount(requestDto.getGrandAmount());
+
+        try {
+            String merchantUid = "orderId:" + orderRepository.count();
+            String paymentLink = paymentLinkService.createPaymentLink(
+                    merchantUid,
+                    requestDto.getGrandAmount().intValue(),
+                    customer.getCustomerName() + "님의 주문",
+                    customer.getPhoneNumber());
+            order.setPaymentLink(paymentLink);
+            order.setMerchantUid(merchantUid);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("주문 생성 중 결제 링크 생성 실패: " + e.getMessage(), e);
+        }
 
         // 3. 주문 아이템 리스트 변환 및 추가
         for (OrderRequestDto.OrderItemDto itemDto : requestDto.getItems()) {
@@ -89,13 +103,22 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    public void deleteOrder(Long orderId) {
+    public void deleteOrder(Integer orderId) {
         orderRepository.deleteById(orderId);
     }
 
-    public List<OrderResponseDto> findOrdersByStatus(String status) {
-        return orderRepository.findByStatus(status).stream()
+    public List<OrderResponseDto> findByOrderStatus(OrderStatus orderStatus) {
+        return orderRepository.findByOrderStatus(orderStatus).stream()
                 .map(OrderResponseDto::new)
                 .collect(Collectors.toList());
+    }
+
+    public Order updateOrderStatus(Integer orderId, OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(
+                        () -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
+
+        order.setOrderStatus(newStatus);
+        return orderRepository.save(order);
     }
 }

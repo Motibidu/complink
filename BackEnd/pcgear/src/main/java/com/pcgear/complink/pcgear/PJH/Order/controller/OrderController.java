@@ -16,12 +16,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderRequestDto;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderResponseDto;
+import com.pcgear.complink.pcgear.PJH.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.PJH.Order.service.OrderService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 
 @Tag(name = "주문서 API", description = "주문서를 관리하는 API")
 @RestController
+@Slf4j
 @RequestMapping("/orders")
 public class OrderController {
 
@@ -32,7 +35,7 @@ public class OrderController {
     }
 
     @DeleteMapping("{orderId}")
-    public ResponseEntity deleteOrder(@PathVariable(name = "orderId") Long orderId) {
+    public ResponseEntity deleteOrder(@PathVariable(name = "orderId") Integer orderId) {
         orderService.deleteOrder(orderId);
         return ResponseEntity.noContent().build();
     }
@@ -45,12 +48,17 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<List<OrderResponseDto>> readOrders(
-            @RequestParam(name = "status", required = false) String status) {
-        if (status != null) {
-            // status 파라미터가 있다면 해당 상태의 주문만 조회
-            return ResponseEntity.ok(orderService.findOrdersByStatus(status));
+            @RequestParam(name = "orderStatus", required = false) String orderStatusParam) {
+        if (orderStatusParam != null && !orderStatusParam.trim().isEmpty()) {
+            try {
+                OrderStatus status = OrderStatus.fromNameIgnoreCase(orderStatusParam);
+
+                return ResponseEntity.ok(orderService.findByOrderStatus(status));
+            } catch (IllegalArgumentException e) {
+                log.warn("유효하지 않은 주문 상태 파라미터: {}", orderStatusParam);
+                return ResponseEntity.badRequest().body(null);
+            }
         } else {
-            // status 파라미터가 없다면 전체 주문 조회
             return ResponseEntity.ok(orderService.findAllOrders());
         }
     }

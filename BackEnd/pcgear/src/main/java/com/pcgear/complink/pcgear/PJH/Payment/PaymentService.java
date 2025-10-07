@@ -7,11 +7,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 // --- 필요한 클래스 Import ---
 import com.pcgear.complink.pcgear.KJG.user.entity.UserEntity;
 import com.pcgear.complink.pcgear.KJG.user.repository.UserRepository;
+import com.pcgear.complink.pcgear.PJH.Payment.model.AccessTokenResponse;
+import com.pcgear.complink.pcgear.PJH.Payment.model.SingleInquiryResponse;
+import com.pcgear.complink.pcgear.PJH.Payment.model.SubscriptionRequest;
 
 import io.portone.sdk.server.webhook.WebhookVerificationException;
 import io.portone.sdk.server.webhook.WebhookVerifier;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.math.BigDecimal;
@@ -27,11 +35,13 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PaymentService {
 
     // @Value("${portone.api.secret}")
@@ -40,19 +50,10 @@ public class PaymentService {
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
 
-    public PaymentService(UserRepository userRepository, PaymentRepository paymentRepository) {
-        this.userRepository = userRepository;
-        this.paymentRepository = paymentRepository;
-    }
-    // private final PaymentScheduleRepository paymentScheduleRepository; // 결제 예약
-    // 정보 저장을 위한 Repository
+    private static final String ACCESS_TOKEN_URI = "https://api.iamport.kr/users/getToken";
 
-    /**
-     * 프론트엔드로부터 빌링키를 받아 첫 결제 및 다음 회차 예약을 처리합니다.
-     * 
-     * @param request 프론트엔드에서 받은 billingKey와 주문 정보
-     * @param userId  현재 로그인된 사용자의 ID
-     */
+    private final WebClient webClient;
+
     @Transactional
     public void processSubscription(SubscriptionRequest request, String userId) {
         UserEntity user = userRepository.findByUsername(userId)
@@ -180,6 +181,27 @@ public class PaymentService {
         return new HttpEntity<>(body, headers);
     }
 
+    public String getAccessToken() {
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("imp_key", "4813120024707813");
+        requestBody.put("imp_secret",
+                "TXhW1M23idXFaD4LkF3Qyj7FrLQicFbs6A6naVLgj3WK3h2yostgXhpNaO1w3bPBstm6agBunAVn5dxL");
+
+        return webClient.post()
+                .uri(ACCESS_TOKEN_URI)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(AccessTokenResponse.class)
+                .map(response -> {
+                    if (response != null && response.getResponse() != null) {
+                        return response.getResponse().getAccessToken();
+                    }
+                    throw new RuntimeException("Failed to get access token: Response or response data is null.");
+                })
+                .block();
+    }
+
     // Customer 정보 Map 생성을 위한 헬퍼 메서드
     private Map<String, Object> createCustomerMap(UserEntity user) {
         return Map.of(
@@ -227,18 +249,28 @@ public class PaymentService {
 
         log.info("paymentDetail: {}", paymentDetail);
 
-        Object billingKeyValueObject = paymentDetail.get("billingKey");
-        String billingKey = null;
-        if (billingKeyValueObject != null) {
-            billingKey = (String) billingKeyValueObject;
-        }
-        UserEntity user = userRepository.findByUsername(userDetails.getUsername()).get();
+        // Object billingKeyValueObject = paymentDetail.get("billingKey");
+        // String billingKey = null;
+        // if (billingKeyValueObject != null) {
+        // billingKey = (String) billingKeyValueObject;
+        // }
+        // UserEntity user =
+        // userRepository.findByUsername(userDetails.getUsername()).get();
 
-        SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
-        subscriptionRequest.setAmount(1000);
-        subscriptionRequest.setOrderName("정기결제");
-        subscriptionRequest.setBillingKey(billingKey);
+        // SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
+        // subscriptionRequest.setAmount(1000);
+        // subscriptionRequest.setOrderName("정기결제");
+        // subscriptionRequest.setBillingKey(billingKey);
 
-        scheduleNextPayment(user, subscriptionRequest, 3000);
+        // scheduleNextPayment(user, subscriptionRequest, 3000);
+    }
+
+    public SingleInquiryResponse getSingleInquiry(String impUid, String accessToken) {
+        return webClient.get()
+                .uri("https://api.iamport.kr/payments/" + impUid)
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .bodyToMono(SingleInquiryResponse.class)
+                .block();
     }
 }

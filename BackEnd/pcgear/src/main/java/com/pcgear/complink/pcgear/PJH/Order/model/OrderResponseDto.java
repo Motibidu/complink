@@ -16,7 +16,8 @@ public class OrderResponseDto {
     private final Integer orderId;
     private final LocalDate orderDate;
     private final LocalDate deliveryDate;
-    private final String status;
+    private final String orderStatusDesc;
+    private final String paymentLink;
     private final BigDecimal totalAmount;
     private final BigDecimal vatAmount;
     private final BigDecimal grandAmount;
@@ -29,10 +30,11 @@ public class OrderResponseDto {
         this.orderId = order.getOrderId();
         this.orderDate = order.getOrderDate();
         this.deliveryDate = order.getDeliveryDate();
-        this.status = order.getStatus();
+        this.orderStatusDesc = order.getOrderStatus().getDescription();
         this.totalAmount = order.getTotalAmount();
         this.vatAmount = order.getVatAmount();
         this.grandAmount = order.getGrandAmount();
+        this.paymentLink = order.getPaymentLink();
 
         this.customer = new CustomerDto(order.getCustomer());
         if (order.getManager() != null) {

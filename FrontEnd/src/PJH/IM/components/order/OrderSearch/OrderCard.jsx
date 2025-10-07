@@ -5,7 +5,7 @@ import {
 } from "../../../utils/formatters";
 
 const OrderCard = ({ order, isSelected, onSelect }) => {
-  const badgeColors = getStatusBadgeVariant(order.status);
+  const badgeColors = getStatusBadgeVariant(order.orderStatusDesc);
 
   return (
     <a
@@ -30,7 +30,7 @@ const OrderCard = ({ order, isSelected, onSelect }) => {
         <span
           className={`badge rounded-pill ${badgeColors.bg} ${badgeColors.text}`}
         >
-          {order.status}
+          {order.orderStatusDesc}
         </span>
       </div>
 
