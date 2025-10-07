@@ -2,7 +2,6 @@ package com.pcgear.complink.pcgear.PJH.Order.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.pcgear.complink.pcgear.PJH.Payment.model.PaymentStatus;
 
 public enum OrderStatus {
         // 결제 관련 상태

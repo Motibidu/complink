@@ -12,8 +12,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.pcgear.complink.pcgear.PJH.Customer.Customer;
 import com.pcgear.complink.pcgear.PJH.Manager.Manager;
-import com.pcgear.complink.pcgear.PJH.Payment.model.PaymentStatus;
-import com.pcgear.complink.pcgear.PJH.Payment.model.PaymentStatusConverter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

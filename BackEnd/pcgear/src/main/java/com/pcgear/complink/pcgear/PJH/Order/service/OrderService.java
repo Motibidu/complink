@@ -12,7 +12,6 @@ import com.pcgear.complink.pcgear.PJH.Order.model.OrderResponseDto;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.PJH.Order.repository.OrderRepository;
 import com.pcgear.complink.pcgear.PJH.Payment.PaymentLinkService;
-import com.pcgear.complink.pcgear.PJH.Payment.model.PaymentStatus;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;

@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   // 로그인 상태를 저장할 state (기본값은 false)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  axios.defaults.withCredentials= true;
 
   useEffect(() => {
     const fetchIsLoggedIn = async () => {
@@ -48,6 +49,7 @@ export const AuthProvider = ({ children }) => {
     isLoggedIn,
     login,
     logout,
+    loading
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
