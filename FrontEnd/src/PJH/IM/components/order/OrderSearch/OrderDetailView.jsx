@@ -6,10 +6,31 @@ import {
 import axios from "axios";
 
 const OrderDetailView = ({ order, onDeleteOrder, onSubmit }) => {
-  const badgeColors = getStatusBadgeVariant(order.status);
+  const badgeColors = getStatusBadgeVariant(order.orderStatusDesc);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingLink, setIsSendingLink] = useState(false);
 
+  const handleSendLink = async () => {
+    setIsSendingLink(true);
+    const requestBody = {
+      orderId: order.orderId,
+      customerPhoneNumber: order.customer.phoneNumber,
+      paymentLink: order.paymentLink,
+      grandAmount: order.grandAmount,
+    };
+    try {
+      if (confirm("결제 링크를 문자로 전송하시겠습니까?")) {
+        await axios.post("/api/sms/send-one", requestBody);
+        alert("결제 링크가 성공적으로 전송되었습니다.");
+      }
+    } catch (error) {
+      alert("결제 링크 전송 중 오류가 발생했습니다.");
+      console.error("Link sending error:", error);
+    } finally {
+      setIsSendingLink(false);
+    }
+  };
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
@@ -30,7 +51,7 @@ const OrderDetailView = ({ order, onDeleteOrder, onSubmit }) => {
         <span
           className={`badge fs-6 rounded-pill ${badgeColors.bg} ${badgeColors.text}`}
         >
-          {order.status}
+          {order.orderStatusDesc}
         </span>
         {onDeleteOrder ? (
           <div className="ms-auto d-flex gap-2">
@@ -60,11 +81,42 @@ const OrderDetailView = ({ order, onDeleteOrder, onSubmit }) => {
             {order.manager.managerName} ({order.manager.managerPhoneNumber})
           </p>
         </div>
-        <div className="col-12">
+        <div className="col-md-6">
           <p className="order-detail-view__info-label">주소</p>
           <p className="order-detail-view__info-value">
             {order.customer.customerAddress}
           </p>
+        </div>
+        <div className="col-md-6">
+          <p className="order-detail-view__info-label">결제 링크</p>
+          {order.paymentLink ? (
+            <div className="input-group">
+              <a
+                className="form-control text-truncate"
+                style={{
+                  backgroundColor: "#e9ecef",
+                  textDecoration: "none",
+                  color: "#495057",
+                }}
+              >
+                {order.paymentLink}
+              </a>
+              {
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  onClick={handleSendLink}
+                  disabled={isSendingLink}
+                >
+                  {isSendingLink ? "전송 중..." : "문자 전송"}
+                </button>
+              }
+            </div>
+          ) : (
+            <p className="order-detail-view__info-value text-muted">
+              생성된 링크가 없습니다.
+            </p>
+          )}
         </div>
         <div className="col-md-6">
           <p className="order-detail-view__info-label">주문일</p>

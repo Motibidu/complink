@@ -44,6 +44,7 @@ dependencies {
 	implementation 'io.portone:server-sdk:0.1.0'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
+	implementation 'net.nurigo:sdk:4.3.2'
 	
 }
 
