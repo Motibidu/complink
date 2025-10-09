@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum OrderStatus {
         // 결제 관련 상태
-        PENDING_PAYMENT(0, "결제 대기"), // 주문 생성 후 아직 결제되지 않음 (가상계좌 발급 대기 등)
-        PAYMENT_READY(1, "결제 준비"), // 가상계좌 발급 등 결제를 위한 정보가 제공된 상태
+        ORDER_RECEIVED(0, "주문 접수"), // 주문 생성 후 아직 결제되지 않음 (가상계좌 발급 대기 등)
+        PAYMENT_PENDING(1, "결제 대기"), // 가상계좌 발급 등 결제를 위한 정보가 제공된 상태
         PAID(2, "결제 완료"), // 결제 성공
         PAYMENT_FAILED(3, "결제 실패"), // 결제 실패
         REFUND_REQUESTED(4, "환불 요청"), // 환불 요청

@@ -39,7 +39,9 @@ public class SmsService {
                 SingleMessageSentResponse response = sendSms(toPhoneNumber, text);
 
                 log.info("SMS 발송 완료. Response: {}", response);
-                orderService.updateOrderStatus(sendOneRequest.getOrderId(), OrderStatus.PAYMENT_READY);
+                orderService.updateOrderStatus(sendOneRequest.getOrderId(), OrderStatus.PAYMENT_PENDING);
+
+                
         }
 
         private SingleMessageSentResponse sendSms(String to, String text) {

@@ -53,7 +53,7 @@ public class OrderService {
         Order order = new Order();
         order.setOrderDate(requestDto.getOrderDate());
         order.setDeliveryDate(requestDto.getDeliveryDate());
-        order.setOrderStatus(OrderStatus.PENDING_PAYMENT);
+        order.setOrderStatus(OrderStatus.ORDER_RECEIVED);
 
         order.setCustomer(customer);
         order.setManager(manager);
@@ -88,7 +88,6 @@ public class OrderService {
         }
 
         String message = "주문서가 성공적으로 생성되었습니다.";
-        // "/topic/notifications" 토픽을 구독하는 클라이언트에게 메시지를 보냄
         messagingTemplate.convertAndSend("/topic/notifications", message);
 
         // 4. Repository를 통해 DB에 저장
