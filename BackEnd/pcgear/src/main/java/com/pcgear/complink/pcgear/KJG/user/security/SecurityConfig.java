@@ -32,6 +32,7 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers("/").permitAll()
                                                 .requestMatchers("/payment/webhook/verify/paymentLink").permitAll()
+                                                .requestMatchers("/delivery/webhook").permitAll()
                                                 .requestMatchers("/users/isLoggedIn").authenticated()
 
                                                 .requestMatchers(

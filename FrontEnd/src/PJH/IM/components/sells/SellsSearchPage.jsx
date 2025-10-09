@@ -3,8 +3,9 @@ import axios from "axios";
 
 const SellsSearchPage = () => {
   const [sells, setsells] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
   // 필터링을 위한 state
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,12 +13,27 @@ const SellsSearchPage = () => {
     start: "",
     end: new Date().toISOString().slice(0, 10), // 오늘 날짜를 기본값으로 설정
   });
+  const [waybillReq, setWaybillReq] = useState({
+    orderId: "",
+    trackingNumber: "508368319105",
+    carrierId: "kr.cjlogistics",
+  });
 
   // 상세 조회를 위한 state
   const [selectedsell, setSelectedsell] = useState(null);
 
-  const fetchsells = useCallback(async () => {
-    setIsLoading(true);
+  const handleOpenWaybillModal = (sell) => {
+		// 선택된 주문의 orderId를 설정하고 운송장 정보는 초기화 (새로 입력해야 하므로)
+		setWaybillReq({
+			orderId: sell.orderId,
+			trackingNumber: waybillReq.trackingNumber,
+			carrierId: waybillReq.carrierId,
+		});
+		setMessage({ type: "", text: "" }); // 메시지 초기화
+	};
+
+  const fetchSells = useCallback(async () => {
+    setLoading(true);
     setError(null);
     try {
       const response = await axios.get("/api/sells");
@@ -27,22 +43,22 @@ const SellsSearchPage = () => {
       setError("판매 데이터를 불러오는 데 실패했습니다.");
       console.error(err);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchsells();
-  }, [fetchsells]);
+    fetchSells();
+  }, [fetchSells]);
 
   // 검색어와 날짜 범위에 따라 데이터를 필터링 (useMemo로 성능 최적화)
   const filteredsells = useMemo(() => {
     return sells.filter((sell) => {
       // sellDate는 그대로 둡니다.
       const sellDate = new Date(sell.sellDate);
-      
+
       const startDate = dateRange.start ? new Date(dateRange.start) : null;
-      
+
       // 👇 endDate를 설정할 때, 그날의 가장 마지막 시간으로 설정합니다.
       let endDate = null;
       if (dateRange.end) {
@@ -55,7 +71,7 @@ const SellsSearchPage = () => {
       if (endDate && sellDate > endDate) return false;
 
       const lowercasedSearchTerm = searchTerm.toLowerCase();
-      
+
       return (
         sell.customerName?.toLowerCase().includes(lowercasedSearchTerm) ||
         sell.managerName?.toLowerCase().includes(lowercasedSearchTerm)
@@ -80,12 +96,53 @@ const SellsSearchPage = () => {
     const { name, value } = e.target;
     setDateRange((prev) => ({ ...prev, [name]: value }));
   };
-  
-  // 상세 조회 모달을 열기 위한 함수
+
   const handleViewDetails = (sell) => {
     setSelectedsell(sell);
   };
 
+  const handleWaybillFormChange = (e) => {
+    const { name, value } = e.target;
+    setWaybillReq((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
+  const handleWaybilReqSubmit = async (e) => {
+    e.preventDefault(); // 폼의 기본 새로고침 동작 방지
+
+    setLoading(true);
+
+    try {
+      console.log("waybillReq: ", waybillReq);
+      const response = await axios.post("/api/delivery/trackingNumber", waybillReq);
+      console.log("response: ", response);
+
+      if (response.status === 201 || response.status === 200) {
+        setWaybillReq({
+          trackingNumber: "",
+          carrierId: "",
+        });
+        const modalElement = document.getElementById("waybillReqModal");
+        const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+          modalInstance.hide();
+        }
+
+        fetchSells();
+
+        alert(response.data);
+        
+      }
+    } catch (error) {
+      const errorMsg =
+        error.response?.data?.message ||
+        "운송장 번호 등록 중 오류가 발생했습니다.";
+      setMessage({ type: "danger", text: errorMsg });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="container py-4">
@@ -135,15 +192,16 @@ const SellsSearchPage = () => {
           <thead>
             <tr>
               <th>판매일</th>
+              <th>주문번호</th>
               <th>판매번호</th>
-              <th>거래처명</th>
+              <th>고객명</th>
               <th>담당자명</th>
               <th className="text-end">합계 금액</th>
-              <th>결제 상태</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
+            {loading ? (
               <tr>
                 <td colSpan="6" className="text-center">
                   로딩 중...
@@ -151,9 +209,15 @@ const SellsSearchPage = () => {
               </tr>
             ) : filteredsells.length > 0 ? (
               filteredsells.map((sell) => (
-                <tr key={sell.sellId} onClick={() => handleViewDetails(sell)} data-bs-toggle="modal"
-                data-bs-target="#sellDetailModal" style={{ cursor: 'pointer' }}>
+                <tr
+                  key={sell.sellId}
+                  onClick={() => handleViewDetails(sell)}
+                  data-bs-toggle="modal"
+                  data-bs-target="#sellDetailModal"
+                  style={{ cursor: "pointer" }}
+                >
                   <td>{sell.sellDate.split("T")[0]}</td>
+                  <td>{sell.orderId}</td>
                   <td>{sell.sellId}</td>
                   <td>{sell.customerName}</td>
                   <td>{sell.managerName || "-"}</td>
@@ -161,7 +225,18 @@ const SellsSearchPage = () => {
                     {sell.grandAmount.toLocaleString()}원
                   </td>
                   <td>
-                    <span className="badge bg-success">{sell.paymentStatus}</span>
+                    <button
+											className="btn btn-sm btn-outline-info"
+											data-bs-target="#waybillReqModal"
+											data-bs-toggle="modal"
+											// 운송장 버튼 클릭 시 orderId를 설정하고 행 클릭 이벤트는 막습니다.
+											onClick={(e) => {
+												e.stopPropagation();
+												handleOpenWaybillModal(sell);
+											}}
+										>
+											[운송장번호 입력/ 배송추적]
+										</button>
                   </td>
                 </tr>
               ))
@@ -178,42 +253,169 @@ const SellsSearchPage = () => {
               <td colSpan="4" className="text-end">
                 조회된 합계
               </td>
-              <td className="text-end">{totals.grandAmount.toLocaleString()}원</td>
+              <td className="text-end">
+                {totals.grandAmount.toLocaleString()}원
+              </td>
               <td></td>
             </tr>
           </tfoot>
         </table>
       </div>
-       {/* 상세 조회 모달 */}
-       <div className="modal fade" id="sellDetailModal" tabIndex="-1" aria-labelledby="sellDetailModalLabel" aria-hidden="true">
+      <div className="modal fade" id="waybillReqModal" tabIndex="-1">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <form onSubmit={handleWaybilReqSubmit}>
+              <div className="modal-header">
+                <h5 className="modal-title" id="sellDetailModalLabel">
+                  운송장 번호/ 택배사 코드 입력
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                 <div className="col-md-12 mb-4">
+                  <label htmlFor="orderId" className="form-label">
+                    주문Id <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="orderId"
+                    name="orderId"
+                    value={waybillReq.orderId}
+                    readOnly
+                    required
+                  />
+                </div>
+                <div className="col-md-12 mb-4">
+                  <label htmlFor="wailbillNumber" className="form-label">
+                    운송장번호 <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="trackingNumber"
+                    name="trackingNumber"
+                    value={waybillReq.trackingNumber}
+                    onChange={handleWaybillFormChange}
+                    required
+                  />
+                </div>
+
+                <div className="col-md-12">
+                  <label htmlFor="carrierId" className="form-label">
+                    택배사코드
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="carrierId"
+                    name="carrierId"
+                    value={waybillReq.carrierId}
+                    onChange={handleWaybillFormChange}
+                    required
+                  />
+                </div>
+                {message.text && (
+                  <div
+                    className={`alert alert-${message.type} mt-4`}
+                    role="alert"
+                  >
+                    {message.text}
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  닫기
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  저장하기
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div
+        className="modal fade"
+        id="sellDetailModal"
+        tabIndex="-1"
+        aria-labelledby="sellDetailModalLabel"
+        aria-hidden="true"
+      >
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title" id="sellDetailModalLabel">
                 판매 상세 정보 (판매번호: {selectedsell?.sellId})
               </h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
             </div>
             <div className="modal-body">
               {selectedsell ? (
                 <div>
-                  <p><strong>판매일:</strong> {selectedsell.sellDate.split("T")[0]}</p>
-                  <p><strong>거래처:</strong> {selectedsell.customerName} ({selectedsell.customerId})</p>
-                  <p><strong>담당자:</strong> {selectedsell.managerName || "미지정"}</p>
+                  <p>
+                    <strong>판매일:</strong>{" "}
+                    {selectedsell.sellDate.split("T")[0]}
+                  </p>
+                  <p>
+                    <strong>거래처:</strong> {selectedsell.customerName} (
+                    {selectedsell.customerId})
+                  </p>
+                  <p>
+                    <strong>담당자:</strong>{" "}
+                    {selectedsell.managerName || "미지정"}
+                  </p>
                   <hr />
-                  <p><strong>공급가액:</strong> {selectedsell.totalAmount.toLocaleString()}원</p>
-                  <p><strong>부가세:</strong> {selectedsell.vatAmount.toLocaleString()}원</p>
-                  <p><strong>총 합계:</strong> {selectedsell.grandAmount.toLocaleString()}원</p>
-                  <p><strong>결제 상태:</strong> {selectedsell.paymentStatus}</p>
-                  <p><strong>원본 주문번호:</strong> {selectedsell.orderId}</p>
-                  <p><strong>메모:</strong> {selectedsell.memo || "없음"}</p>
+                  <p>
+                    <strong>공급가액:</strong>{" "}
+                    {selectedsell.totalAmount.toLocaleString()}원
+                  </p>
+                  <p>
+                    <strong>부가세:</strong>{" "}
+                    {selectedsell.vatAmount.toLocaleString()}원
+                  </p>
+                  <p>
+                    <strong>총 합계:</strong>{" "}
+                    {selectedsell.grandAmount.toLocaleString()}원
+                  </p>
+                  <p>
+                    <strong>결제 상태:</strong> {selectedsell.paymentStatus}
+                  </p>
+                  <p>
+                    <strong>원본 주문번호:</strong> {selectedsell.orderId}
+                  </p>
+                  <p>
+                    <strong>메모:</strong> {selectedsell.memo || "없음"}
+                  </p>
                 </div>
               ) : (
                 <p>상세 정보를 불러올 수 없습니다.</p>
               )}
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                닫기
+              </button>
             </div>
           </div>
         </div>
