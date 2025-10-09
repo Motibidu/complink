@@ -177,7 +177,7 @@ const OrderForm = () => {
           handleAddItem={handleAddItem}
           handleRemoveItem={handleRemoveItem}
         />
-        <NotificationComponent />
+        
 
         {/* 에러 메시지 표시 영역 */}
         {error && <div className="order-form__error-message">{error}</div>}

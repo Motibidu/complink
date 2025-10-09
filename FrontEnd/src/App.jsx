@@ -16,10 +16,12 @@ import InventoryStatus from "./PJH/IM/components/Inventory/InventoryStatus";
 import ProtectedRoute from "./PJH/IM/components/ProtectedRoute";
 import SellsSearchPage from "./PJH/IM/components/sells/SellsSearchPage";
 import SellsEntryPage from "./PJH/IM/components/sells/SellsEntryPage";
+import NotificationComponent from "./PJH/IM/components/NotificationComponent";
 
 function App() {
   return (
     <AuthProvider>
+      <NotificationComponent />
       <Layout>
         <Routes>
           {/* 공개 라우트 */}

@@ -57,23 +57,31 @@ const NotificationComponent = () => {
   // 알림 메시지가 있을 경우 화면에 표시
   return (
     <div>
-      {notification && (
-        <div
-          style={{
-            position: "fixed",
-            top: "20px",
-            right: "20px",
-            backgroundColor: "#4CAF50",
-            color: "white",
-            padding: "15px",
-            borderRadius: "5px",
-            zIndex: 1000,
-          }}
-        >
-          {notification}
+            {notification && (
+                <div
+                    style={{
+                        position: "fixed",
+                        // ⭐️ 중앙 정렬을 위한 설정 ⭐️
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        // ⭐️ 가시성을 위한 디자인 변경 ⭐️
+                        backgroundColor: "#333", // 진한 배경색
+                        color: "white",
+                        padding: "20px 30px",
+                        borderRadius: "10px",
+                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)", // 그림자 추가
+                        fontSize: "1.2rem", // 글자 크기 키우기
+                        textAlign: "center",
+                        zIndex: 1000,
+                        // 최소 너비 지정으로 보기 좋게 만듦
+                        minWidth: "300px", 
+                    }}
+                >
+                    {notification}
+                </div>
+            )}
         </div>
-      )}
-    </div>
   );
 };
 

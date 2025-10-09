@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,6 +45,7 @@ public class PaymentController {
     private final PaymentLinkService paymentLinkService;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 프론트엔드로부터 빌링키와 주문 정보를 받아 구독 처리를 시작하는 API 엔드포인트입니다.
@@ -178,6 +180,9 @@ public class PaymentController {
                     orderRepository.save(order);
                     break;
             }
+
+            String message = "주문번호: " + order.getOrderId() + "번의 주문이 결제되었습니다. 판매조회에서 확인해주세요.";
+            messagingTemplate.convertAndSend("/topic/notifications", message);
 
             return ResponseEntity.ok("Webhook processed successfully.");
 
