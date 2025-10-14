@@ -13,8 +13,9 @@ const SellsSearchPage = () => {
     start: "",
     end: new Date().toISOString().slice(0, 10), // 오늘 날짜를 기본값으로 설정
   });
-  const [waybillReq, setWaybillReq] = useState({
+  const [TrackingNumberReq, setTrackingNumberReq] = useState({
     orderId: "",
+    customerId: "",
     trackingNumber: "508368319105",
     carrierId: "kr.cjlogistics",
   });
@@ -24,10 +25,11 @@ const SellsSearchPage = () => {
 
   const handleOpenWaybillModal = (sell) => {
 		// 선택된 주문의 orderId를 설정하고 운송장 정보는 초기화 (새로 입력해야 하므로)
-		setWaybillReq({
+		setTrackingNumberReq({
 			orderId: sell.orderId,
-			trackingNumber: waybillReq.trackingNumber,
-			carrierId: waybillReq.carrierId,
+      customerId: sell.customerId,
+			trackingNumber: TrackingNumberReq.trackingNumber,
+			carrierId: TrackingNumberReq.carrierId,
 		});
 		setMessage({ type: "", text: "" }); // 메시지 초기화
 	};
@@ -103,7 +105,7 @@ const SellsSearchPage = () => {
 
   const handleWaybillFormChange = (e) => {
     const { name, value } = e.target;
-    setWaybillReq((prevState) => ({
+    setTrackingNumberReq((prevState) => ({
       ...prevState,
       [name]: value,
     }));
@@ -114,12 +116,12 @@ const SellsSearchPage = () => {
     setLoading(true);
 
     try {
-      console.log("waybillReq: ", waybillReq);
-      const response = await axios.post("/api/delivery/trackingNumber", waybillReq);
+      console.log("waybillReq: ", TrackingNumberReq);
+      const response = await axios.post("/api/delivery/trackingNumber", TrackingNumberReq);
       console.log("response: ", response);
 
       if (response.status === 201 || response.status === 200) {
-        setWaybillReq({
+        setTrackingNumberReq({
           trackingNumber: "",
           carrierId: "",
         });
@@ -286,7 +288,7 @@ const SellsSearchPage = () => {
                     className="form-control"
                     id="orderId"
                     name="orderId"
-                    value={waybillReq.orderId}
+                    value={TrackingNumberReq.orderId}
                     readOnly
                     required
                   />
@@ -300,7 +302,7 @@ const SellsSearchPage = () => {
                     className="form-control"
                     id="trackingNumber"
                     name="trackingNumber"
-                    value={waybillReq.trackingNumber}
+                    value={TrackingNumberReq.trackingNumber}
                     onChange={handleWaybillFormChange}
                     required
                   />
@@ -315,7 +317,7 @@ const SellsSearchPage = () => {
                     className="form-control"
                     id="carrierId"
                     name="carrierId"
-                    value={waybillReq.carrierId}
+                    value={TrackingNumberReq.carrierId}
                     onChange={handleWaybillFormChange}
                     required
                   />

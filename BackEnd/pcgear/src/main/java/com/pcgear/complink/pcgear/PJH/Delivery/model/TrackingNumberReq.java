@@ -9,6 +9,7 @@ import lombok.ToString;
 @ToString
 public class TrackingNumberReq {
         private Integer orderId;
+        private String customerId;
         private String trackingNumber;
         private String carrierId;
 }

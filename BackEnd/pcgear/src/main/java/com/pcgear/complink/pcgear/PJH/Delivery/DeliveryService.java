@@ -5,21 +5,24 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-import org.hibernate.type.descriptor.DateTimeUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.pcgear.complink.pcgear.PJH.Customer.Customer;
+import com.pcgear.complink.pcgear.PJH.Customer.CustomerRepository;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.AccessTokenResp;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.Delivery;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.GraphQLRequest;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.RegisterWebhookResp;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.TrackingResponse;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.ValidationResult;
+
+import jakarta.persistence.EntityNotFoundException;
+
 import com.pcgear.complink.pcgear.PJH.Delivery.model.RegisterWebhookInput;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.TrackingNumberReq;
 
@@ -32,6 +35,8 @@ import reactor.core.publisher.Mono;
 @Service
 public class DeliveryService {
         private final WebClient webClient;
+        private final CustomerRepository customerRepository;
+        private final DeliveryRepository deliveryRepository;
         private static final String GRAPHQL_API_URL = "https://apis.tracker.delivery/graphql";
         private static final String TRACK_DELIVERY_QUERY = """
                                                     query Track(
@@ -191,12 +196,20 @@ public class DeliveryService {
                                                 }
                                         }
                                         // createDelivery();
-                                        // Delivery delivery = new Delivery();
-                                        // delivery.setCarrierId(trackingNumberReq.getCarrierId());
-                                        // delivery.setTrackingNumber(trackingNumberReq.getTrackingNumber());
-                                        // delivery.setOrderId(accessToken);
-                                        // //
-
+                                        Delivery delivery = new Delivery();
+                                        delivery.setCarrierId(trackingNumberReq.getCarrierId());
+                                        delivery.setTrackingNumber(trackingNumberReq.getTrackingNumber());
+                                        delivery.setOrderId(trackingNumberReq.getOrderId());
+                                        Customer customer = customerRepository
+                                                        .findById(trackingNumberReq.getCustomerId())
+                                                        .orElseThrow(() -> new EntityNotFoundException(
+                                                                        "해당 ID의 거래처를 찾을 수 없습니다." + trackingNumberReq
+                                                                                        .getCustomerId()));
+                                        delivery.setCustomerId(trackingNumberReq.getCustomerId());
+                                        delivery.setRecipientName(customer.getCustomerName());
+                                        delivery.setRecipientPhone(customer.getPhoneNumber());
+                                        delivery.setRecipientAddr(customer.getAddress());
+                                        deliveryRepository.save(delivery);
                                         return new ValidationResult(true, "배송 조회에 성공했습니다.");
                                 });
         }
