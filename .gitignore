@@ -1,2 +1,4 @@
+/.metadata/
+*.env
 mysql_data/*
-.env
+/FrontEnd/dist/

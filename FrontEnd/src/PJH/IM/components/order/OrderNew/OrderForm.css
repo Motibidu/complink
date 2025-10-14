@@ -1,0 +1,217 @@
+/* --- Order Form Block --- */
+.order-form {
+  max-width: 2000px;
+  margin: 40px auto;
+  padding: 30px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+.order-form__form h3 {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* --- Summary Element --- */
+.order-form__summary {
+  border-top: 2px solid #eee;
+  padding-top: 20px;
+  margin-top: 20px;
+}
+
+.order-form__summary-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.order-form__summary-item--total {
+  font-weight: bold;
+  font-size: 20px;
+  color: #007bff;
+}
+
+.order-form__summary-label {
+  color: #555;
+}
+
+.order-form__summary-value {
+  font-weight: bold;
+}
+
+/* --- Buttons Elements --- */
+.order-form__button {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 18px;
+  margin-top: 20px;
+}
+
+.order-form__button--submit {
+  background-color: #007bff;
+  color: white;
+}
+
+/* --- Order Header Block --- */
+.orderHeader {
+  margin-bottom: 30px;
+}
+
+.orderHeader__title {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.orderHeader__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.orderHeader__label {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  font-weight: bold;
+  color: #555;
+}
+
+.orderHeader__list {
+  cursor: pointer;
+}
+.orderHeader__list:hover {
+  /* CSS 변수에 정의된 연한 파란색 배경 추가 */
+  background-color: var(--custom-primary-light, #e7f1ff);
+
+  /* 아이콘 색상도 포인트 색으로 변경하여 가독성 확보 */
+  color: var(--custom-primary-dark, #0d6efd);
+
+  /* 배경을 원형으로 만들기 */
+  border-radius: 50%;
+
+  transition: all 0.2s ease-in-out;
+}
+
+.orderHeader__input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 5px;
+  width: auto;
+}
+
+/* --- Order Items Block --- */
+.order-items {
+  margin-bottom: 30px;
+}
+
+.order-items__title {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.order-items__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.order-items__table th {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+.order-items__table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.order-items__cell {
+  vertical-align: middle;
+  min-width: 80px;
+}
+
+.order-items__head {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.order-items__result {
+  background-color: #ececec;
+  font-weight: bold;
+}
+
+.order-items__input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: right;
+}
+.order-items__input-string {
+  width: 100%;
+  border: none;
+  font-size: 14px;
+  text-overflow: ellipsis;
+}
+
+.order-items__button {
+  background: none;
+  border: none;
+  padding: 3px 7px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: white;
+}
+
+.order-items__button--remove {
+  background-color: #f44336;
+}
+
+.order-items__button--add {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 15px;
+  margin-top: 10px;
+}
+
+.order-items__total {
+  font-weight: bold;
+  color: #333;
+}
+
+.cell-number {
+  text-align: right;
+}
+
+.cell-center {
+  text-align: center;
+}
+
+.col-category {
+  width: 13%;
+} /* 부품 종류 */
+.col-itemName {
+  width: 34%;
+} /* 상품명 (가장 넓게) */
+.col-quantity {
+  width: 8%;
+} /* 수량 (좁게) */
+.col-price {
+  width: 12%;
+} /* 단가, 공급가액, 부가세 */
+.col-delete {
+  width: 8%;
+}

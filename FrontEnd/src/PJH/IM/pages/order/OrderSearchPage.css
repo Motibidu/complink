@@ -1,0 +1,175 @@
+/* --- Global Styles & Custom Properties --- */
+:root {
+  --bs-body-font-family: "Pretendard", sans-serif;
+  --bs-body-bg: #f8f9fa;
+  --custom-card-bg: #ffffff;
+  --custom-border-color: #e9ecef;
+  --custom-text-muted: #6c757d;
+  --custom-text-dark: #212529;
+  --custom-primary-light: #e7f1ff;
+  --custom-primary-dark: #0d6efd;
+}
+
+body {
+  font-family: var(--bs-body-font-family);
+  background-color: var(--bs-body-bg);
+}
+
+/* --- App Layout --- */
+.app-container {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+@media (min-width: 992px) {
+  .app-container {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+}
+
+.app-header__title {
+  font-weight: 700;
+  color: var(--custom-text-dark);
+}
+
+/* --- Custom Card & Panel Styles --- */
+.custom-panel {
+  background-color: var(--custom-card-bg);
+  border: 1px solid var(--custom-border-color);
+  border-radius: 0.75rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.04);
+  height: 100%;
+}
+
+/* --- Order List Panel --- */
+.order-list-panel .form-control,
+.order-list-panel .form-select {
+  border-radius: 0.5rem;
+  border-color: var(--custom-border-color);
+}
+
+.order-list-panel__list {
+  height: calc(100vh - 280px); /* Adjust height as needed */
+  min-height: 400px;
+  overflow-y: auto;
+  /* CHANGED: Use padding and gap for spacing instead of margin on children */
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* --- Order Card (Updated for Readability) --- */
+.order-card {
+  /* CHANGED: Remove margin, the parent container now handles spacing */
+  border: 5px solid var(--custom-border-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+  /* ADDED: Ensure the card doesn't shrink */
+  flex-shrink: 0;
+}
+
+.order-card:hover {
+  background-color: #f8f9fa;
+  border-color: #d1d5db;
+}
+
+.order-card.active {
+  background-color: var(--custom-primary-light);
+  border-color: var(--custom-primary-dark);
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25); /* Add a focus ring effect */
+}
+
+.order-card .badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3em 0.6em;
+}
+
+.order-card__customer-name {
+  font-weight: 600;
+  font-size: 1.05rem; /* Main identifier */
+  color: var(--custom-text-dark);
+}
+
+.order-card.active .order-card__customer-name {
+  color: var(--custom-text-dark);
+}
+
+.order-card__meta {
+  font-size: 0.85rem; /* Consistent meta text size */
+  color: var(--custom-text-muted);
+}
+
+.order-card.active .order-card__meta {
+  color: var(--custom-text-dark);
+  opacity: 0.8;
+}
+
+.order-card .border-top {
+  border-top-color: var(--custom-border-color) !important;
+}
+
+.order-card.active .border-top {
+  border-top-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.order-card__total {
+  font-size: 1.2rem; /* Make total more prominent */
+  font-weight: 700;
+  color: var(--custom-text-dark);
+  line-height: 1; /* Align with date text */
+}
+
+.order-card.active .order-card__total {
+  color: var(--custom-primary-dark);
+}
+
+/* --- Order Detail Panel --- */
+.order-detail-view__header {
+  border-bottom: 1px solid var(--custom-border-color);
+}
+
+.order-detail-view__info-label {
+  font-size: 0.8rem;
+  color: var(--custom-text-muted);
+  margin-bottom: 0.1rem;
+}
+
+.order-detail-view__info-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--custom-text-dark);
+}
+
+.order-detail-view .table {
+  --bs-table-border-color: var(--custom-border-color);
+  --bs-table-hover-bg: #f8f9fa;
+}
+
+.order-detail-view .table thead {
+  background-color: #f8f9fa;
+  color: var(--custom-text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.order-detail-view__totals .list-group-item {
+  border-color: var(--custom-border-color);
+}
+
+.order-detail-view__grand-total {
+  background-color: var(--custom-card-bg);
+}
+.order-detail-view__grand-total span:last-child {
+  color: var(--custom-primary-dark);
+}
+
+/* --- Empty State --- */
+.empty-details__icon {
+  font-size: 3rem;
+  color: #dee2e6;
+}
