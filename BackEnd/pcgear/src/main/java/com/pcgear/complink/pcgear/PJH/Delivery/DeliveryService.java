@@ -3,10 +3,12 @@ package com.pcgear.complink.pcgear.PJH.Delivery;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -20,6 +22,9 @@ import com.pcgear.complink.pcgear.PJH.Delivery.model.GraphQLRequest;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.RegisterWebhookResp;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.TrackingResponse;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.ValidationResult;
+import com.pcgear.complink.pcgear.PJH.Delivery.model.WebhookReq;
+import com.pcgear.complink.pcgear.PJH.Order.model.OrderStatus;
+import com.pcgear.complink.pcgear.PJH.Order.service.OrderService;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -35,8 +40,10 @@ import reactor.core.publisher.Mono;
 @Service
 public class DeliveryService {
         private final WebClient webClient;
+        private final OrderService orderService;
         private final CustomerRepository customerRepository;
         private final DeliveryRepository deliveryRepository;
+        private final SimpMessagingTemplate messagingTemplate;
         private static final String GRAPHQL_API_URL = "https://apis.tracker.delivery/graphql";
         private static final String TRACK_DELIVERY_QUERY = """
                                                     query Track(
@@ -71,7 +78,7 @@ public class DeliveryService {
                         }
                                                 """;
 
-        public String getAccessToken(TrackingNumberReq waybillReq) {
+        public String getAccessToken() {
                 MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
                 formData.add("grant_type", "client_credentials");
                 formData.add("client_id", "AA6mQRHNYCMkBhwhlZ0A1nyy");
@@ -95,6 +102,11 @@ public class DeliveryService {
                                 .flatMap(result -> {
                                         if (result.isValid()) {
                                                 log.info("Delivery is valid. Proceeding to register webhook.");
+
+                                                // order의 status를 "배송 대기"로 변경
+                                                orderService.updateOrderStatus(trackingNumberReq.getOrderId(),
+                                                                OrderStatus.SHIPPING_PENDING);
+
                                                 return registerWebhook(accessToken, trackingNumberReq.getCarrierId(),
                                                                 trackingNumberReq.getTrackingNumber(),
                                                                 myCallbackUrl);
@@ -153,8 +165,8 @@ public class DeliveryService {
                                 });
         }
 
+        // 배송조회
         public Mono<TrackingResponse> trackDelivery(String carrierId, String trackingNumber, String accessToken) {
-
                 Map<String, String> variables = Map.of(
                                 "carrierId", carrierId,
                                 "trackingNumber", trackingNumber);
@@ -173,6 +185,7 @@ public class DeliveryService {
                                 .bodyToMono(TrackingResponse.class);
         }
 
+        // 전달 받은 운송장번호로 배송조회에 완료 하면 유효한 운송장번호
         public Mono<ValidationResult> isValidDelivery(TrackingNumberReq trackingNumberReq,
                         String accessToken) {
                 return this.trackDelivery(trackingNumberReq.getCarrierId(), trackingNumberReq.getTrackingNumber(),
@@ -195,23 +208,71 @@ public class DeliveryService {
                                                                         "알 수 없는 배송 조회 오류가 발생했습니다: " + errorMessage);
                                                 }
                                         }
-                                        // createDelivery();
-                                        Delivery delivery = new Delivery();
-                                        delivery.setCarrierId(trackingNumberReq.getCarrierId());
-                                        delivery.setTrackingNumber(trackingNumberReq.getTrackingNumber());
-                                        delivery.setOrderId(trackingNumberReq.getOrderId());
-                                        Customer customer = customerRepository
-                                                        .findById(trackingNumberReq.getCustomerId())
-                                                        .orElseThrow(() -> new EntityNotFoundException(
-                                                                        "해당 ID의 거래처를 찾을 수 없습니다." + trackingNumberReq
-                                                                                        .getCustomerId()));
-                                        delivery.setCustomerId(trackingNumberReq.getCustomerId());
-                                        delivery.setRecipientName(customer.getCustomerName());
-                                        delivery.setRecipientPhone(customer.getPhoneNumber());
-                                        delivery.setRecipientAddr(customer.getAddress());
-                                        deliveryRepository.save(delivery);
+                                        createDelivery(trackingNumberReq);
                                         return new ValidationResult(true, "배송 조회에 성공했습니다.");
                                 });
+        }
+
+        public String getDeliveryStatus(TrackingResponse trackingResponse) {
+                String currentStatus = null;
+                if (trackingResponse != null && trackingResponse.getData() != null &&
+                                trackingResponse.getData().getTrack() != null &&
+                                trackingResponse.getData().getTrack().getLastEvent() != null &&
+                                trackingResponse.getData().getTrack().getLastEvent().getStatus() != null) {
+
+                        // 최종 상태 코드를 추출하여 변수에 할당
+                        currentStatus = trackingResponse.getData().getTrack().getLastEvent().getStatus()
+                                        .getName();
+                }
+                return currentStatus;
+        }
+
+        public boolean existsByOrderId(Integer orderId) {
+                return deliveryRepository.existsByOrderId(orderId);
+
+        }
+
+        public List<Delivery> updateDeiliveryStatus(WebhookReq webhookReq, String currentStatus) {
+                String trackingNumber = webhookReq.getTrackingNumber();
+
+                List<Delivery> deliveries = deliveryRepository.findAllByTrackingNumber(trackingNumber);
+
+                if (deliveries.isEmpty()) {
+                        log.warn("Delivery record not found for tracking number: {}", trackingNumber);
+                        return List.of();
+                }
+
+                for (Delivery delivery : deliveries) {
+                        delivery.setCurrentStatus(currentStatus);
+                        String message = "주문번호: " + delivery.getOrderId() + "의 배송상태가 "
+                                        + currentStatus + "로 변경되었습니다. 배송조회에서 확인해주세요!";
+                        messagingTemplate.convertAndSend("/topic/notifications", message);
+
+                        if ("배송완료".equals(currentStatus)) {
+                                orderService.updateOrderStatus(delivery.getOrderId(), OrderStatus.DELIVERED);
+                        }
+                }
+
+                return deliveryRepository.saveAll(deliveries);
+        }
+
+        private Delivery createDelivery(TrackingNumberReq trackingNumberReq) {
+
+                Customer customer = customerRepository
+                                .findById(trackingNumberReq.getCustomerId())
+                                .orElseThrow(() -> new EntityNotFoundException(
+                                                "해당 ID의 거래처를 찾을 수 없습니다." + trackingNumberReq
+                                                                .getCustomerId()));
+                Delivery delivery = Delivery.builder()
+                                .carrierId(trackingNumberReq.getCarrierId())
+                                .trackingNumber(trackingNumberReq.getTrackingNumber())
+                                .orderId(trackingNumberReq.getOrderId())
+                                .customerId(trackingNumberReq.getCustomerId())
+                                .recipientName(customer.getCustomerName())
+                                .recipientPhone(customer.getPhoneNumber())
+                                .recipientAddr(customer.getAddress())
+                                .build();
+                return deliveryRepository.save(delivery);
         }
 
         private String getExpirationTime(int hoursLater) {

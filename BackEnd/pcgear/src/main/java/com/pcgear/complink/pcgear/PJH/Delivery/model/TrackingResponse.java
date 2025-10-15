@@ -36,23 +36,18 @@ public class TrackingResponse {
         @AllArgsConstructor
         public static class TrackingData {
                 // 'track' 쿼리의 응답 페이로드
-                private TrackResult track;
+                private Track track;
         }
 
         @Data
         @NoArgsConstructor
         @AllArgsConstructor
-        public static class TrackResult {
-                private String trackingNumber;
-                private String carrierId;
-
+        public static class Track {
                 // 최종 이벤트 정보 (JSON의 lastEvent 필드)
                 private LastEvent lastEvent;
 
                 // 전체 배송 이벤트 목록 (JSON의 events 필드)
                 private Events events;
-
-                // 이전 DTO의 state 및 status 필드는 상세 이벤트 정보로 대체됨.
         }
 
         /**

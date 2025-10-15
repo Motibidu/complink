@@ -5,17 +5,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.pcgear.complink.pcgear.PJH.Delivery.model.TrackingResponse;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.ValidationResult;
+import com.pcgear.complink.pcgear.PJH.Delivery.model.WebhookReq;
+import com.pcgear.complink.pcgear.PJH.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.PJH.Order.service.OrderService;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.TrackingNumberReq;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Response;
 import reactor.core.publisher.Mono;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -31,7 +37,7 @@ public class DelieveryController {
         log.info("waybillReq: {}", trackingNumberReq);
 
         // 토큰 생성
-        String accessToken = deliveryService.getAccessToken(trackingNumberReq);
+        String accessToken = deliveryService.getAccessToken();
         log.info("accessToken: {}", accessToken);
 
         Mono<ValidationResult> webhookRegistered = deliveryService.registerWebhookIfValid(accessToken,
@@ -40,6 +46,7 @@ public class DelieveryController {
         log.info("webhookRegistered: {}", webhookRegistered.block());
 
         if (webhookRegistered.block().isValid()) {
+
             return ResponseEntity.ok("추적 등록에 완료했습니다.");
         } else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -49,19 +56,34 @@ public class DelieveryController {
     }
 
     @PostMapping("/webhook")
-    public ResponseEntity<String> handleWebhookRequest(@RequestBody TrackingNumberReq trackingNumberReq) {
-        String accessToken = deliveryService.getAccessToken(trackingNumberReq);
+    public ResponseEntity<String> handleWebhookRequest(@RequestBody WebhookReq webhookReq) {
+        // 토큰 발급
+        String accessToken = deliveryService.getAccessToken();
+        log.info("Webhook received!! accessToken: {}", accessToken);
+        log.info("webhookReq: {}", webhookReq);
 
-        TrackingResponse trackingResponse = deliveryService.trackDelivery(trackingNumberReq.getCarrierId(),
-                trackingNumberReq.getTrackingNumber(), accessToken).block();
-        if (trackingResponse.getData().getTrack().getLastEvent().getStatus().getName().equals("배송완료")) {
-            // carrierId, trackingNumber로 order 찾기
-            // orderId로 order 찾고 OrderStatus 업데이트 하기
-            orderService.updateOrderStatus(null, null);
-        }
+        // 배송 조회
+        TrackingResponse trackingResponse = deliveryService.trackDelivery(webhookReq.getCarrierId(),
+                webhookReq.getTrackingNumber(), accessToken).block();
         log.info("trackingResponse: {}", trackingResponse);
 
+        // Delivery의 status 업데이트
+        String currentStatus = deliveryService.getDeliveryStatus(trackingResponse);
+        log.info("currentStatus: {}", currentStatus);
+        deliveryService.updateDeiliveryStatus(webhookReq, currentStatus);
+
         return ResponseEntity.ok("웹훅 수신완료!");
+    }
+
+    @GetMapping("/registered/{orderId}")
+    public ResponseEntity getMethodName(@PathVariable(name = "orderId") Integer orderId) {
+        boolean exists = deliveryService.existsByOrderId(orderId);
+
+        if (exists) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
 }

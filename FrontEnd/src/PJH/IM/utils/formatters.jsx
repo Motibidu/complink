@@ -7,9 +7,9 @@
 export const getStatusBadgeVariant = (orderStatusDescription) => {
   switch (orderStatusDescription) {
     // 결제 관련 상태
-    case "결제 대기":
+    case "주문 접수":
       return { bg: "bg-info-subtle", text: "text-info-emphasis" };
-    case "결제 준비":
+    case "결제 대기":
       return { bg: "bg-primary-subtle", text: "text-primary-emphasis" };
     case "결제 완료":
       return { bg: "bg-success-subtle", text: "text-success-emphasis" };
@@ -21,7 +21,7 @@ export const getStatusBadgeVariant = (orderStatusDescription) => {
       return { bg: "bg-secondary-subtle", text: "text-secondary-emphasis" };
 
     // 배송/처리 관련 상태
-    case "상품 준비중":
+    case "배송 대기":
       return { bg: "bg-primary-subtle", text: "text-primary-emphasis" };
     case "배송중":
       return { bg: "bg-info-subtle", text: "text-info-emphasis" };

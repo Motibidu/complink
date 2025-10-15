@@ -145,7 +145,6 @@ const OrderForm = () => {
         const errorText = await response.text();
         throw new Error(errorText || "서버에서 오류가 발생했습니다.");
       }
-      alert("주문이 성공적으로 등록되었습니다.");
       setOrderItems([]);
       setOrderHeader({});
     } catch (err) {

@@ -14,9 +14,10 @@ public enum OrderStatus {
 
         // 배송/처리 관련 상태
         PREPARING_PRODUCT(10, "상품 준비중"), // 결제 완료 후 상품 포장/준비
-        SHIPPING(11, "배송중"), // 상품이 배송을 시작함
-        DELIVERED(12, "배송 완료"), // 상품 배송 완료
-        PURCHASE_CONFIRMED(13, "구매 확정"), // 사용자가 구매를 확정함
+        SHIPPING_PENDING(11, "배송 대기"),
+        SHIPPING(12, "배송중"), // 상품이 배송을 시작함
+        DELIVERED(13, "배송 완료"), // 상품 배송 완료
+        PURCHASE_CONFIRMED(14, "구매 확정"), // 사용자가 구매를 확정함
 
         // 취소/기타 상태
         CANCELLED(20, "주문 취소"), // 주문 전체 취소

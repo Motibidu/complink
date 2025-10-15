@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
 
+const fetchTrackingStatus = async (orderId) => {
+  try {
+    await axios.get(`/api/delivery/registered/${orderId}`);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
 const SellsSearchPage = () => {
   const [sells, setsells] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,9 +46,23 @@ const SellsSearchPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get("/api/sells");
-      console.log("response.data: ", response.data);
-      setsells(response.data);
+      const sellsResponse = await axios.get("/api/sells");
+      const sellsData = sellsResponse.data;
+
+      // 💡 각 주문에 대한 배송 추적 등록 상태(Delivery 레코드 존재 여부)를 병렬로 확인
+      const statusPromises = sellsData.map(sell => 
+        fetchTrackingStatus(sell.orderId)
+          .then(isRegistered => ({
+            ...sell,
+            isTrackingRegistered: isRegistered,
+          }))
+      );
+      
+      // 모든 상태 확인이 완료될 때까지 기다림
+      const enrichedSells = await Promise.all(statusPromises);
+
+      console.log("Enriched Sells Data:", enrichedSells);
+      setsells(enrichedSells);
     } catch (err) {
       setError("판매 데이터를 불러오는 데 실패했습니다.");
       console.error(err);
@@ -80,7 +102,7 @@ const SellsSearchPage = () => {
       );
     });
   }, [sells, searchTerm, dateRange]);
-  console.log("filteredsells: ", filteredsells);
+  //console.log("filteredsells: ", filteredsells);
   // 필터링된 데이터의 합계 계산
   const totals = useMemo(() => {
     return filteredsells.reduce(
@@ -210,7 +232,9 @@ const SellsSearchPage = () => {
                 </td>
               </tr>
             ) : filteredsells.length > 0 ? (
-              filteredsells.map((sell) => (
+              filteredsells.map((sell) => {
+                const isRegistered = sell.isTrackingRegistered;
+                return(
                 <tr
                   key={sell.sellId}
                   onClick={() => handleViewDetails(sell)}
@@ -228,20 +252,24 @@ const SellsSearchPage = () => {
                   </td>
                   <td>
                     <button
-											className="btn btn-sm btn-outline-info"
-											data-bs-target="#waybillReqModal"
-											data-bs-toggle="modal"
-											// 운송장 버튼 클릭 시 orderId를 설정하고 행 클릭 이벤트는 막습니다.
-											onClick={(e) => {
-												e.stopPropagation();
-												handleOpenWaybillModal(sell);
-											}}
-										>
-											[운송장번호 입력/ 배송추적]
-										</button>
+                        className={`btn btn-sm ${isRegistered ? 'btn-success disabled' : 'btn-outline-primary'}`}
+                        data-bs-target="#waybillReqModal"
+                        data-bs-toggle="modal"
+                        disabled={isRegistered} // 💡 등록 완료 시 버튼 비활성화
+                        // 운송장 버튼 클릭 시 orderId를 설정하고 행 클릭 이벤트는 막습니다.
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isRegistered) { // 이미 등록된 상태가 아닐 때만 모달 열기
+                            handleOpenWaybillModal(sell);
+                          }
+                        }}
+                      >
+                        {isRegistered ? '✅ 추적 등록 완료' : '[운송장번호 입력/ 배송추적]'}
+                      </button>
                   </td>
                 </tr>
-              ))
+                )
+})
             ) : (
               <tr>
                 <td colSpan="6" className="text-center text-muted">
@@ -252,13 +280,13 @@ const SellsSearchPage = () => {
           </tbody>
           <tfoot>
             <tr className="fw-bold table-group-divider">
-              <td colSpan="4" className="text-end">
+              <td colSpan="5" className="text-end">
                 조회된 합계
               </td>
               <td className="text-end">
                 {totals.grandAmount.toLocaleString()}원
               </td>
-              <td></td>
+              
             </tr>
           </tfoot>
         </table>

@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.pcgear.complink.pcgear.PJH.Order.model.Order;
+import com.pcgear.complink.pcgear.PJH.Order.model.OrderItem;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.PJH.Order.repository.OrderRepository;
 
@@ -20,12 +21,19 @@ public class SellService {
         private final SellRepository sellRepository;
         private final OrderRepository orderRepository;
 
+        // order의 orderStatus를 OrderStatus.PAID로 업데이트하고, sell 저장
         public Sell createSellAndUpdateToPaid(Integer orderId) {
                 Order order = orderRepository.findById(orderId)
                                 .orElseThrow(() -> new EntityNotFoundException("해당 ID의 주문서를 찾을 수 없습니다: " + orderId));
 
                 order.setOrderStatus(OrderStatus.PAID);
                 orderRepository.save(order);
+
+                List<OrderItem> itemsFromOrder = order.getItems();
+
+                for(OrderItem orderItem: itemsFromOrder){
+                        
+                }
 
                 Sell newSell = mapOrderToSell(order);
 
@@ -34,6 +42,10 @@ public class SellService {
 
         public List<Sell> readSells() {
                 return sellRepository.findAll();
+        }
+
+        private void updateItemQuantityOnHand() {
+
         }
 
         private Sell mapOrderToSell(Order order) {
