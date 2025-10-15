@@ -30,7 +30,6 @@ public class SecurityConfig {
                                         response.setStatus(HttpServletResponse.SC_OK);
                                 }))
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/").permitAll()
                                                 .requestMatchers("/payment/webhook/verify/paymentLink").permitAll()
                                                 .requestMatchers("/delivery/webhook").permitAll()
                                                 .requestMatchers("/users/isLoggedIn").authenticated()

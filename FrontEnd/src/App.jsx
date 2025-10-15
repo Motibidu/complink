@@ -25,7 +25,7 @@ function App() {
       <Layout>
         <Routes>
           {/* 공개 라우트 */}
-          <Route path="/" element={<RegisterItemPage />} /> {/* 초기 페이지는 공개 */}
+          
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/find-id" element={<FindId />} />
@@ -33,6 +33,7 @@ function App() {
 
           {/* 보호된 라우트들 */}
           <Route element={<ProtectedRoute />}> {/* ProtectedRoute로 감싸기 */}
+          <Route path="/" element={<RegisterItemPage />} /> {/* 초기 페이지는 공개 */}
             <Route path="/orders/new" element={<OrderFormPage />} />
             <Route path="/orders/search" element={<OrderSearchPage />} />
             <Route path="/registers/item" element={<RegisterItemPage />} />
