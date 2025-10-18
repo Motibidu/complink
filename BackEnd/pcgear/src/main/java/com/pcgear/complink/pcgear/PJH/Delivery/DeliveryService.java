@@ -1,10 +1,10 @@
 package com.pcgear.complink.pcgear.PJH.Delivery;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -97,23 +97,21 @@ public class DeliveryService {
 
         public Mono<ValidationResult> registerWebhookIfValid(String accessToken, TrackingNumberReq trackingNumberReq,
                         String myCallbackUrl) {
-                return isValidDelivery(trackingNumberReq,
-                                accessToken)
-                                .flatMap(result -> {
-                                        if (result.isValid()) {
-                                                log.info("Delivery is valid. Proceeding to register webhook.");
 
+                return isValidDelivery(trackingNumberReq, accessToken)
+                                .flatMap(validationResult -> {
+                                        log.info("isValidDelivery: {}", validationResult);
+                                        if (validationResult.isValid()) {
                                                 // order의 status를 "배송 대기"로 변경
                                                 orderService.updateOrderStatus(trackingNumberReq.getOrderId(),
                                                                 OrderStatus.SHIPPING_PENDING);
 
-                                                return registerWebhook(accessToken, trackingNumberReq.getCarrierId(),
+                                                return registerWebhook(accessToken,
+                                                                trackingNumberReq.getCarrierId(),
                                                                 trackingNumberReq.getTrackingNumber(),
                                                                 myCallbackUrl);
                                         } else {
-                                                log.warn("Delivery is NOT valid. Skipping webhook registration. Reason: {}",
-                                                                result.getMessage());
-                                                return Mono.just(new ValidationResult(false, result.getMessage()));
+                                                return Mono.just(validationResult);
                                         }
                                 });
         }
@@ -248,6 +246,12 @@ public class DeliveryService {
                                         + currentStatus + "로 변경되었습니다. 배송조회에서 확인해주세요!";
                         messagingTemplate.convertAndSend("/topic/notifications", message);
 
+                        // 배송 상태가 집화처리일 시 order의 status 배송대기-> 배송중으로 변경
+                        if ("집화처리".equals(currentStatus)) {
+                                orderService.updateOrderStatus(delivery.getOrderId(), OrderStatus.SHIPPING);
+                        }
+
+                        // 배송 상태가 배송완료일 시 order의 status를 배송중-> 배송완료로 변경
                         if ("배송완료".equals(currentStatus)) {
                                 orderService.updateOrderStatus(delivery.getOrderId(), OrderStatus.DELIVERED);
                         }
@@ -276,10 +280,15 @@ public class DeliveryService {
         }
 
         private String getExpirationTime(int hoursLater) {
-                // UTC 시간 기준으로 현재 시간 + 지정된 시간
-                return OffsetDateTime.now(ZoneOffset.UTC)
-                                .plusHours(hoursLater)
-                                .format(DateTimeFormatter.ISO_INSTANT); // ISO 8601 형식
+                // 항상 밀리초(SSS)를 포함하는 ISO 8601 형식의 UTC 시간 생성
+                Instant expirationInstant = Instant.now().plus(hoursLater, java.time.temporal.ChronoUnit.HOURS);
+                return DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                                .withZone(java.time.ZoneOffset.UTC)
+                                .format(expirationInstant);
+        }
+
+        public Optional<Delivery> findByOrderId(Integer orderId) {
+                return deliveryRepository.findByOrderId(orderId);
         }
 
 }

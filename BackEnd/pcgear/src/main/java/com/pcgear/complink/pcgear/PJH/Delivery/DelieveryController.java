@@ -7,7 +7,12 @@ import com.pcgear.complink.pcgear.PJH.Delivery.model.TrackingResponse;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.ValidationResult;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.WebhookReq;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderStatus;
+import java.util.Optional;
 import com.pcgear.complink.pcgear.PJH.Order.service.OrderService;
+
+import jakarta.persistence.EntityNotFoundException;
+
+import com.pcgear.complink.pcgear.PJH.Delivery.model.Delivery;
 import com.pcgear.complink.pcgear.PJH.Delivery.model.TrackingNumberReq;
 
 import lombok.RequiredArgsConstructor;
@@ -16,6 +21,7 @@ import okhttp3.Response;
 import reactor.core.publisher.Mono;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,30 +35,30 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/delivery")
 public class DelieveryController {
 
+    @Value("${delivery-tracker.webhook-url}")
+    private String DELIVERYTRACKER_WEBHOOK_URL;
     private final DeliveryService deliveryService;
     private final OrderService orderService;
 
     @PostMapping("/trackingNumber")
-    public ResponseEntity<String> registerWebhook(@RequestBody TrackingNumberReq trackingNumberReq) {
+    public Mono<ResponseEntity<String>> registerWebhook(@RequestBody TrackingNumberReq trackingNumberReq) {
         log.info("waybillReq: {}", trackingNumberReq);
 
         // 토큰 생성
         String accessToken = deliveryService.getAccessToken();
         log.info("accessToken: {}", accessToken);
 
-        Mono<ValidationResult> webhookRegistered = deliveryService.registerWebhookIfValid(accessToken,
-                trackingNumberReq, "https://76eb83593b8c.ngrok-free.app/delivery/webhook");
-
-        log.info("webhookRegistered: {}", webhookRegistered.block());
-
-        if (webhookRegistered.block().isValid()) {
-
-            return ResponseEntity.ok("추적 등록에 완료했습니다.");
-        } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(webhookRegistered.block().getMessage());
-        }
-
+        return deliveryService
+                .registerWebhookIfValid(accessToken, trackingNumberReq,
+                        DELIVERYTRACKER_WEBHOOK_URL + "/delivery/webhook")
+                .map(result -> {
+                    if (result.isValid()) {
+                        return ResponseEntity.ok(result.getMessage());
+                    } else {
+                        // 클라이언트의 요청이 잘못되었을 가능성이 높으므로 400 Bad Request가 더 적합합니다.
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.getMessage());
+                    }
+                });
     }
 
     @PostMapping("/webhook")
@@ -67,7 +73,7 @@ public class DelieveryController {
                 webhookReq.getTrackingNumber(), accessToken).block();
         log.info("trackingResponse: {}", trackingResponse);
 
-        // Delivery의 status 업데이트
+        // Delivery, Order의 status 업데이트
         String currentStatus = deliveryService.getDeliveryStatus(trackingResponse);
         log.info("currentStatus: {}", currentStatus);
         deliveryService.updateDeiliveryStatus(webhookReq, currentStatus);
@@ -75,15 +81,13 @@ public class DelieveryController {
         return ResponseEntity.ok("웹훅 수신완료!");
     }
 
-    @GetMapping("/registered/{orderId}")
-    public ResponseEntity getMethodName(@PathVariable(name = "orderId") Integer orderId) {
-        boolean exists = deliveryService.existsByOrderId(orderId);
+    @GetMapping("/{orderId}")
+    public ResponseEntity<Delivery> readDelivery(@PathVariable(name = "orderId") Integer orderId) {
+        Optional<Delivery> deliveryOpt = deliveryService.findByOrderId(orderId);
+        return deliveryOpt
+                .map(ResponseEntity::ok) // delivery가 있다면 ResponseEntity에 감싸서 반환
+                .orElseGet(() -> ResponseEntity.noContent().build()); // 없으면 204 반환
 
-        if (exists) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
     }
 
 }
