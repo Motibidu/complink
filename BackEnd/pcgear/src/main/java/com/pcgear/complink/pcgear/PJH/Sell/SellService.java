@@ -4,7 +4,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.pcgear.complink.pcgear.PJH.Item.Item;
+import com.pcgear.complink.pcgear.PJH.Item.ItemRepository;
 import com.pcgear.complink.pcgear.PJH.Order.model.Order;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderItem;
 import com.pcgear.complink.pcgear.PJH.Order.model.OrderStatus;
@@ -20,32 +23,55 @@ import lombok.extern.slf4j.Slf4j;
 public class SellService {
         private final SellRepository sellRepository;
         private final OrderRepository orderRepository;
+        private final ItemRepository itemRepository; // 품목 재고 관리를 위해 추가
 
-        // order의 orderStatus를 OrderStatus.PAID로 업데이트하고, sell 저장
+        // 1. 주문 상태를 'PAID'로 변경
+        // 2. 재고 수량 변경
+        // 3. Sell 데이터 생성
+        @Transactional
         public Sell createSellAndUpdateToPaid(Integer orderId) {
                 Order order = orderRepository.findById(orderId)
                                 .orElseThrow(() -> new EntityNotFoundException("해당 ID의 주문서를 찾을 수 없습니다: " + orderId));
 
+                // 1. 주문 상태를 'PAID'로 변경
                 order.setOrderStatus(OrderStatus.PAID);
                 orderRepository.save(order);
 
-                List<OrderItem> itemsFromOrder = order.getItems();
+                // 2. 주문된 상품들의 재고 수량 감소
+                List<OrderItem> itemsFromOrder = order.getOrderItems();
+                updateItemQuantityOnHand(itemsFromOrder);
 
-                for(OrderItem orderItem: itemsFromOrder){
-                        
-                }
-
+                // 3. 판매(Sell) 데이터 생성
                 Sell newSell = mapOrderToSell(order);
 
                 return sellRepository.save(newSell);
         }
 
-        public List<Sell> readSells() {
-                return sellRepository.findAll();
+        private void updateItemQuantityOnHand(List<OrderItem> itemsFromOrder) {
+
+                for (OrderItem orderItem : itemsFromOrder) {
+                        log.info("orderItem: {}", orderItem);
+                        Item item = itemRepository.findById(orderItem.getItemId())
+                                        .orElseThrow(() -> new EntityNotFoundException(
+                                                        "품목을 찾을 수 없습니다: ID " + orderItem.getItemId()));
+
+                        int orderedQuantity = orderItem.getQuantity();
+                        int currentStock = item.getQuantityOnHand();
+
+                        if (currentStock < orderedQuantity) {
+                                throw new IllegalStateException(
+                                                "재고 부족: 품목 '" + item.getItemName() + "'의 재고가 충분하지 않습니다. (현재 재고: "
+                                                                + currentStock + ", 주문 수량: " + orderedQuantity + ")");
+                        }
+
+                        item.setQuantityOnHand(currentStock - orderedQuantity);
+                        itemRepository.save(item);
+                }
+
         }
 
-        private void updateItemQuantityOnHand() {
-
+        public List<Sell> readSells() {
+                return sellRepository.findAll();
         }
 
         private Sell mapOrderToSell(Order order) {

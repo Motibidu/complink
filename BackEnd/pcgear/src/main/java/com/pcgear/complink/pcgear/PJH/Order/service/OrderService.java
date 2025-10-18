@@ -78,6 +78,7 @@ public class OrderService {
         // 3. 주문 아이템 리스트 변환 및 추가
         for (OrderRequestDto.OrderItemDto itemDto : requestDto.getItems()) {
             OrderItem orderItem = new OrderItem();
+            orderItem.setItemId(itemDto.getItemId());
             orderItem.setCategory(itemDto.getCategory());
             orderItem.setItemName(itemDto.getItemName());
             orderItem.setQuantity(itemDto.getQuantity());

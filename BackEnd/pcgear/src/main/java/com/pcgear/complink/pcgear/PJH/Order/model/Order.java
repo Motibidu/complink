@@ -71,11 +71,11 @@ public class Order {
     @JsonManagedReference
     @ToString.Exclude
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> items = new ArrayList<>();
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     // == 연관관계 편의 메서드 ==//
     public void addItem(OrderItem orderItem) {
-        items.add(orderItem);
+        orderItems.add(orderItem);
         orderItem.setOrder(this);
     }
 }

@@ -44,7 +44,7 @@ public class OrderResponseDto {
             // 3. null일 경우, manager 필드도 null로 설정합니다.
             this.manager = null;
         }
-        this.items = order.getItems().stream()
+        this.items = order.getOrderItems().stream()
                 .map(OrderItemDto::new) // .map(orderItem -> new OrderItemDto(orderItem))과 동일
                 .collect(Collectors.toList());
     }

@@ -125,6 +125,7 @@ public class PaymentController {
                         log.error("Order not found for merchant_uid: " + webhookRequest.getMerchantUid());
                         return new EntityNotFoundException("주문을 찾을 수 없습니다.");
                     });
+            log.info("order found by merchantUid: {}", order);
 
             // 4. 결제 금액 비교
             BigDecimal amountToBePaid = order.getGrandAmount(); // DB에 저장된 실제 주문 금액

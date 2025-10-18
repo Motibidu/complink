@@ -22,6 +22,8 @@ public class OrderItem {
     @JoinColumn(name = "order_id")
     private Order order;
 
+    private Integer itemId;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer orderItemId;

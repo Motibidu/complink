@@ -13,7 +13,7 @@ import java.util.List;
 @ToString
 public class OrderRequestDto {
     private LocalDate orderDate;
-    
+
     private String customerId;
     private String customerName;
     private String managerId;
@@ -29,6 +29,7 @@ public class OrderRequestDto {
     @Setter
     @ToString
     public static class OrderItemDto {
+        private Integer itemId;
         private String category;
         private String itemName;
         private int quantity;
