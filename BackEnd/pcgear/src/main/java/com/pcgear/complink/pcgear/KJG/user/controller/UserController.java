@@ -94,5 +94,11 @@ public class UserController {
         
         return ResponseEntity.ok("회원가입 승인이 완료되었습니다.");
     }
+
+    @DeleteMapping("/signup-reject/{email}")
+    public ResponseEntity<String> signupReject(@PathVariable(name= "email") String email) {
+        userService.signupReject(email);
+        return ResponseEntity.noContent().build(); // 204 No Content
+    }
     
 }

@@ -132,4 +132,9 @@ public class UserService {
 		userEntity.setApproved(true);
 		userRepository.save(userEntity);
         }
+
+        public void signupReject(String email) {
+                UserEntity userEntity = userRepository.findByEmail(email).orElseThrow(()->(new EntityNotFoundException("해당 email의 요청을 찾을 수 없습니다."+ email)));
+                userRepository.delete(userEntity);
+        }
 }

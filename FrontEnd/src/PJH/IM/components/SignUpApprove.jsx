@@ -49,6 +49,21 @@ function SignupApprove() {
     }
   };
 
+  const handleReject = async (email) => {
+    try {
+      if (confirm("회원가입 요청을 삭제하시겠습니까?")) {
+        const resp = await axios.delete("/api/users/signup-reject/" + email);
+        if (resp.status === 204) {
+          alert("회원가입 요청이 삭제되었습니다.");
+        }
+
+        fetchSignupReq(currentPage);
+      }
+    } catch (err) {
+      console.error("회원가입 승인 에러:", err);
+    }
+  };
+
   const handlePageChange = (newPage) => {
     if (newPage >= 0 && newPage < totalPages) {
       setCurrentPage(newPage);
@@ -106,7 +121,7 @@ function SignupApprove() {
                       <button
                         className="btn btn-sm btn-danger rounded-2 fw-medium"
                         // 거부 로직도 필요하다면 별도 함수 구현
-                        onClick={() => handleApproval(signupReq.email)}
+                        onClick={() => handleReject(signupReq.email)}
                       >
                         거부
                       </button>
