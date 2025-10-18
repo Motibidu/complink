@@ -58,6 +58,8 @@ public class UserEntity extends BaseTimeEntity implements UserDetails {
 	@Column(nullable = false)
 	private UserRole role;
 
+	private boolean isApproved;
+
 	@Builder
 	public UserEntity(String email, String username, String password, String name, String tel, String address,
 			UserRole role) {
@@ -67,7 +69,8 @@ public class UserEntity extends BaseTimeEntity implements UserDetails {
 		this.name = name;
 		this.tel = tel;
 		this.address = address;
-		this.role = role; // Builder에도 role 추가
+		this.role = role;
+		this.isApproved = false;
 	}
 
 	public void Memberupdate(String email, String name) {
@@ -82,5 +85,11 @@ public class UserEntity extends BaseTimeEntity implements UserDetails {
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		return Collections.singletonList(new SimpleGrantedAuthority(this.role.getKey()));
+	}
+
+	// Spring security가 isEnalbed()가 true일 때만 로그인을 허용함
+	@Override
+	public boolean isEnabled() {
+		return this.isApproved;
 	}
 }

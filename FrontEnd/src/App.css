@@ -61,6 +61,25 @@ body {
   text-decoration: none;
 }
 
+.header__controls {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 10px;
+}
+
+.header__admin-link {
+  margin-right: 5px;
+  text-decoration: none;
+  color: var(--text-color);
+  padding: 8px 12px;
+  border-radius: var(--border-radius-small);
+  transition: background-color 0.2s;
+}
+.header__admin-link:hover {
+  background-color: var(--secondary-bg-color);
+}
+
 /* sidebar */
 .sidebar {
   position: fixed;

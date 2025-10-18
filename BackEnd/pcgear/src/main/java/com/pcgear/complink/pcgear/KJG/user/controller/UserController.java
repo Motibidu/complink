@@ -1,6 +1,8 @@
 package com.pcgear.complink.pcgear.KJG.user.controller;
 
 import com.pcgear.complink.pcgear.KJG.user.dto.SignRequestDto;
+import com.pcgear.complink.pcgear.KJG.user.dto.SignupRespDto;
+import com.pcgear.complink.pcgear.KJG.user.entity.UserRole;
 import com.pcgear.complink.pcgear.KJG.user.service.RecaptchaService;
 import com.pcgear.complink.pcgear.KJG.user.service.UserService;
 
@@ -8,24 +10,32 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
+
 @Tag(name = "사용자 관리", description = "사용자 등록 및 로그인 상태 확인 API")
-@RestController
 @RequiredArgsConstructor
+@Slf4j
+@RestController
 @RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
     private final RecaptchaService recaptchaService;
 
-    @Operation(summary = "회원 가입", description = "새로운 사용자를 등록하고 reCAPTCHA를 검증합니다.")
+    @Operation(summary = "회원 가입", description = "reCAPTCHA 검증에 성공하면 회원가입을 진행합니다.")
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody SignRequestDto signRequestDto) {
 
@@ -51,4 +61,38 @@ public class UserController {
             return ResponseEntity.ok().body(Map.of("isLoggedIn", false));
         }
     }
+
+    @GetMapping("/signup-req")
+    public ResponseEntity<Page<SignupRespDto>> readSignupReq(
+        // 💡 @PageableDefault로 기본값 설정 (페이지 0, 사이즈 10)
+        @PageableDefault(page = 0, size = 10) Pageable pageable) 
+    {
+        Page<SignupRespDto> signupPage = userService.readSignupReq(pageable);
+        return ResponseEntity.ok(signupPage);
+    }
+
+    @GetMapping("/userRole")
+    public ResponseEntity<UserRole> getUserRole(@AuthenticationPrincipal UserDetails userDetails) {
+
+        String authorityString = userDetails.getAuthorities().iterator().next().getAuthority();
+
+        String roleKey = authorityString.replaceFirst("ROLE_", "");
+        log.info("roleKey: {}", roleKey);
+
+        try {
+            UserRole role = UserRole.valueOf(roleKey);
+            return ResponseEntity.ok(role);
+        } catch (IllegalArgumentException e) {
+            System.err.println("ERROR: Undefined UserRole value from authority: " + roleKey + " | " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/signup-approve/{email}")
+    public ResponseEntity<String> signupApprove(@PathVariable(name= "email") String email) {
+        userService.signupApprove(email);
+        
+        return ResponseEntity.ok("회원가입 승인이 완료되었습니다.");
+    }
+    
 }

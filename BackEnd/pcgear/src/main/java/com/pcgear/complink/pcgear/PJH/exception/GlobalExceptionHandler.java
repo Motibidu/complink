@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.pcgear.complink.pcgear.KJG.user.exception.UserNotApprovedAuthenticationException;
+import com.pcgear.complink.pcgear.KJG.user.exception.UserNotFoundException;
+
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -73,6 +76,29 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // 400
+    }
+
+    /**
+     * Case 1: 존재하지 않는 사용자 ID (404 Not Found)
+     */
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex) {
+        // HTTP 상태 코드: 404 (Not Found)
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    /**
+     * Case 2: 승인 대기 중인 사용자 ID (403 Forbidden)
+     * 접근은 거부되지만, 사용자가 존재한다는 사실을 알려줍니다.
+     */
+    @ExceptionHandler(UserNotApprovedAuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotApprovedException(UserNotApprovedAuthenticationException ex) {
+        // HTTP 상태 코드: 403 (Forbidden) - 접근 권한 없음
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(ex.getMessage()));
     }
 
 }

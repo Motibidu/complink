@@ -1,9 +1,11 @@
 import { IoPerson } from "react-icons/io5";
+import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import axios from "axios"; // axios 사용을 권장합니다 (fetch보다 편리)
 
 const Header = () => {
   const { isLoggedIn, logout } = useAuth();
+  const [userRole, setUserRole] = useState();
   const handleLogout = (e) => {
     e.preventDefault(); // a 태그의 기본 동작 방지
     logout();
@@ -14,6 +16,19 @@ const Header = () => {
       .map((word) => word.toString(16).padStart(8, "0"))
       .join("");
   }
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const resp = await axios.get("/api/users/userRole");
+        console.log("fetchUserRole_resp: ", resp.data);
+        setUserRole(resp.data);
+      } catch (err) {
+        console.log("사용자 역할 확인 에러:", err);
+      }
+    };
+    fetchUserRole();
+  }, []);
 
   const STORE_ID = import.meta.env.VITE_PORTONE_STORE_ID;
   const TOSSPAY_CHANNEL_KEY = import.meta.env.VITE_PORTONE_TOSSPAY_CHANNEL_KEY;
@@ -95,6 +110,29 @@ const Header = () => {
       <header className="header">
         <div className="header__container">
           <a className="header__logo">PCGear</a>
+          <div class="header__controls">
+            {userRole == "ADMIN" ? (
+              <div className="dropdown- header__admin-link">
+                <a
+                  href="#"
+                  className="dropdown-toggle"
+                  data-bs-toggle="dropdown"
+                >
+                  관리자
+                </a>
+                <ul className="dropdown-menu dropdown-menu-end">
+                  <li>
+                    <a className="dropdown-item" href="/admin/signup-approve">
+                      회원가입 승인
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              ""
+            )}
+          </div>
+
           <div className="dropdown">
             <a
               href="#"
@@ -195,7 +233,7 @@ const Header = () => {
                 취소
               </button>
               <button
-                 onClick={requestPayment}
+                onClick={requestPayment}
                 type="button"
                 className="btn btn-primary"
               >

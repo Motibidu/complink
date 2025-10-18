@@ -10,24 +10,23 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LoginResponseDto {
 
-	
 	private final Long id;
-	
+
 	private final String email;
-	
+
 	private final String username;
-	
+
 	private final String password;
-	
+
 	private final String name;
-	
+
 	private final String tel;
-	
+
 	private final String address;
-	
+
 	@Builder
 	public LoginResponseDto(UserEntity userEntity) {
-	
+
 		this.id = userEntity.getId();
 		this.email = userEntity.getEmail();
 		this.username = userEntity.getUsername();

@@ -17,6 +17,7 @@ import ProtectedRoute from "./PJH/IM/components/ProtectedRoute";
 import SellsSearchPage from "./PJH/IM/components/sells/SellsSearchPage";
 import SellsEntryPage from "./PJH/IM/components/sells/SellsEntryPage";
 import NotificationComponent from "./PJH/IM/components/NotificationComponent";
+import SignupApprove from "./PJH/IM/components/SignupApprove";
 
 function App() {
   return (
@@ -25,23 +26,33 @@ function App() {
       <Layout>
         <Routes>
           {/* 공개 라우트 */}
-          
+
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/find-id" element={<FindId />} />
           <Route path="/find-password" element={<FindPassword />} />
 
           {/* 보호된 라우트들 */}
-          <Route element={<ProtectedRoute />}> {/* ProtectedRoute로 감싸기 */}
-          <Route path="/" element={<RegisterItemPage />} /> {/* 초기 페이지는 공개 */}
+          <Route element={<ProtectedRoute />}>
+            {" "}
+            {/* ProtectedRoute로 감싸기 */}
+            <Route path="/" element={<RegisterItemPage />} />{" "}
+            {/* 초기 페이지는 공개 */}
             <Route path="/orders/new" element={<OrderFormPage />} />
             <Route path="/orders/search" element={<OrderSearchPage />} />
             <Route path="/registers/item" element={<RegisterItemPage />} />
-            <Route path="/registers/customer" element={<RegisterCustomerPage />} />
-            <Route path="/registers/manager" element={<RegisterManagerPage />} />
+            <Route
+              path="/registers/customer"
+              element={<RegisterCustomerPage />}
+            />
+            <Route
+              path="/registers/manager"
+              element={<RegisterManagerPage />}
+            />
             <Route path="/inventory/status" element={<InventoryStatus />} />
             <Route path="/sells/new" element={<SellsEntryPage />} />
             <Route path="/sells/search" element={<SellsSearchPage />} />
+            <Route path="/admin/signup-approve" element={<SignupApprove />} />
           </Route>
         </Routes>
       </Layout>

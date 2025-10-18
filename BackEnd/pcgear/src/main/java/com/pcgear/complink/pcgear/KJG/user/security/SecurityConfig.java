@@ -4,12 +4,14 @@ package com.pcgear.complink.pcgear.KJG.user.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+
 import org.springframework.web.cors.CorsConfigurationSource;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -20,6 +22,7 @@ public class SecurityConfig {
 
         // CustomOAuth2UserService를 주입받습니다.
         // private final CustomOAuth2UserService customOAuth2UserService;
+        private final CustomAuthFailureHandler customAuthFailureHandler;
 
         @Bean
         public SecurityFilterChain httpFilterChain(HttpSecurity http) throws Exception {
@@ -28,8 +31,13 @@ public class SecurityConfig {
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .formLogin(form -> form.successHandler((request, response, authentication) -> {
                                         response.setStatus(HttpServletResponse.SC_OK);
-                                }))
+                                        
+                                        
+                                })
+                                .failureHandler(customAuthFailureHandler))
                                 .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(HttpMethod.GET, "/users/signup-req").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.POST, "/users/signup-approve/**").hasRole("ADMIN")
                                                 .requestMatchers("/payment/webhook/verify/paymentLink").permitAll()
                                                 .requestMatchers("/delivery/webhook").permitAll()
                                                 .requestMatchers("/users/isLoggedIn").authenticated()
