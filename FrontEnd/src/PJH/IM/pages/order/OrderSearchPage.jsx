@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, use } from "react";
 import OrderListPanel from "../../components/order/OrderSearch/OrderListPanel";
 import OrderDetailPanel from "../../components/order/OrderSearch/OrderDetailPanel";
 import "./OrderSearchPage.css";
@@ -36,22 +36,33 @@ function OrderSearchPage() {
     }
   };
 
+  const handleStatusUpdate = useCallback((orderId, newOrderData) => {
+    setOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order.orderId === orderId ? newOrderData : order
+      )
+    );
+
+    // 2. 'selectedOrder' 상태도 최신 데이터로 업데이트합니다.
+    setSelectedOrder(newOrderData);
+  }, []);
+
   useEffect(() => {
     const fetchOrders = async () => {
+      setIsLoading(true);
       try {
         const response = await axios.get("/api/orders");
         const data = Array.isArray(response.data) ? response.data : [];
         setOrders(data);
-        if (orders.length > 0) {
-          setSelectedOrder(orders[0]);
+        if (data.length > 0 && !selectedOrder) {
+          setSelectedOrder(data[0]);
         }
       } catch (err) {
-        console.log(err);
+        console.error("주문 목록을 불러오는 데 실패했습니다.", err);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchOrders();
   }, []);
 
@@ -97,6 +108,7 @@ function OrderSearchPage() {
             <OrderDetailPanel
               order={selectedOrder}
               onDeleteOrder={handleDeleteOrder}
+              onStatusUpdate={handleStatusUpdate}
             />
           </div>
         </main>
