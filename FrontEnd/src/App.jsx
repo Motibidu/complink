@@ -18,6 +18,8 @@ import SellsSearchPage from "./PJH/IM/components/sells/SellsSearchPage";
 import SellsEntryPage from "./PJH/IM/components/sells/SellsEntryPage";
 import NotificationComponent from "./PJH/IM/components/NotificationComponent";
 import SignupApprove from "./PJH/IM/components/SignupApprove";
+import AssemblyQueue from "./PJH/IM/components/assembly/AssemblyQueue";
+import AssemblyDetail from "./PJH/IM/components/assembly/AssemblyDetail";
 
 function App() {
   return (
@@ -40,6 +42,14 @@ function App() {
             {/* 초기 페이지는 공개 */}
             <Route path="/orders/new" element={<OrderFormPage />} />
             <Route path="/orders/search" element={<OrderSearchPage />} />
+            <Route
+              path="/orders/assembly-queue"
+              element={<AssemblyQueue />}
+            />
+            <Route
+              path="/assembly/detail/:orderId"
+              element={<AssemblyDetail />}
+            />
             <Route path="/registers/item" element={<RegisterItemPage />} />
             <Route
               path="/registers/customer"

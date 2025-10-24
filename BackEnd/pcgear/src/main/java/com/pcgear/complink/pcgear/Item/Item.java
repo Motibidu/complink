@@ -30,6 +30,8 @@ public class Item {
         @NotBlank(message = "카테고리는 필수 입력 항목입니다.")
         private String category;
 
+        private ItemCategory itemCategory;
+
         private Integer QuantityOnHand;
 
         @NotNull(message = "입고단가는 필수 입력 항목입니다.")

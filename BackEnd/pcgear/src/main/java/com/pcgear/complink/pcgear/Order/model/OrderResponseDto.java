@@ -9,7 +9,6 @@ import com.pcgear.complink.pcgear.Customer.CustomerDto;
 import com.pcgear.complink.pcgear.Manager.ManagerDto;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 @Getter
 public class OrderResponseDto {
@@ -30,12 +29,16 @@ public class OrderResponseDto {
         this.orderId = order.getOrderId();
         this.orderDate = order.getOrderDate();
         this.deliveryDate = order.getDeliveryDate();
-        this.orderStatusDesc = order.getOrderStatus().getDescription();
         this.totalAmount = order.getTotalAmount();
         this.vatAmount = order.getVatAmount();
-        this.grandAmount = order.getGrandAmount();
+        this.grandAmount = order.getGrandAmount();  
         this.paymentLink = order.getPaymentLink();
 
+        if (order.getOrderStatus() != null) {
+            this.orderStatusDesc = order.getOrderStatus().getDescription();
+        } else {
+            this.orderStatusDesc = "상태 정보 없음";
+        }
         this.customer = new CustomerDto(order.getCustomer());
         if (order.getManager() != null) {
             // 2. null이 아닐 때만 ManagerDto를 생성합니다.

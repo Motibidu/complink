@@ -10,6 +10,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.pcgear.complink.pcgear.Assembly.AssemblyStatus;
+import com.pcgear.complink.pcgear.Assembly.AssemblyStatusConverter;
 import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Manager.Manager;
 
@@ -58,7 +60,13 @@ public class Order {
 
     @Column(name = "grand_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal grandAmount;
+
+    @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
+
+    private String assemblyWorkerId; // 조립 담당 직원 ID (새로 추가)
+
+    private AssemblyStatus assemblyStatus = AssemblyStatus.QUEUE; // 기본값 '작업 대기'
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
@@ -67,6 +75,8 @@ public class Order {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    private LocalDateTime paidAt;
 
     @JsonManagedReference
     @ToString.Exclude

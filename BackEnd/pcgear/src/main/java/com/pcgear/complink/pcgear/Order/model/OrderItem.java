@@ -8,6 +8,7 @@ import lombok.ToString;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.pcgear.complink.pcgear.Item.ItemCategory;
 
 @Getter
 @Setter
@@ -29,6 +30,12 @@ public class OrderItem {
     private Integer orderItemId;
 
     private String category;
+
+    private ItemCategory itemCategory;
+
+    private String serialNum;
+
+    private Boolean serialNumRequired;
 
     @Column(name = "item_name", nullable = false)
     private String itemName;
