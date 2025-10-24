@@ -3,6 +3,7 @@ package com.pcgear.complink.pcgear.Payment; // 실제 프로젝트의 패키지 
 import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
+import com.pcgear.complink.pcgear.Order.service.OrderService;
 import com.pcgear.complink.pcgear.Payment.model.SingleInquiryResponse;
 import com.pcgear.complink.pcgear.Payment.model.SubscriptionRequest;
 import com.pcgear.complink.pcgear.Payment.model.WebhookRequest;
@@ -38,17 +39,11 @@ public class PaymentController {
     private String portoneWebHookSecret = "whsec_JLpNT1u+qOJbJ8zFwa2Ff8Fn0MAiG8HpgoJFL+ZFL1I=";
     private final PaymentService paymentService;
     private final PaymentLinkService paymentLinkService;
+    private final OrderService orderService;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
-    /**
-     * 프론트엔드로부터 빌링키와 주문 정보를 받아 구독 처리를 시작하는 API 엔드포인트입니다.
-     * 
-     * @param request     프론트엔드에서 보낸 요청 DTO (billingKey, orderName, amount 포함)
-     * @param userDetails Spring Security가 주입해주는 현재 로그인된 사용자의 정보
-     * @return 성공 메시지를 포함한 ResponseEntity
-     */
     @PostMapping("/subscribe")
     public ResponseEntity<?> subscribe(@RequestBody SubscriptionRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -154,7 +149,8 @@ public class PaymentController {
                     // }
                     break;
                 case "paid": // 결제 완료
-                    sellService.createSellAndUpdateToPaid(order.getOrderId());
+                    paymentService.finalizeOrderPayment(order);
+
                     log.info("Payment completed for order {}", webhookRequest.getMerchantUid());
                     break;
                 case "cancelled": // 결제 취소

@@ -29,18 +29,7 @@ public class SellService {
         // 2. 재고 수량 변경
         // 3. Sell 데이터 생성
         @Transactional
-        public Sell createSellAndUpdateToPaid(Integer orderId) {
-                Order order = orderRepository.findById(orderId)
-                                .orElseThrow(() -> new EntityNotFoundException("해당 ID의 주문서를 찾을 수 없습니다: " + orderId));
-
-                // 1. 주문 상태를 'PAID'로 변경
-                order.setOrderStatus(OrderStatus.PAID);
-                orderRepository.save(order);
-
-                // 2. 주문된 상품들의 재고 수량 감소
-                List<OrderItem> itemsFromOrder = order.getOrderItems();
-                updateItemQuantityOnHand(itemsFromOrder);
-
+        public Sell createSell(Order order) {
                 // 3. 판매(Sell) 데이터 생성
                 Sell newSell = mapOrderToSell(order);
 

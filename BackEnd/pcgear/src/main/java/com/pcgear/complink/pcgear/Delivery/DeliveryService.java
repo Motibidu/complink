@@ -175,12 +175,16 @@ public class DeliveryService {
                                 .build();
 
                 return webClient.post()
-                                .uri(GRAPHQL_API_URL)
-                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(requestBody)
-                                .retrieve()
-                                .bodyToMono(TrackingResponse.class);
+                .uri(GRAPHQL_API_URL)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(TrackingResponse.class)
+                .map(response -> {
+                        log.info("response: {}", response);
+                        return response;
+                });
         }
 
         // 전달 받은 운송장번호로 배송조회에 완료 하면 유효한 운송장번호
@@ -189,6 +193,7 @@ public class DeliveryService {
                 return this.trackDelivery(trackingNumberReq.getCarrierId(), trackingNumberReq.getTrackingNumber(),
                                 accessToken)
                                 .map(response -> {
+                                        log.info("response: "+ response);
                                         // 1. GraphQL 오류 응답이 있거나, data.track이 null이면 유효하지 않음 (NOT_FOUND 포함)
                                         if ((response.getErrors() != null && !response.getErrors().isEmpty()) ||
                                                         (response.getData() == null
@@ -205,6 +210,9 @@ public class DeliveryService {
                                                         return new ValidationResult(false,
                                                                         "알 수 없는 배송 조회 오류가 발생했습니다: " + errorMessage);
                                                 }
+                                        }
+                                        else{
+                                                log.info("No trackDelivery Response");
                                         }
                                         createDelivery(trackingNumberReq);
                                         return new ValidationResult(true, "배송 조회에 성공했습니다.");

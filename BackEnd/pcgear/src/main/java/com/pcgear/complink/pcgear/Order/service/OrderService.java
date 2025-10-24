@@ -21,6 +21,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -125,6 +126,12 @@ public class OrderService {
         order.setOrderStatus(newStatus);
         return orderRepository.save(order);
     }
+
+    public Order setPaidAt(Order order) {
+        order.setPaidAt(LocalDateTime.now());
+        return orderRepository.save(order);
+    }
+
     public List<AssemblyQueueRespDto> readAssemblyQueueOrders(List<OrderStatus> orderStatus) {
         return orderRepository.findAllByOrderStatusIn(orderStatus).stream()
                 .map(AssemblyQueueRespDto::new)

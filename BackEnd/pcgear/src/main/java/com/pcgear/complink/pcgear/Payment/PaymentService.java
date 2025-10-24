@@ -4,9 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pcgear.complink.pcgear.Item.ItemService;
+import com.pcgear.complink.pcgear.Order.model.Order;
+import com.pcgear.complink.pcgear.Order.model.OrderStatus;
+import com.pcgear.complink.pcgear.Order.service.OrderService;
 import com.pcgear.complink.pcgear.Payment.model.AccessTokenResponse;
 import com.pcgear.complink.pcgear.Payment.model.SingleInquiryResponse;
 import com.pcgear.complink.pcgear.Payment.model.SubscriptionRequest;
+import com.pcgear.complink.pcgear.Sell.SellService;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
 import com.pcgear.complink.pcgear.User.repository.UserRepository;
 
@@ -48,6 +53,11 @@ public class PaymentService {
 
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
+
+    private final SellService sellService;
+    private final OrderService orderService;
+    private final ItemService itemService;
+    
 
     private static final String ACCESS_TOKEN_URI = "https://api.iamport.kr/users/getToken";
 
@@ -271,5 +281,22 @@ public class PaymentService {
                 .retrieve()
                 .bodyToMono(SingleInquiryResponse.class)
                 .block();
+    }
+
+    @Transactional
+    public void finalizeOrderPayment(Order order) {
+        
+        // 1. 판매 기록 생성 (매출 테이블에 반영)
+        sellService.createSell(order); 
+
+        // 2. 주문 상태를 상품준비중으로 업데이트
+        orderService.updateOrderStatus(order.getOrderId(), OrderStatus.PAID);
+
+        // 3. 주문 결제 날짜를 설정
+        orderService.setPaidAt(order); 
+        
+        // 4. 재고 차감 (재고 수량(QOH)을 업데이트)
+        // 이 과정에서 재고 부족 등으로 예외가 발생하면 전체 트랜잭션이 롤백됩니다.
+        itemService.updateItemQuantityOnHand(order);
     }
 }

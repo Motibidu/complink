@@ -4,6 +4,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.pcgear.complink.pcgear.Order.model.Order;
+import com.pcgear.complink.pcgear.Order.model.OrderItem;
+
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +46,29 @@ public class ItemService {
         @Transactional
         public void deleteItems(List<Integer> itemIds) {
                 itemRepository.deleteAllByItemIdIn(itemIds);
+        }
+
+        public void updateItemQuantityOnHand(Order order){
+
+                List<OrderItem> itemsFromOrder = order.getOrderItems();
+                for (OrderItem orderItem : itemsFromOrder) {
+                        log.info("orderItem: {}", orderItem);
+                        Item item = itemRepository.findById(orderItem.getItemId())
+                                        .orElseThrow(() -> new EntityNotFoundException(
+                                                        "품목을 찾을 수 없습니다: ID " + orderItem.getItemId()));
+
+                        int orderedQuantity = orderItem.getQuantity();
+                        int currentStock = item.getQuantityOnHand();
+
+                        if (currentStock < orderedQuantity) {
+                                throw new IllegalStateException(
+                                                "재고 부족: 품목 '" + item.getItemName() + "'의 재고가 충분하지 않습니다. (현재 재고: "
+                                                                + currentStock + ", 주문 수량: " + orderedQuantity + ")");
+                        }
+
+                        item.setQuantityOnHand(currentStock - orderedQuantity);
+                        itemRepository.save(item);
+                }
         }
 
 }
