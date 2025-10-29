@@ -4,6 +4,7 @@ import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
 import com.pcgear.complink.pcgear.Order.service.OrderService;
+import com.pcgear.complink.pcgear.Payment.exception.PaymentVerificationException;
 import com.pcgear.complink.pcgear.Payment.model.SingleInquiryResponse;
 import com.pcgear.complink.pcgear.Payment.model.SubscriptionRequest;
 import com.pcgear.complink.pcgear.Payment.model.WebhookRequest;
@@ -11,6 +12,7 @@ import com.pcgear.complink.pcgear.Sell.SellService;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
 import com.pcgear.complink.pcgear.User.repository.UserRepository;
 
+import io.portone.sdk.server.webhook.WebhookVerificationException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,48 +47,40 @@ public class PaymentController {
     private final SimpMessagingTemplate messagingTemplate;
 
     @PostMapping("/subscribe")
-    public ResponseEntity<?> subscribe(@RequestBody SubscriptionRequest request,
+    public ResponseEntity<String> subscribe(@RequestBody SubscriptionRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // 1. Spring Security의 UserDetails에서 사용자 이름(username)을 가져옵니다.
         String username = userDetails.getUsername();
-
-        // 2. 사용자 이름으로 DB에서 User 엔티티를 조회하여 고유 ID(Long 타입)를 얻습니다.
         UserEntity user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("해당 사용자를 찾을 수 없습니다: " + username));
-        String userId = user.getUsername();
 
-        // 3. 조회한 userId와 요청 데이터를 서비스 계층으로 전달합니다.
-        paymentService.processSubscription(request, userId);
+        paymentService.executeImmediatePayment(user, request).block();
 
-        // 4. 모든 처리가 성공적으로 완료되면 200 OK 응답과 함께 성공 메시지를 반환합니다.
-        return ResponseEntity.ok(Map.of("message", "구독 처리가 성공적으로 시작되었습니다."));
+        return ResponseEntity.ok("구독 처리가 성공적으로 시작되었습니다.");
     }
 
-    @PostMapping("/webhookVerify")
+    @PostMapping("/webhook-verify")
     public ResponseEntity<String> portOneWebhook(
             @RequestBody String payload, // 1. 원본 Body를 String으로 받습니다.
             @RequestHeader("webhook-id") String webhookId, // 2. 헤더 값을 받아옵니다.
             @RequestHeader("webhook-signature") String webhookSignature,
-            @RequestHeader("webhook-timestamp") String webhookTimestamp,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @RequestHeader("webhook-timestamp") String webhookTimestamp) {
         log.info("payload: {}", payload);
         log.info("webhook-id: {}", webhookId);
         log.info("webhook-signature: {}", webhookSignature);
-        log.info("ebhook-timestamp: {}", webhookTimestamp);
-        log.info("userDetails: {}", userDetails);
+        log.info("webhook-timestamp: {}", webhookTimestamp);
 
         try {
-            // 실제 비즈니스 로직은 서비스 계층에 위임합니다.
-            //
-            paymentService.processWebhook(webhookId, webhookSignature, webhookTimestamp, payload, userDetails);
-
+            paymentService.webhookVerify(payload, webhookId, webhookSignature, webhookTimestamp);
             return ResponseEntity.ok("Webhook processed successfully.");
-
+        } catch (WebhookVerificationException e) {
+            log.error("웹훅 검증 실패로 인해 요청 거부: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("Webhook verification failed: Invalid signature or payload.");
+        } catch (PaymentVerificationException e) {
+            log.error("웹훅 검증 실패로 인해 요청 거부: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("Webhook verification failed: " + e.getMessage());
         } catch (Exception e) {
-            log.error("웹훅 처리 중 오류 발생: {}", e.getMessage());
-            // 문제가 발생했더라도, 포트원의 재전송을 막기 위해 200 OK를 보내는 것을 고려할 수 있습니다.
-            // 또는 에러를 반환하여 재전송을 유도할 수도 있습니다. (포트원 정책 확인 필요)
-            return ResponseEntity.badRequest().body("Error processing webhook.");
+            log.error("웹훅 처리 중 내부 오류 발생: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body("Error processing webhook internally.");
 
         }
 
@@ -131,23 +125,6 @@ public class PaymentController {
             order.setImpUid(webhookRequest.getImpUid());
 
             switch (paymentStatus) {
-                case "ready": // 가상계좌 발급
-                    // order.setPaymentStatus(PaymentStatus.READY);
-                    // order.setVbankNum(paymentData.getVbankNum());
-                    // order.setVbankDate(paymentData.getVbankDate());
-                    // order.setVbankName(paymentData.getVbankName());
-                    // orderRepository.save(order);
-                    // log.info("VBank issued for order " + merchantUid + ": " +
-                    // paymentData.getVbankNum());
-
-                    // TODO: 가상계좌 발급 안내 문자메시지 발송 (SMS 서비스 사용)
-                    // if (smsService != null) {
-                    // String smsMessage = String.format("가상계좌 발급 성공. 계좌 정보: %s %s %s",
-                    // paymentData.getVbankNum(), paymentData.getVbankDate(),
-                    // paymentData.getVbankName());
-                    // smsService.sendSms(order.getBuyerTel(), smsMessage);
-                    // }
-                    break;
                 case "paid": // 결제 완료
                     paymentService.finalizeOrderPayment(order);
 
@@ -181,21 +158,6 @@ public class PaymentController {
         } catch (Exception e) {
             log.error("웹훅 처리 중 오류 발생: {}", e.getMessage());
             return ResponseEntity.badRequest().body("Error processing webhook.");
-        }
-    }
-
-    @PostMapping("/payment-link")
-    public ResponseEntity<String> createPaymentLink() {
-        try {
-            String shortenedUrl = paymentLinkService.createPaymentLink(
-                    "test_order_" + System.currentTimeMillis(),
-                    1000,
-                    "테스트 상품",
-                    "01011112222");
-            return ResponseEntity.ok(shortenedUrl);
-        } catch (Exception e) {
-            // 서비스에서 예외 발생 시 500 Internal Server Error와 함께 에러 메시지 반환
-            return ResponseEntity.internalServerError().body("결제 링크 생성에 실패했습니다: " + e.getMessage());
         }
     }
 }

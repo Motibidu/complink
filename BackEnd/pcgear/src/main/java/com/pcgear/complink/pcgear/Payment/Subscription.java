@@ -13,11 +13,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
 import lombok.Setter;
 
 @Entity
 @Table(name = "subscriptions")
 @Setter
+@Getter
 @EntityListeners(AuditingEntityListener.class)
 public class Subscription {
 
@@ -28,6 +30,11 @@ public class Subscription {
         String userId;
         String billingKey;
         String status;
+        String orderName;
+
+        String trackingId;
+
+        Integer amount;
 
         LocalDateTime startTime;
         LocalDateTime nextBillingTime;

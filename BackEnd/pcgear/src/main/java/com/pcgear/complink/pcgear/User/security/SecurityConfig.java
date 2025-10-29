@@ -11,7 +11,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-
 import org.springframework.web.cors.CorsConfigurationSource;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -31,14 +30,15 @@ public class SecurityConfig {
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .formLogin(form -> form.successHandler((request, response, authentication) -> {
                                         response.setStatus(HttpServletResponse.SC_OK);
-                                        
-                                        
+
                                 })
-                                .failureHandler(customAuthFailureHandler))
+                                                .failureHandler(customAuthFailureHandler))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(HttpMethod.GET, "/users/signup-req").hasRole("ADMIN")
-                                                .requestMatchers(HttpMethod.POST, "/users/signup-approve/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.POST, "/users/signup-approve/**")
+                                                .hasRole("ADMIN")
                                                 .requestMatchers("/payment/webhook/verify/paymentLink").permitAll()
+                                                .requestMatchers("/payment/webhook-verify").permitAll()
                                                 .requestMatchers("/delivery/webhook").permitAll()
                                                 .requestMatchers("/users/isLoggedIn").authenticated()
 

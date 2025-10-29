@@ -23,7 +23,6 @@ import com.pcgear.complink.pcgear.User.service.UserService;
 
 import java.util.Map;
 
-
 @Tag(name = "사용자 관리", description = "사용자 등록 및 로그인 상태 확인 API")
 @RequiredArgsConstructor
 @Slf4j
@@ -61,11 +60,15 @@ public class UserController {
         }
     }
 
+    @GetMapping("/userId")
+    public ResponseEntity<String> userId(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok().body(userDetails.getUsername());
+    }
+
     @GetMapping("/signup-req")
     public ResponseEntity<Page<SignupRespDto>> readSignupReq(
-        // 💡 @PageableDefault로 기본값 설정 (페이지 0, 사이즈 10)
-        @PageableDefault(page = 0, size = 10) Pageable pageable) 
-    {
+            // 💡 @PageableDefault로 기본값 설정 (페이지 0, 사이즈 10)
+            @PageableDefault(page = 0, size = 10) Pageable pageable) {
         Page<SignupRespDto> signupPage = userService.readSignupReq(pageable);
         return ResponseEntity.ok(signupPage);
     }
@@ -88,16 +91,16 @@ public class UserController {
     }
 
     @PostMapping("/signup-approve/{email}")
-    public ResponseEntity<String> signupApprove(@PathVariable(name= "email") String email) {
+    public ResponseEntity<String> signupApprove(@PathVariable(name = "email") String email) {
         userService.signupApprove(email);
-        
+
         return ResponseEntity.ok("회원가입 승인이 완료되었습니다.");
     }
 
     @DeleteMapping("/signup-reject/{email}")
-    public ResponseEntity<String> signupReject(@PathVariable(name= "email") String email) {
+    public ResponseEntity<String> signupReject(@PathVariable(name = "email") String email) {
         userService.signupReject(email);
         return ResponseEntity.noContent().build(); // 204 No Content
     }
-    
+
 }

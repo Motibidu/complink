@@ -6,8 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PaymentRepository extends JpaRepository<Payment, String> {
-
-        Optional<Payment> findByPaymentId(String paymentId);
-
+public interface SubscriptionRepository extends JpaRepository<Subscription, Integer> {
+        Optional<Subscription> findByTrackingId(String trackingId);
 }

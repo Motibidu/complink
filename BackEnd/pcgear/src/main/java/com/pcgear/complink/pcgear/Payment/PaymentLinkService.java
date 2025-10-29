@@ -73,7 +73,6 @@ public class PaymentLinkService {
                         System.out.println("requestBody JSON: " + objectMapper.writeValueAsString(requestBody));
                 } catch (JsonProcessingException e) {
                         System.err.println("requestBody 객체 JSON 직렬화 실패: " + e.getMessage());
-                        // 만약 직렬화 실패 시, 기본 toString으로라도 출력
                         System.out.println("requestBody (toString fallback): " + requestBody.toString());
                 }
 
@@ -95,8 +94,6 @@ public class PaymentLinkService {
                 if (response != null && response.getShortenedUrl() != null) {
                         return response.getShortenedUrl(); // 성공 시 단축 URL 반환
                 } else {
-                        // 이 else 블록은 HTTP 상태 코드가 200이면서 shortenedUrl이 없는 경우를 처리
-                        // (onStatus에서 이미 에러를 던지므로 여기는 거의 도달하지 않을 수 있습니다)
                         throw new RuntimeException("결제 링크 생성 실패: 응답에서 shortenedUrl을 찾을 수 없습니다.");
                 }
         }
