@@ -56,6 +56,14 @@ const Sidebar = () => {
         { name: "판매조회", path: "/sells/search" },
       ],
     },
+    {
+      name: "조립/출고",
+      icon: <MdSell />,
+      children: [
+        // 하위 메뉴 항목 추가
+        { name: "조립/출고 대기 리스트", path: "/orders/assembly-queue" },
+      ],
+    },
   ];
   const handleItemClick = (itemName) => {
     // 이미 열려있는 메뉴를 다시 클릭하면 닫기
@@ -68,71 +76,6 @@ const Sidebar = () => {
   };
 
   return (
-    // <nav className="sidebar">
-    //   <ul className="sidebar__menu">
-    //     {navItems.map((item) => (
-    //       <li key={item.name} className="sidebar__menu-item">
-    //         <div
-    //           className="sidebar__menu-link-wrapper"
-    //           onClick={() => handleItemClick(item.name)}
-    //         >
-    //           {!item.children ? (
-    //             <NavLink
-    //               to={item.path}
-    //               className={({ isActive }) =>
-    //                 isActive
-    //                   ? "sidebar__menu-link sidebar__menu-link--active"
-    //                   : "sidebar__menu-link"
-    //               }
-    //             >
-    //               <div className="sidebar__menu-icon">{item.icon}</div>
-    //               <span className="sidebar__menu-text">{item.name}</span>
-    //             </NavLink>
-    //           ) : (
-    //             // 하위 메뉴가 있는 항목은 링크 기능을 제거한 div 사용
-    //             <div
-    //               className={`sidebar__menu-link ${
-    //                 clickedItem === item.name
-    //                   ? "sidebar__menu-link--active"
-    //                   : ""
-    //               }`}
-    //             >
-    //               <div className="sidebar__menu-icon">{item.icon}</div>
-    //               <span className="sidebar__menu-text">{item.name}</span>
-    //               <div className="sidebar__submenu-toggle-icon">
-    //                 {clickedItem === item.name ? (
-    //                   <FaChevronDown />
-    //                 ) : (
-    //                   <FaChevronRight />
-    //                 )}
-    //               </div>
-    //             </div>
-    //           )}
-    //         </div>
-
-    //         {/* 하위 메뉴를 조건부로 렌더링 */}
-    //         {item.children && clickedItem === item.name && (
-    //           <ul className="sidebar__submenu">
-    //             {item.children.map((child) => (
-    //               <li key={child.name} className="sidebar__submenu-item">
-    //                 <NavLink
-    //                   to={child.path}
-    //                   className={({ isActive }) =>
-    //                     isActive
-    //                       ? "sidebar__submenu-link sidebar__submenu-link--active"
-    //                       : "sidebar__submenu-link"
-    //                   }
-    //                 >
-    //                   {child.name}
-    //                 </NavLink>
-    //               </li>
-    //             ))}
-    //           </ul>
-    //         )}
-    //       </li>
-    //     ))}
-    //   </ul>
-    // </nav>
     <nav className="sidebar">
       <ul className="sidebar__list">
         {navItems.map((item) => {

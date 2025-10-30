@@ -11,25 +11,28 @@ const OrderForm = () => {
 
   const [orderItems, setOrderItems] = useState([
     {
-      category: "CPU",
-      itemName: "인텔 코어 울트라5 시리즈2 245K (애로우레이크) (정품)",
-      quantity: 1,
-      unitPrice: 387630,
-      totalPrice: 387630,
-    },
-    {
+      itemId: 36,
       category: "메인보드",
-      itemName: "MSI MAG X870 토마호크 WIFI",
+      itemName: "GIGABYTE B650 AORUS ELITE AX",
       quantity: 1,
-      unitPrice: 465470,
-      totalPrice: 465470,
+      unitPrice: 500,
+      totalPrice: 550,
     },
     {
-      category: "메모리",
+      itemId: 33,
+      category: "그래픽카드",
+      itemName: "ZOTAC GAMING 지포스 RTX 4060 TWIN Edge OC D6 8GBI",
+      quantity: 1,
+      unitPrice: 500,
+      totalPrice: 550,
+    },
+    {
+      itemId: 39,
+      category: "RAM",
       itemName: "SK하이닉스 DDR5-5600 (16GB)",
       quantity: 1,
-      unitPrice: 91460,
-      totalPrice: 91460,
+      unitPrice: 500,
+      totalPrice: 550,
     },
   ]);
 
@@ -66,6 +69,7 @@ const OrderForm = () => {
     const updatedRow = {
       ...newItems[index], // 기존 행의 다른 값(예: 수량)은 유지될 수 있도록
       category: selectedItem.category,
+      itemId: selectedItem.itemId, // itemId 추가
       itemName: selectedItem.itemName,
       unitPrice: selectedItem.sellingPrice * newItems[index].quantity, // 출고단가(sellingPrice)를 단가로 설정
       totalPrice: (newItems[index].quantity || 1) * selectedItem.sellingPrice,
@@ -110,6 +114,7 @@ const OrderForm = () => {
       deliveryDate: orderHeader.deliveryDate,
       status: "접수", // 초기 상태를 '접수'로 지정
       items: orderItems.map((item) => ({
+        itemId: item.itemId,
         category: item.category,
         itemName: item.itemName,
         quantity: parseInt(item.quantity, 10),
@@ -145,7 +150,6 @@ const OrderForm = () => {
         const errorText = await response.text();
         throw new Error(errorText || "서버에서 오류가 발생했습니다.");
       }
-      alert("주문이 성공적으로 등록되었습니다.");
       setOrderItems([]);
       setOrderHeader({});
     } catch (err) {

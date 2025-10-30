@@ -1,6 +1,23 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
 
+// const fetchTrackingStatus = async (orderId) => {
+//   try {
+//     await axios.get(`/api/delivery/registered/${orderId}`);
+//     return true;
+//   } catch (error) {
+//     return false;
+//   }
+// };
+const fetchDelivery = async (orderId) => {
+  try {
+    const resp = await axios.get(`/api/delivery/${orderId}`);
+    return resp.data;
+  } catch (err) {
+    return null;
+    //console.err(err);
+  }
+};
 const SellsSearchPage = () => {
   const [sells, setsells] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,24 +40,41 @@ const SellsSearchPage = () => {
   // 상세 조회를 위한 state
   const [selectedsell, setSelectedsell] = useState(null);
 
-  const handleOpenWaybillModal = (sell) => {
-		// 선택된 주문의 orderId를 설정하고 운송장 정보는 초기화 (새로 입력해야 하므로)
-		setTrackingNumberReq({
-			orderId: sell.orderId,
+  const openTrackingNumberReqModal = (sell) => {
+    // 선택된 판매의 orderId를 설정하고 운송장 정보는 초기화 (새로 입력해야 하므로)
+    setTrackingNumberReq({
+      orderId: sell.orderId,
       customerId: sell.customerId,
-			trackingNumber: TrackingNumberReq.trackingNumber,
-			carrierId: TrackingNumberReq.carrierId,
-		});
-		setMessage({ type: "", text: "" }); // 메시지 초기화
-	};
+      trackingNumber: TrackingNumberReq.trackingNumber,
+      carrierId: TrackingNumberReq.carrierId,
+    });
+    setMessage({ type: "", text: "" }); // 메시지 초기화
+  };
+
+  const openDeliveryDetailModal = (sell) => {
+    setSelectedsell(sell);
+  };
 
   const fetchSells = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get("/api/sells");
-      console.log("response.data: ", response.data);
-      setsells(response.data);
+      const sellsResponse = await axios.get("/api/sells");
+      const sellsData = sellsResponse.data;
+
+      // 💡 각 주문에 대한 배송 추적 등록 상태(Delivery 레코드 존재 여부)를 병렬로 확인
+      const statusPromises = sellsData.map((sell) =>
+        fetchDelivery(sell.orderId).then((delivery) => ({
+          ...sell,
+          delivery: delivery,
+        }))
+      );
+
+      // 모든 상태 확인이 완료될 때까지 기다림
+      const enrichedSells = await Promise.all(statusPromises);
+
+      console.log("Enriched Sells Data:", enrichedSells);
+      setsells(enrichedSells);
     } catch (err) {
       setError("판매 데이터를 불러오는 데 실패했습니다.");
       console.error(err);
@@ -80,7 +114,7 @@ const SellsSearchPage = () => {
       );
     });
   }, [sells, searchTerm, dateRange]);
-  console.log("filteredsells: ", filteredsells);
+  //console.log("filteredsells: ", filteredsells);
   // 필터링된 데이터의 합계 계산
   const totals = useMemo(() => {
     return filteredsells.reduce(
@@ -110,14 +144,17 @@ const SellsSearchPage = () => {
       [name]: value,
     }));
   };
-  const handleWaybilReqSubmit = async (e) => {
+  const trackingNumberReqSubmit = async (e) => {
     e.preventDefault(); // 폼의 기본 새로고침 동작 방지
 
     setLoading(true);
 
     try {
-      console.log("waybillReq: ", TrackingNumberReq);
-      const response = await axios.post("/api/delivery/trackingNumber", TrackingNumberReq);
+      console.log("TrackingNumberReq: ", TrackingNumberReq);
+      const response = await axios.post(
+        "/api/delivery/trackingNumber",
+        TrackingNumberReq
+      );
       console.log("response: ", response);
 
       if (response.status === 201 || response.status === 200) {
@@ -125,7 +162,7 @@ const SellsSearchPage = () => {
           trackingNumber: "",
           carrierId: "",
         });
-        const modalElement = document.getElementById("waybillReqModal");
+        const modalElement = document.getElementById("trackingNumberReqModal");
         const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) {
           modalInstance.hide();
@@ -134,7 +171,6 @@ const SellsSearchPage = () => {
         fetchSells();
 
         alert(response.data);
-        
       }
     } catch (error) {
       const errorMsg =
@@ -199,7 +235,7 @@ const SellsSearchPage = () => {
               <th>고객명</th>
               <th>담당자명</th>
               <th className="text-end">합계 금액</th>
-              <th></th>
+              {/* <th></th> */}
             </tr>
           </thead>
           <tbody>
@@ -210,38 +246,57 @@ const SellsSearchPage = () => {
                 </td>
               </tr>
             ) : filteredsells.length > 0 ? (
-              filteredsells.map((sell) => (
-                <tr
-                  key={sell.sellId}
-                  onClick={() => handleViewDetails(sell)}
-                  data-bs-toggle="modal"
-                  data-bs-target="#sellDetailModal"
-                  style={{ cursor: "pointer" }}
-                >
-                  <td>{sell.sellDate.split("T")[0]}</td>
-                  <td>{sell.orderId}</td>
-                  <td>{sell.sellId}</td>
-                  <td>{sell.customerName}</td>
-                  <td>{sell.managerName || "-"}</td>
-                  <td className="text-end">
-                    {sell.grandAmount.toLocaleString()}원
-                  </td>
-                  <td>
-                    <button
-											className="btn btn-sm btn-outline-info"
-											data-bs-target="#waybillReqModal"
-											data-bs-toggle="modal"
-											// 운송장 버튼 클릭 시 orderId를 설정하고 행 클릭 이벤트는 막습니다.
-											onClick={(e) => {
-												e.stopPropagation();
-												handleOpenWaybillModal(sell);
-											}}
-										>
-											[운송장번호 입력/ 배송추적]
-										</button>
-                  </td>
-                </tr>
-              ))
+              filteredsells.map((sell) => {
+                // isRegistered 값에 따라 버튼의 텍스트와 클래스를 미리 정의
+                // const isRegistered = sell.delivery.trackingNumber; // 가정: 운송장 번호가 있으면 등록된 상태
+
+                // const buttonText = isRegistered
+                //   ? "[" + sell.delivery.currentStatus + "/상세보기]" // 등록 완료: 현재 배송 상태 표시
+                //   : "[운송장번호 입력/ 배송추적]"; // 미등록: 입력 요청 텍스트 표시
+
+                // const buttonClass = isRegistered
+                //   ? "btn-outline-primary" // 등록 완료: 초록색/비활성화
+                //   : "btn-outline-secondary"; // 미등록: 파란색 테두리/활성화
+
+                // const modalTarget = isRegistered
+                //   ? "#deliveryDatailModal"
+                //   : "#trackingNumberReqModal";
+                return (
+                  <tr
+                    key={sell.sellId}
+                    onClick={() => handleViewDetails(sell)}
+                    data-bs-toggle="modal"
+                    data-bs-target="#sellDetailModal"
+                    style={{ cursor: "pointer" }}
+                  >
+                    <td>{sell.sellDate.split("T")[0]}</td>
+                    <td>{sell.orderId}</td>
+                    <td>{sell.sellId}</td>
+                    <td>{sell.customerName}</td>
+                    <td>{sell.managerName || "-"}</td>
+                    <td className="text-end">
+                      {sell.grandAmount.toLocaleString()}원
+                    </td>
+                    {/* <td>
+                      <button
+                        className={`btn btn-sm ${buttonClass}`}
+                        data-bs-target={modalTarget}
+                        data-bs-toggle="modal"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isRegistered) {
+                            openTrackingNumberReqModal(sell);
+                          } else {
+                            openDeliveryDetailModal(sell);
+                          }
+                        }}
+                      >
+                        {buttonText}
+                      </button>
+                    </td> */}
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan="6" className="text-center text-muted">
@@ -252,21 +307,20 @@ const SellsSearchPage = () => {
           </tbody>
           <tfoot>
             <tr className="fw-bold table-group-divider">
-              <td colSpan="4" className="text-end">
+              <td colSpan="5" className="text-end">
                 조회된 합계
               </td>
               <td className="text-end">
                 {totals.grandAmount.toLocaleString()}원
               </td>
-              <td></td>
             </tr>
           </tfoot>
         </table>
       </div>
-      <div className="modal fade" id="waybillReqModal" tabIndex="-1">
+      <div className="modal fade" id="trackingNumberReqModal" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
-            <form onSubmit={handleWaybilReqSubmit}>
+            <form onSubmit={trackingNumberReqSubmit}>
               <div className="modal-header">
                 <h5 className="modal-title" id="sellDetailModalLabel">
                   운송장 번호/ 택배사 코드 입력
@@ -279,7 +333,7 @@ const SellsSearchPage = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                 <div className="col-md-12 mb-4">
+                <div className="col-md-12 mb-4">
                   <label htmlFor="orderId" className="form-label">
                     주문Id <span className="text-danger">*</span>
                   </label>
@@ -348,13 +402,7 @@ const SellsSearchPage = () => {
           </div>
         </div>
       </div>
-      <div
-        className="modal fade"
-        id="sellDetailModal"
-        tabIndex="-1"
-        aria-labelledby="sellDetailModalLabel"
-        aria-hidden="true"
-      >
+      <div className="modal fade" id="sellDetailModal" tabIndex="-1">
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
             <div className="modal-header">
@@ -396,9 +444,9 @@ const SellsSearchPage = () => {
                     <strong>총 합계:</strong>{" "}
                     {selectedsell.grandAmount.toLocaleString()}원
                   </p>
-                  <p>
+                  {/* <p>
                     <strong>결제 상태:</strong> {selectedsell.paymentStatus}
-                  </p>
+                  </p> */}
                   <p>
                     <strong>원본 주문번호:</strong> {selectedsell.orderId}
                   </p>
@@ -422,6 +470,56 @@ const SellsSearchPage = () => {
           </div>
         </div>
       </div>
+      {/* <div className="modal fade" id="deliveryDatailModal" tabIndex="-1">
+        <div className="modal-dialog modal-lg">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title" id="sellDetailModalLabel">
+                배송 상세 정보
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body">
+              {selectedsell ? (
+                <div>
+                  <p>
+                    <strong>수령인 이름:</strong>{" "}
+                    {selectedsell.delivery.recipientName}
+                  </p>
+                  <p>
+                    <strong>수령인 주소: </strong>
+                    {selectedsell.delivery.recipientAddr}
+                  </p>
+                  <p>
+                    <strong>수령인 전화번호:</strong>{" "}
+                    {selectedsell.delivery.recipientPhone}
+                  </p>
+                  <p>
+                    <strong>배송 상태:</strong>{" "}
+                    {selectedsell.delivery.currentStatus}
+                  </p>
+                </div>
+              ) : (
+                <p>상세 정보를 불러올 수 없습니다.</p>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      </div> */}
     </div>
   );
 };

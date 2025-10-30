@@ -1,9 +1,14 @@
 import { IoPerson } from "react-icons/io5";
+import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import axios from "axios"; // axios 사용을 권장합니다 (fetch보다 편리)
 
 const Header = () => {
   const { isLoggedIn, logout } = useAuth();
+  const [userRole, setUserRole] = useState("");
+  const [userId, setUserId] = useState("");
+  const {webhookMessage, setWebhookMessage} = useState("");
+
   const handleLogout = (e) => {
     e.preventDefault(); // a 태그의 기본 동작 방지
     logout();
@@ -15,15 +20,33 @@ const Header = () => {
       .join("");
   }
 
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const resp = await axios.get("/api/users/userRole");
+        console.log("fetchUserRole_resp: ", resp.data);
+        setUserRole(String(resp.data));
+      } catch (err) {
+        console.log("사용자 역할 확인 에러:", err);
+      }
+    };
+
+    const fetchUserId = async () => {
+      try {
+        const resp = await axios.get("/api/users/userId");
+        console.log("fetchUserId_resp: ", resp.data);
+        setUserId(String(resp.data));
+      } catch (err) {
+        console.log("사용자 아이디 가져오기:", err);
+      }
+    };
+    fetchUserRole();
+    fetchUserId();
+  }, []);
+
   const STORE_ID = import.meta.env.VITE_PORTONE_STORE_ID;
   const TOSSPAY_CHANNEL_KEY = import.meta.env.VITE_PORTONE_TOSSPAY_CHANNEL_KEY;
 
-  //console.log(`[ENV] STORE_ID: "${STORE_ID}" (Type: ${typeof STORE_ID})`);
-  // console.log(
-  //   `[ENV] CHANNEL_KEY: "${TOSSPAY_CHANNEL_KEY}" (Type: ${typeof TOSSPAY_CHANNEL_KEY})`
-  // );
-
-  // axios 인스턴스 설정 (App.js에서 사용한 axiosInstance가 있다면 그것을 가져와도 좋습니다)
   const api = axios.create({
     baseURL: "/api", // 백엔드 API 기본 경로
     withCredentials: true, // 세션 쿠키 전송을 위해 필수
@@ -40,16 +63,15 @@ const Header = () => {
 
     // 토스페이 빌링키 발급 요청
     const response = await window.PortOne.requestIssueBillingKey({
-      storeId: STORE_ID, // 고객사 storeId로 변경해주세요.
-      channelKey: TOSSPAY_CHANNEL_KEY, // 콘솔 결제 연동 화면에서 채널 연동 시 생성된 채널 키를 입력해주세요.
+      storeId: STORE_ID, 
+      channelKey: TOSSPAY_CHANNEL_KEY,
       billingKeyMethod: "EASY_PAY",
       issueId: `issue-${randomId()}`,
       issueName: "test-issueName",
       customer: {
-        customerId: `customer-${randomId()}`,
+        customerId: userId,
       },
-      redirectUrl: "http://localhost",
-      noticeUrls: ["https://9c49923e9506.ngrok-free.app"],
+      noticeUrls: ["https://6b6b37142cd4.ngrok-free.app/payment/webhook-verify"],
     });
 
     if (response.code) {
@@ -62,24 +84,16 @@ const Header = () => {
     const isServerProcessSuccess = await processPaymentOnServer(
       response.billingKey
     );
-    if (isServerProcessSuccess) {
-      if (paymentModal) paymentModal.hide(); // 기존 모달 닫기
-      successModal.show(); // 새로운 성공 모달 열기
-    } else {
-      alert(
-        "결제는 성공했으나 서버에 기록하는 중 문제가 발생했습니다. 관리자에게 문의하세요."
-      );
-      paymentModal.hide();
-    }
   }
   const processPaymentOnServer = async (billingKey) => {
     try {
       const response = await api.post("/payment/subscribe", {
         billingKey: billingKey,
-        orderName: "단건 결제",
+        billingKeyMethod: "EASY_PAY",
         amount: 1000,
       });
       if (response.status === 200) {
+        setWebhookMessage(response.data);
         console.log("서버 처리 성공:", response.data);
         return true;
       }
@@ -95,6 +109,29 @@ const Header = () => {
       <header className="header">
         <div className="header__container">
           <a className="header__logo">PCGear</a>
+          <div class="header__controls">
+            {userRole == "ADMIN" ? (
+              <div className="dropdown- header__admin-link">
+                <a
+                  href="#"
+                  className="dropdown-toggle"
+                  data-bs-toggle="dropdown"
+                >
+                  관리자
+                </a>
+                <ul className="dropdown-menu dropdown-menu-end">
+                  <li>
+                    <a className="dropdown-item" href="/admin/signup-approve">
+                      회원가입 승인
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              ""
+            )}
+          </div>
+
           <div className="dropdown">
             <a
               href="#"
@@ -173,7 +210,6 @@ const Header = () => {
             </div>
             <div className="modal-body">
               <p>여기에 결제 관련 폼이나 정보를 입력하세요.</p>
-              {/* 예: 결제 수단 선택, 약관 동의 등 */}
               <div className="form-check">
                 <input
                   className="form-check-input"
@@ -195,7 +231,7 @@ const Header = () => {
                 취소
               </button>
               <button
-                 onClick={requestPayment}
+                onClick={requestPayment}
                 type="button"
                 className="btn btn-primary"
               >
@@ -210,7 +246,7 @@ const Header = () => {
           <div className="modal-content">
             <div className="modal-body text-center py-5">
               <h3 className="mt-3">결제 완료!</h3>
-              <p className="text-muted">결제가 성공적으로 처리되었습니다.</p>
+              <p className="text-muted">{webhookMessage}</p>
               <button
                 type="button"
                 className="btn btn-primary mt-3"

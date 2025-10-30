@@ -5,7 +5,7 @@ import {
 } from "../../../utils/formatters";
 import axios from "axios";
 
-const OrderDetailView = ({ order, onDeleteOrder, onSubmit }) => {
+const OrderDetailView = ({ order, onDeleteOrder, onSubmit, onStatusUpdate }) => {
   const badgeColors = getStatusBadgeVariant(order.orderStatusDesc);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,6 +23,13 @@ const OrderDetailView = ({ order, onDeleteOrder, onSubmit }) => {
       if (confirm("결제 링크를 문자로 전송하시겠습니까?")) {
         await axios.post("/api/sms/send-one", requestBody);
         alert("결제 링크가 성공적으로 전송되었습니다.");
+
+        const updatedOrderResponse = await axios.get("/api/orders/"+order.orderId);
+        console.log("updatedOrderResponse: ", updatedOrderResponse);
+        const newOrderData = updatedOrderResponse.data;
+        if (onStatusUpdate) {
+            onStatusUpdate(order.orderId, newOrderData);
+        }
       }
     } catch (error) {
       alert("결제 링크 전송 중 오류가 발생했습니다.");

@@ -1,6 +1,6 @@
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pcgear.complink.pcgear.PcgearApplication;
-import com.pcgear.complink.pcgear.PJH.Payment.PaymentLinkService;
+import com.pcgear.complink.pcgear.Payment.PaymentLinkService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

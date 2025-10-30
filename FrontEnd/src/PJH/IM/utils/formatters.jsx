@@ -7,12 +7,14 @@
 export const getStatusBadgeVariant = (orderStatusDescription) => {
   switch (orderStatusDescription) {
     // 결제 관련 상태
-    case "결제 대기":
+    case "주문 접수":
       return { bg: "bg-info-subtle", text: "text-info-emphasis" };
-    case "결제 준비":
+    case "결제 대기":
       return { bg: "bg-primary-subtle", text: "text-primary-emphasis" };
     case "결제 완료":
       return { bg: "bg-success-subtle", text: "text-success-emphasis" };
+    case "상품 준비중":
+      return { bg: "bg-primary-subtle", text: "text-primary-emphasis" };
     case "결제 실패":
       return { bg: "bg-danger-subtle", text: "text-danger-emphasis" };
     case "환불 요청":
@@ -21,7 +23,7 @@ export const getStatusBadgeVariant = (orderStatusDescription) => {
       return { bg: "bg-secondary-subtle", text: "text-secondary-emphasis" };
 
     // 배송/처리 관련 상태
-    case "상품 준비중":
+    case "배송 대기":
       return { bg: "bg-primary-subtle", text: "text-primary-emphasis" };
     case "배송중":
       return { bg: "bg-info-subtle", text: "text-info-emphasis" };
@@ -42,11 +44,6 @@ export const getStatusBadgeVariant = (orderStatusDescription) => {
   }
 };
 
-/**
- * 숫자를 통화 형식(e.g., 10,000)의 문자열로 변환합니다.
- * @param {number} amount - 포맷할 숫자
- * @returns {string} 포맷된 문자열
- */
 export const formatCurrency = (amount) => {
   if (typeof amount !== "number") return amount;
   return new Intl.NumberFormat("ko-KR").format(amount);

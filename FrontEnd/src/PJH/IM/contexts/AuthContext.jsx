@@ -39,9 +39,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 로그아웃 함수
-  const logout = () => {
-    // 실제로는 저장된 토큰 삭제 및 상태 변경
-    setIsLoggedIn(false);
+  const logout = async() => {
+    try{
+      await axios.post("/api/logout");
+      setIsLoggedIn(false);
+      window.location.reload(); 
+    }catch(err)
+    {
+        console.log("로그아웃 에러:", err);
+        alert("로그아웃 중 오류가 발생했습니다.");
+    }
+
+    
   };
 
   // 공유할 값들
