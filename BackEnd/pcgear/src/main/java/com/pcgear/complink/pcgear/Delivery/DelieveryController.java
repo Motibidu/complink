@@ -12,7 +12,7 @@ import com.pcgear.complink.pcgear.Order.service.OrderService;
 
 import jakarta.persistence.EntityNotFoundException;
 
-import com.pcgear.complink.pcgear.Delivery.model.Delivery;
+import com.pcgear.complink.pcgear.Delivery.entity.Delivery;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
 
 import lombok.RequiredArgsConstructor;
@@ -75,19 +75,12 @@ public class DelieveryController {
 
         // Delivery, Order의 status 업데이트
         String currentStatus = deliveryService.getDeliveryStatus(trackingResponse);
-        log.info("currentStatus: {}", currentStatus);
-        deliveryService.updateDeiliveryStatus(webhookReq, currentStatus);
+        String trackingNumber = webhookReq.getTrackingNumber();
+
+        // log.info("currentStatus: {}", currentStatus);
+        deliveryService.updateDeiliveryStatus(trackingNumber, currentStatus);
 
         return ResponseEntity.ok("웹훅 수신완료!");
-    }
-
-    @GetMapping("/{orderId}")
-    public ResponseEntity<Delivery> readDelivery(@PathVariable(name = "orderId") Integer orderId) {
-        Optional<Delivery> deliveryOpt = deliveryService.findByOrderId(orderId);
-        return deliveryOpt
-                .map(ResponseEntity::ok) // delivery가 있다면 ResponseEntity에 감싸서 반환
-                .orElseGet(() -> ResponseEntity.noContent().build()); // 없으면 204 반환
-
     }
 
 }

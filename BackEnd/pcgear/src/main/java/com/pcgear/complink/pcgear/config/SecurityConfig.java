@@ -1,4 +1,4 @@
-package com.pcgear.complink.pcgear.User.security;
+package com.pcgear.complink.pcgear.config;
 
 //import com.pcgear.complink.pcgear.KJG.user.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +10,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.pcgear.complink.pcgear.User.security.CustomAuthFailureHandler;
 
 import org.springframework.web.cors.CorsConfigurationSource;
 import jakarta.servlet.http.HttpServletResponse;

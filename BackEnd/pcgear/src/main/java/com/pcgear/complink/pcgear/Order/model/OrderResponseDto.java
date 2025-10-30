@@ -31,7 +31,7 @@ public class OrderResponseDto {
         this.deliveryDate = order.getDeliveryDate();
         this.totalAmount = order.getTotalAmount();
         this.vatAmount = order.getVatAmount();
-        this.grandAmount = order.getGrandAmount();  
+        this.grandAmount = order.getGrandAmount();
         this.paymentLink = order.getPaymentLink();
 
         if (order.getOrderStatus() != null) {

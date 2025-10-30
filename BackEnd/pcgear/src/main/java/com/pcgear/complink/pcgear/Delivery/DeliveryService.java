@@ -16,8 +16,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Customer.CustomerRepository;
+import com.pcgear.complink.pcgear.Delivery.entity.Delivery;
 import com.pcgear.complink.pcgear.Delivery.model.AccessTokenResp;
-import com.pcgear.complink.pcgear.Delivery.model.Delivery;
 import com.pcgear.complink.pcgear.Delivery.model.GraphQLRequest;
 import com.pcgear.complink.pcgear.Delivery.model.RegisterWebhookResp;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingResponse;
@@ -175,16 +175,16 @@ public class DeliveryService {
                                 .build();
 
                 return webClient.post()
-                .uri(GRAPHQL_API_URL)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(TrackingResponse.class)
-                .map(response -> {
-                        log.info("response: {}", response);
-                        return response;
-                });
+                                .uri(GRAPHQL_API_URL)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(requestBody)
+                                .retrieve()
+                                .bodyToMono(TrackingResponse.class)
+                                .map(response -> {
+                                        log.info("response: {}", response);
+                                        return response;
+                                });
         }
 
         // 전달 받은 운송장번호로 배송조회에 완료 하면 유효한 운송장번호
@@ -193,7 +193,7 @@ public class DeliveryService {
                 return this.trackDelivery(trackingNumberReq.getCarrierId(), trackingNumberReq.getTrackingNumber(),
                                 accessToken)
                                 .map(response -> {
-                                        log.info("response: "+ response);
+                                        log.info("response: " + response);
                                         // 1. GraphQL 오류 응답이 있거나, data.track이 null이면 유효하지 않음 (NOT_FOUND 포함)
                                         if ((response.getErrors() != null && !response.getErrors().isEmpty()) ||
                                                         (response.getData() == null
@@ -210,8 +210,7 @@ public class DeliveryService {
                                                         return new ValidationResult(false,
                                                                         "알 수 없는 배송 조회 오류가 발생했습니다: " + errorMessage);
                                                 }
-                                        }
-                                        else{
+                                        } else {
                                                 log.info("No trackDelivery Response");
                                         }
                                         createDelivery(trackingNumberReq);
@@ -233,14 +232,7 @@ public class DeliveryService {
                 return currentStatus;
         }
 
-        public boolean existsByOrderId(Integer orderId) {
-                return deliveryRepository.existsByOrderId(orderId);
-
-        }
-
-        public List<Delivery> updateDeiliveryStatus(WebhookReq webhookReq, String currentStatus) {
-                String trackingNumber = webhookReq.getTrackingNumber();
-
+        public List<Delivery> updateDeiliveryStatus(String trackingNumber, String currentStatus) {
                 List<Delivery> deliveries = deliveryRepository.findAllByTrackingNumber(trackingNumber);
 
                 if (deliveries.isEmpty()) {
@@ -295,8 +287,5 @@ public class DeliveryService {
                                 .format(expirationInstant);
         }
 
-        public Optional<Delivery> findByOrderId(Integer orderId) {
-                return deliveryRepository.findByOrderId(orderId);
-        }
 
 }

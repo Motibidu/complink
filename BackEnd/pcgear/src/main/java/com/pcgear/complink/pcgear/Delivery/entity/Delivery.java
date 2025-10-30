@@ -1,4 +1,4 @@
-package com.pcgear.complink.pcgear.Delivery.model;
+package com.pcgear.complink.pcgear.Delivery.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -24,6 +24,7 @@ public class Delivery {
 
         private String carrierId;
 
+        @Column(unique = true)
         private String trackingNumber;
 
         private Integer orderId;
