@@ -18,11 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.pcgear.complink.pcgear.Assembly.AssemblyStatus;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailReqDto;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailRespDto;
-import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderRequestDto;
 import com.pcgear.complink.pcgear.Order.model.OrderResponseDto;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto;
+import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.service.OrderService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -78,7 +78,8 @@ public class OrderController {
             @RequestParam(name = "orderStatus", required = false) List<OrderStatus> orderStatus) {
 
         List<OrderStatus> statusesToFind = (orderStatus == null || orderStatus.isEmpty())
-                ? List.of(OrderStatus.PAID, OrderStatus.PREPARING_PRODUCT, OrderStatus.SHIPPING_PENDING, OrderStatus.SHIPPING,
+                ? List.of(OrderStatus.PAID, OrderStatus.PREPARING_PRODUCT, OrderStatus.SHIPPING_PENDING,
+                        OrderStatus.SHIPPING,
                         OrderStatus.DELIVERED)
                 : orderStatus;
 

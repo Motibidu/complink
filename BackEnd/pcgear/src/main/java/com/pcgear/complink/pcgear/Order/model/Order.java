@@ -25,7 +25,9 @@ import java.util.List;
 @Setter
 @Entity
 @ToString
-@Table(name = "orders")
+@Table(name = "orders", indexes = {
+        @Index(name = "idx_order_status", columnList = "order_status")
+})
 @EntityListeners(AuditingEntityListener.class) // 생성/수정 시간 자동 감지를 위한 리스너
 public class Order {
 

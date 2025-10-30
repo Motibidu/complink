@@ -157,16 +157,18 @@ const AssemblyStatusTag = ({ status }) => {
 const OrderStatusTag = ({ status }) => {
   const { Icon, label, colorClass, nextStepLabel } =
     getOrderStatusProps(status);
+
+  // colorClass에서 배경색 관련 클래스는 제외하고 텍스트 색상 클래스만 사용
+  const textColor = colorClass.split(" ").find(c => c.startsWith('text-'));
+
   return (
     <div className="d-flex flex-column align-items-center">
-      {/* 현재 상태 태그 */}
-      <span
-        className={`badge fs-6 fw-semibold d-inline-flex align-items-center px-3 py-2 rounded-pill ${colorClass}`}
-        style={{ minWidth: "150px" }} // 너비 고정
-      >
-        {Icon && <Icon className="me-2" size={16} />}
-        {label}
-      </span>
+      {/* 현재 상태: 아이콘과 텍스트만으로 간결하게 표시, small 태그로 폰트 크기 축소 */}
+      <small className={`d-inline-flex align-items-center ${textColor || 'text-muted'}`}>
+        {Icon && <Icon className="me-2" size={14} />}
+        <span className="fw-semibold">{label}</span>
+      </small>
+      
       {/* 다음 단계 힌트 (있을 경우에만 표시) */}
       {nextStepLabel && (
         <small className="text-muted mt-1 d-inline-flex align-items-center">
@@ -185,7 +187,7 @@ const AssemblyQueue = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       const resp = await axios.get(
-        "/api/orders/assembly-queue?orderStatus=PAID,PREPARING_PRODUCT, SHIPPING_PENDING, SHIPPING, DELIVERED"
+        "/api/orders/assembly-queue?orderStatus=PAID,PREPARING_PRODUCT, SHIPPING_PENDING, SHIPPING"
       );
       console.log("resp.data: ", resp.data);
       setOrders(resp.data);
@@ -236,49 +238,42 @@ const AssemblyQueue = () => {
             />
           </div>
 
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="table-light">
+          <div class="table-responsive">
+            <table class="table table-hover table-bordered align-middle">
+              <thead class="table-light">
                 <tr>
                   <th
                     scope="col"
                     className="text-center"
-                    style={{ width: "18%" }}
+                    style={{ width: "5%" }}
                   >
                     주문 ID
                   </th>
                   <th
                     scope="col"
                     className="text-center"
-                    style={{ width: "18%" }}
+                    style={{ width: "16%" }}
                   >
                     고객명
                   </th>
                   <th
                     scope="col"
                     className="text-center"
-                    tyle={{ width: "18%" }}
+                    style={{ width: "16%" }}
                   >
                     담당자
                   </th>
                   <th
                     scope="col"
                     className="text-center"
-                    tyle={{ width: "18%" }}
+                    style={{ width: "16%" }}
                   >
                     결제일
                   </th>
                   <th
                     scope="col"
                     className="text-center"
-                    style={{ width: "18%" }}
-                  >
-                    주문 상태
-                  </th>
-                  <th
-                    scope="col"
-                    className="text-center"
-                    style={{ width: "18%" }}
+                    style={{ width: "23%" }}
                   >
                     조립 상태
                   </th>
@@ -286,7 +281,16 @@ const AssemblyQueue = () => {
                     scope="col"
                     className="text-center"
                     style={{ width: "10%" }}
-                  ></th>
+                  >
+                    상세보기
+                  </th>
+                  <th
+                    scope="col"
+                    className="text-center"
+                    style={{ width: "14%" }}
+                  >
+                    배송 상태
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -297,9 +301,7 @@ const AssemblyQueue = () => {
                       onClick={() => handleRowClick(order.orderId)}
                       style={{ cursor: "pointer" }}
                     >
-                      <td className=" text-center fw-medium">
-                        {order.orderId}
-                      </td>
+                      <td className="text-center fw-medium">{order.orderId}</td>
                       <td className="text-center">{order.customerName}</td>
                       <td className="text-center">
                         {order.assemblyWorkerId || (
@@ -308,26 +310,29 @@ const AssemblyQueue = () => {
                       </td>
                       <td className="text-center">{order.paidAt}</td>
                       <td className="text-center">
-                        <OrderStatusTag status={order.orderStatus} />
-                      </td>
-                      <td className="text-center">
                         <AssemblyStatusTag status={order.assemblyStatus} />
                       </td>
                       <td className="text-center">
                         <Link
-                          to={`/assembly/detail/${order.orderId}`} // 주문 ID를 URL에 포함하도록 수정 (권장 사항)
-                          className="btn btn-sm btn-outline-primary"
+                          to={`/assembly/detail/${order.orderId}`}
+                          className="btn btn-sm btn-primary" // 스타일 변경
+                          onClick={(e) => e.stopPropagation()} // 행 클릭 방지
                         >
                           상세보기
                         </Link>
+                      </td>
+                      <td className="text-center">
+                        <OrderStatusTag status={order.orderStatus} />
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="text-center text-muted py-5">
-                      <p className="mb-1">검색 결과가 없습니다.</p>
-                      <small>다른 검색어를 입력해 보세요.</small>
+                    <td colSpan="7" className="text-center text-muted py-5">
+                      <p className="mb-1">결과가 없습니다.</p>
+                      <small>
+                        현재 진행 중인 조립 및 출고 대기 건이 없습니다.
+                      </small>
                     </td>
                   </tr>
                 )}

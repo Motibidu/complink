@@ -235,7 +235,7 @@ const SellsSearchPage = () => {
               <th>고객명</th>
               <th>담당자명</th>
               <th className="text-end">합계 금액</th>
-              <th></th>
+              {/* <th></th> */}
             </tr>
           </thead>
           <tbody>
@@ -248,19 +248,19 @@ const SellsSearchPage = () => {
             ) : filteredsells.length > 0 ? (
               filteredsells.map((sell) => {
                 // isRegistered 값에 따라 버튼의 텍스트와 클래스를 미리 정의
-                const isRegistered = sell.delivery.trackingNumber; // 가정: 운송장 번호가 있으면 등록된 상태
+                // const isRegistered = sell.delivery.trackingNumber; // 가정: 운송장 번호가 있으면 등록된 상태
 
-                const buttonText = isRegistered
-                  ? "[" + sell.delivery.currentStatus + "/상세보기]" // 등록 완료: 현재 배송 상태 표시
-                  : "[운송장번호 입력/ 배송추적]"; // 미등록: 입력 요청 텍스트 표시
+                // const buttonText = isRegistered
+                //   ? "[" + sell.delivery.currentStatus + "/상세보기]" // 등록 완료: 현재 배송 상태 표시
+                //   : "[운송장번호 입력/ 배송추적]"; // 미등록: 입력 요청 텍스트 표시
 
-                const buttonClass = isRegistered
-                  ? "btn-outline-primary" // 등록 완료: 초록색/비활성화
-                  : "btn-outline-secondary"; // 미등록: 파란색 테두리/활성화
+                // const buttonClass = isRegistered
+                //   ? "btn-outline-primary" // 등록 완료: 초록색/비활성화
+                //   : "btn-outline-secondary"; // 미등록: 파란색 테두리/활성화
 
-                const modalTarget = isRegistered
-                  ? "#deliveryDatailModal"
-                  : "#trackingNumberReqModal";
+                // const modalTarget = isRegistered
+                //   ? "#deliveryDatailModal"
+                //   : "#trackingNumberReqModal";
                 return (
                   <tr
                     key={sell.sellId}
@@ -277,7 +277,7 @@ const SellsSearchPage = () => {
                     <td className="text-end">
                       {sell.grandAmount.toLocaleString()}원
                     </td>
-                    <td>
+                    {/* <td>
                       <button
                         className={`btn btn-sm ${buttonClass}`}
                         data-bs-target={modalTarget}
@@ -293,7 +293,7 @@ const SellsSearchPage = () => {
                       >
                         {buttonText}
                       </button>
-                    </td>
+                    </td> */}
                   </tr>
                 );
               })
@@ -444,9 +444,9 @@ const SellsSearchPage = () => {
                     <strong>총 합계:</strong>{" "}
                     {selectedsell.grandAmount.toLocaleString()}원
                   </p>
-                  <p>
+                  {/* <p>
                     <strong>결제 상태:</strong> {selectedsell.paymentStatus}
-                  </p>
+                  </p> */}
                   <p>
                     <strong>원본 주문번호:</strong> {selectedsell.orderId}
                   </p>
@@ -470,7 +470,7 @@ const SellsSearchPage = () => {
           </div>
         </div>
       </div>
-      <div className="modal fade" id="deliveryDatailModal" tabIndex="-1">
+      {/* <div className="modal fade" id="deliveryDatailModal" tabIndex="-1">
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
             <div className="modal-header">
@@ -519,7 +519,7 @@ const SellsSearchPage = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
