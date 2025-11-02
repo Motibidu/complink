@@ -1,41 +1,53 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import OrderHeader from "./OrderHeader";
 import OrderItems from "./OrderItems";
 import NotificationComponent from "../../NotificationComponent";
 import "./OrderForm.css";
+import axios from 'axios';
 
 const OrderForm = () => {
   const [orderHeader, setOrderHeader] = useState({
     orderDate: new Date().toISOString().slice(0, 10),
   });
 
-  const [orderItems, setOrderItems] = useState([
-    {
-      itemId: 36,
-      category: "메인보드",
-      itemName: "GIGABYTE B650 AORUS ELITE AX",
-      quantity: 1,
-      unitPrice: 500,
-      totalPrice: 550,
-    },
-    {
-      itemId: 33,
-      category: "그래픽카드",
-      itemName: "ZOTAC GAMING 지포스 RTX 4060 TWIN Edge OC D6 8GBI",
-      quantity: 1,
-      unitPrice: 500,
-      totalPrice: 550,
-    },
-    {
-      itemId: 39,
-      category: "RAM",
-      itemName: "SK하이닉스 DDR5-5600 (16GB)",
-      quantity: 1,
-      unitPrice: 500,
-      totalPrice: 550,
-    },
-  ]);
+  const [orderItems, setOrderItems] = useState([  ]);
 
+  useEffect(  () => {
+    const fetchTmpOrderItems= async () => {
+      try{
+        const resp= await axios.get("/api/items/temps");
+        resp.data.map((item)=>{
+          item.unitPrice= 500;
+          item.totalPrice= 500;
+          item.quantity= 1;
+        })
+        console.log("resp.data: ", resp.data);
+        setOrderItems(resp.data);
+        
+      }catch(err){  
+        console.log("Error fetching temporary order items:", err);
+      }
+    };
+    fetchTmpOrderItems();
+  }, []);
+
+  useEffect(() => {
+    // orderItems가 변경될 때마다 totalPrice를 다시 계산
+    const updatedItems = orderItems.map(item => {
+      const quantity = parseFloat(item.quantity) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || 0;
+      return {
+        ...item,
+        totalPrice: quantity * unitPrice
+      };
+    });
+    // 실제 변경이 있을 경우에만 상태 업데이트 (무한 루프 방지)
+    if (JSON.stringify(updatedItems) !== JSON.stringify(orderItems)) {
+      setOrderItems(updatedItems);
+    }
+  }, [orderItems]);
+  
+  
   // 요청 상태 관리를 위한 state 추가
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -115,7 +127,7 @@ const OrderForm = () => {
       status: "접수", // 초기 상태를 '접수'로 지정
       items: orderItems.map((item) => ({
         itemId: item.itemId,
-        category: item.category,
+        itemCategory: item.itemCategory,
         itemName: item.itemName,
         quantity: parseInt(item.quantity, 10),
         unitPrice: parseFloat(item.unitPrice),

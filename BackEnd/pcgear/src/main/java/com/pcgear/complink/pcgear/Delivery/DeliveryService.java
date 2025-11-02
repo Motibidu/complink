@@ -27,6 +27,7 @@ import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Order.service.OrderService;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 
 import com.pcgear.complink.pcgear.Delivery.model.RegisterWebhookInput;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
@@ -81,8 +82,8 @@ public class DeliveryService {
         public String getAccessToken() {
                 MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
                 formData.add("grant_type", "client_credentials");
-                formData.add("client_id", "AA6mQRHNYCMkBhwhlZ0A1nyy");
-                formData.add("client_secret", "2qr3KjgSD6v1woHpiBbdhvEfcayAtw9FoHXfqQ7RZzK");
+                formData.add("client_id", "AAK4oZTyBL9zJAaD0x3D79d");
+                formData.add("client_secret", "un7NHmWmzIGya0gHDpU12RVbOQeV5kD7ec1Q4mctMkJ");
 
                 AccessTokenResp accessTokenResp = webClient.post()
                                 .uri("https://auth.tracker.delivery/oauth2/token")
@@ -218,7 +219,7 @@ public class DeliveryService {
                                 });
         }
 
-        public String getDeliveryStatus(TrackingResponse trackingResponse) {
+        public String extractDeliveryStatus(TrackingResponse trackingResponse) {
                 String currentStatus = null;
                 if (trackingResponse != null && trackingResponse.getData() != null &&
                                 trackingResponse.getData().getTrack() != null &&
@@ -232,32 +233,24 @@ public class DeliveryService {
                 return currentStatus;
         }
 
-        public List<Delivery> updateDeiliveryStatus(String trackingNumber, String currentStatus) {
-                List<Delivery> deliveries = deliveryRepository.findAllByTrackingNumber(trackingNumber);
+        @Transactional
+        public Delivery updateDeiliveryStatus(String trackingNumber, String currentStatus) {
+                Delivery delivery = deliveryRepository.findByTrackingNumber(trackingNumber);
 
-                if (deliveries.isEmpty()) {
-                        log.warn("Delivery record not found for tracking number: {}", trackingNumber);
-                        return List.of();
+                delivery.setCurrentStatus(currentStatus);
+                String message = "주문번호: " + delivery.getOrderId() + "의 배송상태가 "
+                                + currentStatus + "로 변경되었습니다. 배송조회에서 확인해주세요!";
+                messagingTemplate.convertAndSend("/topic/notifications", message);
+
+                // 배송 상태가 배송완료일 시 order의 status를 배송중-> 배송완료로 변경
+                if ("배송완료".equals(currentStatus)) {
+                        orderService.updateOrderStatus(delivery.getOrderId(), OrderStatus.DELIVERED);
+                } else {
+                        // 배송 완료 외에는 배송중으로 변경
+                        orderService.updateOrderStatus(delivery.getOrderId(), OrderStatus.SHIPPING);
                 }
 
-                for (Delivery delivery : deliveries) {
-                        delivery.setCurrentStatus(currentStatus);
-                        String message = "주문번호: " + delivery.getOrderId() + "의 배송상태가 "
-                                        + currentStatus + "로 변경되었습니다. 배송조회에서 확인해주세요!";
-                        messagingTemplate.convertAndSend("/topic/notifications", message);
-
-                        // 배송 상태가 집화처리일 시 order의 status 배송대기-> 배송중으로 변경
-                        if ("집화처리".equals(currentStatus)) {
-                                orderService.updateOrderStatus(delivery.getOrderId(), OrderStatus.SHIPPING);
-                        }
-
-                        // 배송 상태가 배송완료일 시 order의 status를 배송중-> 배송완료로 변경
-                        if ("배송완료".equals(currentStatus)) {
-                                orderService.updateOrderStatus(delivery.getOrderId(), OrderStatus.DELIVERED);
-                        }
-                }
-
-                return deliveryRepository.saveAll(deliveries);
+                return deliveryRepository.save(delivery);
         }
 
         private Delivery createDelivery(TrackingNumberReq trackingNumberReq) {
@@ -286,6 +279,5 @@ public class DeliveryService {
                                 .withZone(java.time.ZoneOffset.UTC)
                                 .format(expirationInstant);
         }
-
 
 }

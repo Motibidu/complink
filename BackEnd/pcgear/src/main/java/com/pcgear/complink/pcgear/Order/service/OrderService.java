@@ -3,7 +3,10 @@ package com.pcgear.complink.pcgear.Order.service;
 import com.pcgear.complink.pcgear.Assembly.AssemblyStatus;
 import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Customer.CustomerRepository;
-import com.pcgear.complink.pcgear.Item.ItemCategory;
+import com.pcgear.complink.pcgear.Delivery.DeliveryService;
+import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
+import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
+import com.pcgear.complink.pcgear.Item.ItemRepository;
 import com.pcgear.complink.pcgear.Manager.Manager;
 import com.pcgear.complink.pcgear.Manager.ManagerRepository;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailReqDto;
@@ -23,14 +26,17 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
+// @RequiredArgsConstructor
 @Slf4j
 public class OrderService {
 
@@ -38,8 +44,29 @@ public class OrderService {
     private final ManagerRepository managerRepository;
     private final CustomerRepository customerRepository;
     private final PaymentLinkService paymentLinkService;
+    private final ItemRepository itemRepository;
+    private final DeliveryService deliveryService;
 
     private final SimpMessagingTemplate messagingTemplate;
+
+    @Value("${delivery-tracker.webhook-url}")
+    private String DELIVERYTRACKER_WEBHOOK_URL;
+
+    public OrderService(OrderRepository orderRepository,
+            ManagerRepository managerRepository,
+            CustomerRepository customerRepository,
+            PaymentLinkService paymentLinkService,
+            ItemRepository itemRepository,
+            @Lazy DeliveryService deliveryService, // 👈 4. 순환 참조 대상에 @Lazy 추가
+            SimpMessagingTemplate messagingTemplate) {
+        this.orderRepository = orderRepository;
+        this.managerRepository = managerRepository;
+        this.customerRepository = customerRepository;
+        this.paymentLinkService = paymentLinkService;
+        this.itemRepository = itemRepository;
+        this.deliveryService = deliveryService;
+        this.messagingTemplate = messagingTemplate;
+    }
 
     @Transactional
     public Order createOrder(OrderRequestDto requestDto) {
@@ -68,7 +95,9 @@ public class OrderService {
         order.setGrandAmount(requestDto.getGrandAmount());
 
         try {
-            String merchantUid = "orderId:" + orderRepository.count();
+            String uuid = UUID.randomUUID().toString();
+            String merchantUid = "PCG-" + uuid;
+
             String paymentLink = paymentLinkService.createPaymentLink(
                     merchantUid,
                     requestDto.getGrandAmount().intValue(),
@@ -83,9 +112,10 @@ public class OrderService {
         // 3. 주문 아이템 리스트 변환 및 추가
         for (OrderRequestDto.OrderItemDto itemDto : requestDto.getItems()) {
             OrderItem orderItem = new OrderItem();
-            orderItem.setItemCategory(ItemCategory.fromDbData(itemDto.getCategory()));
-            orderItem.setSerialNumRequired(ItemCategory.fromDbData(itemDto.getCategory()).isSerialNumRequired());
-            orderItem.setItemId(itemDto.getItemId());
+            orderItem.setItemCategory(itemDto.getItemCategory());
+            orderItem.setSerialNumRequired(itemDto.getItemCategory().isSerialNumRequired());
+            orderItem.setItem(itemRepository.findById(itemDto.getItemId())
+                    .orElseThrow(() -> new EntityNotFoundException("품목 정보를 찾을 수 없습니다. ID: " + itemDto.getItemId())));
             orderItem.setItemName(itemDto.getItemName());
             orderItem.setQuantity(itemDto.getQuantity());
             orderItem.setUnitPrice(itemDto.getUnitPrice());
@@ -155,8 +185,6 @@ public class OrderService {
         return respDto;
     }
 
-    
-
     public Order setSerialNumber(Integer orderId, List<OrderItem> orderItemss) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
@@ -172,14 +200,6 @@ public class OrderService {
 
     }
 
-    public Order updateAssemblyStatus(Integer orderId, AssemblyStatus nextAssemblyStatus) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
-        order.setAssemblyStatus(nextAssemblyStatus);
-
-        return orderRepository.save(order);
-    }
-
     @Transactional
     public AssemblyDetailRespDto processAssemblyStatus(Integer orderId, AssemblyDetailReqDto assemblyDetailReqDto) {
         updateAssemblyStatus(orderId, assemblyDetailReqDto.getNextAssemblyStatus());
@@ -191,6 +211,29 @@ public class OrderService {
         // AssemblyStatus가 완료일 경우(운송장번호 입력한 경우) OrderStatus 배송대기로 업데이트
         if (assemblyDetailReqDto.getNextAssemblyStatus() == AssemblyStatus.COMPLETED) {
             updateOrderStatus(orderId, OrderStatus.SHIPPING_PENDING);
+
+            log.info("ㅎㄷㅅ");
+            String accessToken = deliveryService.getAccessToken();
+            log.info("accessToken: {}", accessToken);
+
+            TrackingNumberReq trackingNumberReq = TrackingNumberReq.builder()
+                    .orderId(orderId)
+                    .customerId(assemblyDetailReqDto.getCustomerId())
+                    .trackingNumber(assemblyDetailReqDto.getTrackingNumber())
+                    .carrierId(assemblyDetailReqDto.getCarrierId())
+                    .build();
+
+            ValidationResult result = deliveryService
+                    .registerWebhookIfValid(accessToken, trackingNumberReq,
+                            DELIVERYTRACKER_WEBHOOK_URL + "/delivery/webhook")
+                    .block();
+
+            if (!result.isValid()) {
+                // 웹훅 등록 실패 시 예외 처리 또는 로그
+                log.error("Failed to register webhook: {}", result.getMessage());
+                // 비즈니스 예외를 던져 트랜잭션 롤백 및 에러 응답 유도
+                throw new RuntimeException("운송장 유효성 검사 또는 웹훅 등록 실패: " + result.getMessage());
+            }
         }
         setSerialNumber(orderId, assemblyDetailReqDto.getOrderItems());
         return getAssemblyDetailRespDto(orderId);
@@ -200,5 +243,13 @@ public class OrderService {
         return orderRepository.findById(orderId).map(OrderResponseDto::new)
                 .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
 
+    }
+
+    private Order updateAssemblyStatus(Integer orderId, AssemblyStatus nextAssemblyStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
+        order.setAssemblyStatus(nextAssemblyStatus);
+
+        return orderRepository.save(order);
     }
 }

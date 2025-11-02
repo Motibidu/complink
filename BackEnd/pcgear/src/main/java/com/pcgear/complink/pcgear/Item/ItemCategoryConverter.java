@@ -1,7 +1,5 @@
 package com.pcgear.complink.pcgear.Item;
 
-import com.pcgear.complink.pcgear.Order.model.OrderStatus;
-
 import jakarta.persistence.AttributeConverter;
 
 public class ItemCategoryConverter implements AttributeConverter<ItemCategory, String> {

@@ -6,13 +6,13 @@ import './SignUp.css';
 
 function SignUp() {
     const [formData, setFormData] = useState({
-        email: '',
-        username: '',
-        password: '',
-        passwordConfirm: '',
-        name: '',
-        tel: '',
-        address: '',
+        email: 'jack981109@naver.com',
+        username: '123',
+        password: '123',
+        passwordConfirm: '123',
+        name: '강감찬',
+        tel: '010-3333-2222',
+        address: '탄현동',
     });
 
     const [errorMessage, setErrorMessage] = useState('');

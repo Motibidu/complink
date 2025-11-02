@@ -38,7 +38,6 @@ public class DelieveryController {
     @Value("${delivery-tracker.webhook-url}")
     private String DELIVERYTRACKER_WEBHOOK_URL;
     private final DeliveryService deliveryService;
-    private final OrderService orderService;
 
     @PostMapping("/trackingNumber")
     public Mono<ResponseEntity<String>> registerWebhook(@RequestBody TrackingNumberReq trackingNumberReq) {
@@ -74,7 +73,8 @@ public class DelieveryController {
         log.info("trackingResponse: {}", trackingResponse);
 
         // Delivery, Order의 status 업데이트
-        String currentStatus = deliveryService.getDeliveryStatus(trackingResponse);
+        String currentStatus = deliveryService.extractDeliveryStatus(trackingResponse);
+        log.info("currentStatus: {}", currentStatus);
         String trackingNumber = webhookReq.getTrackingNumber();
 
         // log.info("currentStatus: {}", currentStatus);

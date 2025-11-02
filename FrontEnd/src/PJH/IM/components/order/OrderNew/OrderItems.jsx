@@ -19,7 +19,7 @@
       return items.filter(
         (item) =>
           item.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.category.toLowerCase().includes(searchTerm.toLowerCase())
+          item.itemCategory.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }, [items, searchTerm]);
 
@@ -45,14 +45,14 @@
 
     const partCategories = [
       "CPU",
-      "메인보드",
-      "메모리",
-      "그래픽카드",
+      "MAINBOARD",
+      "RAM",
       "SSD",
-      "파워",
-      "케이스",
-      "쿨러",
-      "기타",
+      "VGA",
+      "PSU",
+      "CASE",
+      "COOLER",
+      "FAN"
     ];
     return (
       <div className="order-items">
@@ -88,7 +88,7 @@
                 <td className="order-items__cell">
                   <select
                     className="order-items__category"
-                    value={orderItem.category}
+                    value={orderItem.itemCategory}
                     onChange={(e) => handleItemsChange(index, e)}
                   >
                     {partCategories.map((partCategory) => (
@@ -258,7 +258,7 @@
                           <h6 className="mb-1 fw-bold">
                             {item.itemId}. {item.itemName}
                           </h6>
-                          <small className="text-muted">{item.category}</small>
+                          <small className="text-muted">{item.itemCategory}</small>
                         </div>
                         <p className="mb-1 text-muted small">
                           입고단가: {item.purchasePrice}

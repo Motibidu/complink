@@ -11,7 +11,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.pcgear.complink.pcgear.Assembly.AssemblyStatus;
-import com.pcgear.complink.pcgear.Assembly.AssemblyStatusConverter;
 import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Manager.Manager;
 

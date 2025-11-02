@@ -1,6 +1,7 @@
 package com.pcgear.complink.pcgear.Item;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,9 +27,6 @@ public class Item {
         @Size(max = 255, message = "품목명은 255자를 초과할 수 없습니다.")
         @Schema(description = "품목명", example = "GIGABYTE 지포스 RTX 4070 SUPER")
         private String itemName;
-
-        @NotBlank(message = "카테고리는 필수 입력 항목입니다.")
-        private String category;
 
         private ItemCategory itemCategory;
 

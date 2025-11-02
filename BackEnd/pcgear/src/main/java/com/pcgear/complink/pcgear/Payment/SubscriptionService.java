@@ -28,6 +28,7 @@ public class SubscriptionService {
         private final String portoneUrl = "https://api.portone.io";
 
         public Mono<Subscription> scheduleNextPayment(UserEntity user, SubscriptionRequest request, int seconds) {
+                log.info("결제예약==========================================================");
 
                 final String paymentId = "payment-" + UUID.randomUUID().toString();
                 // API 경로: /payments/{payment_id}/schedule
@@ -37,6 +38,7 @@ public class SubscriptionService {
                 LocalDateTime nextPaymentTime = LocalDateTime.now().plusSeconds(seconds);
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
                 String formattedNextPaymentTime = nextPaymentTime.atZone(ZoneId.of("Asia/Seoul")).format(formatter);
+                log.info("formattedNextPaymentTime: {}", formattedNextPaymentTime);
 
                 String trackingId = UUID.randomUUID().toString();
                 String orderName = "정기결제 #" + trackingId;
@@ -52,7 +54,7 @@ public class SubscriptionService {
                 newSubscription.setOrderName(orderName);
 
                 subscriptionRepository.save(newSubscription);
-                
+
                 Map<String, Object> paymentData = Map.of(
                                 "billingKey", request.getBillingKey(),
                                 "orderName", orderName,

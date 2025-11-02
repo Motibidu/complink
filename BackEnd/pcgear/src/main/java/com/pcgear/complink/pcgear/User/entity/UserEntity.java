@@ -45,13 +45,10 @@ public class UserEntity extends BaseTimeEntity implements UserDetails {
 	@Column(nullable = false)
 	private String name;
 
-	@Column(nullable = false)
 	private String tel;
 
-	@Column(nullable = false)
 	private String address;
 
-	@Column(name = "billing_key", nullable = false)
 	private String billingKey;
 
 	@Enumerated(EnumType.STRING) // Enum 타입을 DB에 String으로 저장

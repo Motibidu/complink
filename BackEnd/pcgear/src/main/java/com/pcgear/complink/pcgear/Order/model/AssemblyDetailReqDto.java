@@ -10,4 +10,7 @@ import lombok.Getter;
 public class AssemblyDetailReqDto {
         private AssemblyStatus nextAssemblyStatus;
         private List<OrderItem> orderItems;
+        String carrierId;
+        String trackingNumber;
+        String customerId;
 }

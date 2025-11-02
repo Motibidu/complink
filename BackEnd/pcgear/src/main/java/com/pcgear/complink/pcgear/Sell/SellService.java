@@ -36,28 +36,7 @@ public class SellService {
                 return sellRepository.save(newSell);
         }
 
-        private void updateItemQuantityOnHand(List<OrderItem> itemsFromOrder) {
 
-                for (OrderItem orderItem : itemsFromOrder) {
-                        log.info("orderItem: {}", orderItem);
-                        Item item = itemRepository.findById(orderItem.getItemId())
-                                        .orElseThrow(() -> new EntityNotFoundException(
-                                                        "품목을 찾을 수 없습니다: ID " + orderItem.getItemId()));
-
-                        int orderedQuantity = orderItem.getQuantity();
-                        int currentStock = item.getQuantityOnHand();
-
-                        if (currentStock < orderedQuantity) {
-                                throw new IllegalStateException(
-                                                "재고 부족: 품목 '" + item.getItemName() + "'의 재고가 충분하지 않습니다. (현재 재고: "
-                                                                + currentStock + ", 주문 수량: " + orderedQuantity + ")");
-                        }
-
-                        item.setQuantityOnHand(currentStock - orderedQuantity);
-                        itemRepository.save(item);
-                }
-
-        }
 
         public List<Sell> readSells() {
                 return sellRepository.findAll();

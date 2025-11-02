@@ -69,6 +69,7 @@ const getStatusProps = (currentStatus) => {
         color: "text-info bg-light border border-info-subtle", // Info (하늘색 계열)
         text: "운송장 등록 대기",
       };
+    
     case "COMPLETED":
       return {
         icon: IoCheckmarkCircleOutline,
@@ -298,6 +299,7 @@ const AssemblyDetail = () => {
         ...(nextAssemblyStatus === "COMPLETED" && {
           carrierId: trackingInfo.carrierId,
           trackingNumber: trackingInfo.trackingNumber,
+          customerId: order.customer.customerId,
         }),
       };
 

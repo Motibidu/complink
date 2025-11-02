@@ -18,7 +18,13 @@ public class SmsController {
 
         @PostMapping("/send-one")
         public ResponseEntity<String> sendOne(@RequestBody SendOneRequestDto sendOneRequest) {
-                smsService.sendPaymentLinkAndUpdateToReady(sendOneRequest);
+                try {
+                        smsService.sendPaymentLinkAndUpdateToReady(sendOneRequest);
+                } catch (Exception e) {
+
+                        log.error("SMS 전송 중 오류 발생: {}", e.getMessage());
+                        return ResponseEntity.internalServerError().body("SMS 전송 중 오류가 발생했습니다.");
+                }
 
                 return ResponseEntity.ok("메시지가 성공적으로 전송되었습니다.");
         }

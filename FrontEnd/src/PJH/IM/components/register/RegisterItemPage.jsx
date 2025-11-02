@@ -17,14 +17,14 @@ const RegisterItemPage = () => {
   const [message, setMessage] = useState({ type: "", text: "" });
   const [newFormData, setNewFormData] = useState({
     itemName: "인텔 코어i5-14세대 14600K (랩터레이크 리프레시) (정품)",
-    category: "CPU",
+    itemCategory: "CPU",
     purchasePrice: "264480",
     sellingPrice: "296480",
   });
   const [editFormData, setEditFormData] = useState({
     itemId: "",
     itemName: "",
-    category: "",
+    itemCategory: "",
     purchasePrice: "",
     sellingPrice: "",
   });
@@ -142,7 +142,7 @@ const RegisterItemPage = () => {
       if (response.status === 201) {
         setNewFormData({
           itemName: "",
-          category: "",
+          itemCategory: "",
           purchasePrice: "",
           sellingPrice: "",
         });
@@ -195,7 +195,7 @@ const RegisterItemPage = () => {
         setEditFormData({
           itemId: "",
           itemName: "",
-          category: "",
+          itemCategory: "",
           purchasePrice: "",
           sellingPrice: "",
         });
@@ -230,7 +230,7 @@ const RegisterItemPage = () => {
     setEditFormData({
       itemId: itemToEdit.itemId || "",
       itemName: itemToEdit.itemName || "",
-      category: itemToEdit.category || "",
+      itemCategory: itemToEdit.itemCategory || "",
       purchasePrice: itemToEdit.purchasePrice || "",
       sellingPrice: itemToEdit.sellingPrice || "",
     });
@@ -283,7 +283,7 @@ const RegisterItemPage = () => {
                         {item.itemName}
                       </a>
                     </td>
-                    <td>{item.category}</td>
+                    <td>{item.itemCategory}</td>
                     <td>{item.purchasePrice}</td>
                     <td>{item.sellingPrice}</td>
                   </tr>
@@ -343,14 +343,14 @@ const RegisterItemPage = () => {
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor="category" className="form-label fw-bold">
+                  <label htmlFor="itemCategory" className="form-label fw-bold">
                     카테고리
                   </label>
                   <select
                     className="form-select"
-                    id="category"
-                    name="category"
-                    value={newFormData.category}
+                    id="itemCategory"
+                    name="itemCategory"
+                    value={newFormData.itemCategory}
                     onChange={handleNewFormChange}
                   >
                     <option value="">카테고리 선택...</option>
@@ -462,14 +462,14 @@ const RegisterItemPage = () => {
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor="category" className="form-label fw-bold">
+                  <label htmlFor="itemCategory" className="form-label fw-bold">
                     카테고리
                   </label>
                   <select
                     className="form-select"
-                    id="category"
-                    name="category"
-                    value={editFormData.category}
+                    id="itemCategory"
+                    name="itemCategory"
+                    value={editFormData.itemCategory}
                     onChange={handleEditFormChange}
                   >
                     <option value="">카테고리 선택...</option>

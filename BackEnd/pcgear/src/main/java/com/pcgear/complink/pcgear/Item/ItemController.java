@@ -36,6 +36,13 @@ public class ItemController {
                 return ResponseEntity.ok(items);
         }
 
+        @GetMapping("/temps")
+        public ResponseEntity<List<Item>> readTempItems() {
+                List<Item> tmpItems = itemService.findFirstThreeItems();
+
+                return ResponseEntity.ok(tmpItems);
+        }
+
         @Operation(summary = "신규 품목 등록")
         @ApiResponses({
                         @ApiResponse(responseCode = "201", description = "품목 생성 성공"),

@@ -70,16 +70,15 @@ const ORDER_STATUS = {
   PAID: "PAID", // 결제완료
   PREPARING_PRODUCT: "PREPARING_PRODUCT",
   SHIPPING_PENDING: "SHIPPING_PENDING",
-  // 상품준비중
-  IN_DELIVERY: "IN_DELIVERY", // 배송중
+  SHIPPING : "SHIPPING", // 배송중
   DELIVERED: "DELIVERED", // 배송완료
 };
 
 const ORDER_STATUS_FLOW = {
-  [ORDER_STATUS.PAID]: { nextLabel: "상품 준비중" },
+  [ORDER_STATUS.PAID]: { nextLabel: "조립중 " },
   [ORDER_STATUS.PREPARING_PRODUCT]: { nextLabel: "배송 대기" },
   [ORDER_STATUS.SHIPPING_PENDING]: { nextLabel: "배송 중" },
-  [ORDER_STATUS.IN_DELIVERY]: { nextLabel: "배송 완료" },
+  [ORDER_STATUS.SHIPPING]: { nextLabel: "배송 완료" },
   [ORDER_STATUS.DELIVERED]: { nextLabel: null }, // 마지막 단계
 };
 
@@ -97,7 +96,7 @@ const getOrderStatusProps = (status) => {
     case ORDER_STATUS.PREPARING_PRODUCT:
       baseProps = {
         Icon: IoStorefrontOutline,
-        label: "상품 준비중",
+        label: " 조립 중",
         colorClass: "text-info bg-info-subtle border-info-subtle",
       };
       break;
@@ -111,15 +110,8 @@ const getOrderStatusProps = (status) => {
     case ORDER_STATUS.SHIPPING:
       baseProps = {
         Icon: IoCubeOutline,
-        label: "배송중",
-        colorClass: "text-primary bg-primary-subtle border-primary-subtle",
-      };
-      break;
-    case ORDER_STATUS.IN_DELIVERY:
-      baseProps = {
-        Icon: IoCarOutline,
         label: "배송 중",
-        colorClass: "text-warning bg-warning-subtle border-warning-subtle",
+        colorClass: "text-primary bg-primary-subtle border-primary-subtle",
       };
       break;
     case ORDER_STATUS.DELIVERED:

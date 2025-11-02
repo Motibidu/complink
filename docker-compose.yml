@@ -5,13 +5,15 @@ services:
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: pcgear
     volumes:
-      - ./mysql_data:/var/lib/mysql
+      - mysql-data:/var/lib/mysql
     ports:
-      - 3306:3306
+      - 3307:3306
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1234"]
       interval: 5s
+      timeout: 5s
       retries: 10
+      start_period: 30s # <--- DB가 초기화될 시간을 줍니다. 이 시간 동안은 실패해도 재시도 횟수에 포함되지 않습니다.
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -25,9 +27,32 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/pcgear?allowPublicKeyRetrieval=true&useSSL=false
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=1234
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod} 
+      # 2. EMAIL SECRETS
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+
+      # 3. DB SECRETS
+      - PROD_DB_HOST=${PROD_DB_HOST}
+      - PROD_DB_USERNAME=${PROD_DB_USERNAME}
+      - PROD_DB_PASSWORD=${PROD_DB_PASSWORD}
+
+      # 4. ADMIN SECRETS
+      #- ADMIN_USERNAME=${ADMIN_USERNAME}
+      #- ADMIN_PASSWORD=${ADMIN_PASSWORD}
+
+      # 5. API SECRETS
+      - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY}
+      - PORTONE_API_SECRET=${PORTONE_API_SECRET}
+      - PORTONE_WEBHOOK_SECRET=${PORTONE_WEBHOOK_SECRET}
+      - COOLSMS_SECRET=${COOLSMS_SECRET}
+      - PROD_DOMAIN=${PROD_DOMAIN}
+      - TZ=Asia/Seoul
+
     depends_on:
       db:
         condition: service_healthy
+    restart: on-failure
 
   frontend:
     build: ./FrontEnd
@@ -37,4 +62,4 @@ services:
       - backend
 
 volumes:
-  mysql-data:
+  mysql-data: {}

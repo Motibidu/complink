@@ -8,6 +8,7 @@ import lombok.ToString;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.pcgear.complink.pcgear.Item.Item;
 import com.pcgear.complink.pcgear.Item.ItemCategory;
 
 @Getter
@@ -17,20 +18,21 @@ import com.pcgear.complink.pcgear.Item.ItemCategory;
 @Table(name = "order_items")
 public class OrderItem {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer orderItemId;
+
     @JsonBackReference
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
     private Order order;
 
-    private Integer itemId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "item_id") // DB 상의 외래 키 컬럼 이름
+    private Item item;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer orderItemId;
-
-    private String category;
-
+    @Enumerated(EnumType.STRING)
     private ItemCategory itemCategory;
 
     private String serialNum;

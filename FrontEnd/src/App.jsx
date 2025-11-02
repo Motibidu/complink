@@ -17,7 +17,7 @@ import ProtectedRoute from "./PJH/IM/components/ProtectedRoute";
 import SellsSearchPage from "./PJH/IM/components/sells/SellsSearchPage";
 import SellsEntryPage from "./PJH/IM/components/sells/SellsEntryPage";
 import NotificationComponent from "./PJH/IM/components/NotificationComponent";
-import SignupApprove from "./PJH/IM/components/SignupApprove";
+import SignUpApprove from "./PJH/IM/components/SignUpApprove";
 import AssemblyQueue from "./PJH/IM/components/assembly/AssemblyQueue";
 import AssemblyDetail from "./PJH/IM/components/assembly/AssemblyDetail";
 
@@ -62,7 +62,7 @@ function App() {
             <Route path="/inventory/status" element={<InventoryStatus />} />
             <Route path="/sells/new" element={<SellsEntryPage />} />
             <Route path="/sells/search" element={<SellsSearchPage />} />
-            <Route path="/admin/signup-approve" element={<SignupApprove />} />
+            <Route path="/admin/signup-approve" element={<SignUpApprove />} />
           </Route>
         </Routes>
       </Layout>

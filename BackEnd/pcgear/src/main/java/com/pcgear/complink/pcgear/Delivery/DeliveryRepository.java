@@ -11,4 +11,6 @@ import com.pcgear.complink.pcgear.Delivery.entity.Delivery;
 @Repository
 public interface DeliveryRepository extends JpaRepository<Delivery, Integer> {
         List<Delivery> findAllByTrackingNumber(String trackingNumber);
+
+        Delivery findByTrackingNumber(String trackingNumber);
 }

@@ -69,6 +69,7 @@ public class PaymentService {
     private final WebClient webClient;
 
     public Mono<Payment> executeImmediatePayment(UserEntity user, SubscriptionRequest subscriptionRequest) {
+        log.info("단건결제==========================================================");
 
         final String paymentId = "payment-" + UUID.randomUUID().toString();
         // API 경로: /payments/{payment_id}/billing-key
@@ -149,7 +150,7 @@ public class PaymentService {
     @Transactional
     public void webhookVerify(String payload, String webhookId, String webhookSignature, String webhookTimestamp)
             throws WebhookVerificationException {
-
+        log.info("웹훅검증==========================================================");
         // 1. 웹훅을 보낸 이가 포트원이 맞는지 검증합니다.
         WebhookVerifier verifier = new WebhookVerifier(portoneWebhookSecret);
         try {
@@ -212,6 +213,7 @@ public class PaymentService {
 
             String apiStatus = (String) paymentDetail.get("status");
             PaymentStatus apiStatusEnum = PaymentStatus.fromNameIgnoreCase(apiStatus);
+
             // DBStatus== READY|| FAILED|| CANCELLED && APIStatus==PAID일 때만 로직 실행
             if (PaymentStatus.PAID.equals(apiStatusEnum) &&
                     !PaymentStatus.PAID.equals(dbPayment.getPaymentStatus())) {
@@ -506,11 +508,13 @@ public class PaymentService {
     @Transactional
     public void finalizeOrderPayment(Order order) {
 
+        Integer orderId = order.getOrderId();
+
         // 1. 판매 기록 생성 (매출 테이블에 반영)
         sellService.createSell(order);
 
         // 2. 주문 상태를 상품준비중으로 업데이트
-        orderService.updateOrderStatus(order.getOrderId(), OrderStatus.PAID);
+        orderService.updateOrderStatus(orderId, OrderStatus.PAID);
 
         // 3. 주문 결제 날짜를 설정
         orderService.setPaidAt(order);
