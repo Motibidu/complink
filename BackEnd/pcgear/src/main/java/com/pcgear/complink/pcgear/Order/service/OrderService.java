@@ -212,7 +212,6 @@ public class OrderService {
         if (assemblyDetailReqDto.getNextAssemblyStatus() == AssemblyStatus.COMPLETED) {
             updateOrderStatus(orderId, OrderStatus.SHIPPING_PENDING);
 
-            log.info("ㅎㄷㅅ");
             String accessToken = deliveryService.getAccessToken();
             log.info("accessToken: {}", accessToken);
 

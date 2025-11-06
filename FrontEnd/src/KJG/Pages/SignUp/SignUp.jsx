@@ -56,7 +56,7 @@ function SignUp() {
                 setTimeout(() => navigate('/login'), 2000);
             }
         } catch (error) {
-            const serverErrorMessage = error.response?.data?.message || "회원가입 중 오류가 발생했습니다.";
+            const serverErrorMessage = error.request?.response || "회원가입 중 오류가 발생했습니다.";
             setErrorMessage(serverErrorMessage);
             console.error('회원가입 요청 에러:', error);
         }

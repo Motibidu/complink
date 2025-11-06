@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pcgear.complink.pcgear.Payment.model.PaymentLinkRequest;
 import com.pcgear.complink.pcgear.Payment.model.PaymentLinkResponse;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 
+@Slf4j
 @Service
 public class PaymentLinkService {
 
@@ -33,6 +36,8 @@ public class PaymentLinkService {
         }
 
         public String createPaymentLink(String merchantUid, int amount, String productName, String buyerTel) {
+
+                log.info("portone.webhook-url: {}", this.webhookUrl);
 
                 // 1. payment_info에 들어갈 내부 객체 생성
                 PaymentLinkRequest.PaymentInfo.PayMethod cardPayMethod = PaymentLinkRequest.PaymentInfo.PayMethod

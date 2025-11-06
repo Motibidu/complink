@@ -2,14 +2,14 @@ services:
   db:
     image: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_ROOT_PASSWORD: ${PROD_DB_PASSWORD}
       MYSQL_DATABASE: pcgear
     volumes:
       - mysql-data:/var/lib/mysql
     ports:
       - 3307:3306
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1234"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${PROD_DB_PASSWORD}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -26,7 +26,7 @@ services:
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/pcgear?allowPublicKeyRetrieval=true&useSSL=false
       - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=1234
+      - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod} 
       # 2. EMAIL SECRETS
       - MAIL_USERNAME=${MAIL_USERNAME}
@@ -43,10 +43,24 @@ services:
 
       # 5. API SECRETS
       - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY}
+      - RECATPCHA_MAILSENDER_PASSWORD=${RECATPCHA_MAILSENDER_PASSWORD}
+      - RECAPTCHA_VERIFY_URL=${RECAPTCHA_VERIFY_URL}
+
+      - PORTONE_API_URL=${PORTONE_API_URL}
+      - PORTONE_ACCESS_TOKEN_URL=${PORTONE_ACCESS_TOKEN_URL}
       - PORTONE_API_SECRET=${PORTONE_API_SECRET}
       - PORTONE_WEBHOOK_SECRET=${PORTONE_WEBHOOK_SECRET}
-      - COOLSMS_SECRET=${COOLSMS_SECRET}
+      - PORTONE_IMP_KEY=${PORTONE_IMP_KEY}
+      - PORTONE_IMP_SECRET=${PORTONE_IMP_SECRET}
+
+      - COLLSMS_API_KEY=${COLLSMS_API_KEY}
+      - COOLSMS_API_SECRET_KEY=${COOLSMS_API_SECRET_KEY}
+      
       - PROD_DOMAIN=${PROD_DOMAIN}
+      - DELIVERY_TRACKER_CLIENT_ID=${DELIVERY_TRACKER_CLIENT_ID}
+      - DELIVERY_TRACKER_CLIENT_SECRET=${DELIVERY_TRACKER_CLIENT_SECRET}
+      - DELIVERY_TRACKER_AUTH_URL=${DELIVERY_TRACKER_AUTH_URL}
+      - DELIVERY_TRACKER_GRAPHQL_API_URL=${DELIVERY_TRACKER_GRAPHQL_API_URL}
       - TZ=Asia/Seoul
 
     depends_on:

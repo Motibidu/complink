@@ -25,6 +25,7 @@ import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
 import com.pcgear.complink.pcgear.Delivery.model.WebhookReq;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Order.service.OrderService;
+import com.pcgear.complink.pcgear.properties.DeliveryTrackerProperties;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -45,7 +46,7 @@ public class DeliveryService {
         private final CustomerRepository customerRepository;
         private final DeliveryRepository deliveryRepository;
         private final SimpMessagingTemplate messagingTemplate;
-        private static final String GRAPHQL_API_URL = "https://apis.tracker.delivery/graphql";
+        private final DeliveryTrackerProperties properties;
         private static final String TRACK_DELIVERY_QUERY = """
                                                     query Track(
                         $carrierId: ID!,
@@ -82,15 +83,26 @@ public class DeliveryService {
         public String getAccessToken() {
                 MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
                 formData.add("grant_type", "client_credentials");
-                formData.add("client_id", "AAK4oZTyBL9zJAaD0x3D79d");
-                formData.add("client_secret", "un7NHmWmzIGya0gHDpU12RVbOQeV5kD7ec1Q4mctMkJ");
+                log.info("properties.getClientId(): {}", properties.getClientId());
+                formData.add("client_id", properties.getClientId());
+                log.info("properties.getClientSecret(): {}", properties.getClientSecret());
+                formData.add("client_secret", properties.getClientSecret());
+                log.info("properties.getAuthUrl(): {}", properties.getAuthUrl());
 
-                AccessTokenResp accessTokenResp = webClient.post()
-                                .uri("https://auth.tracker.delivery/oauth2/token")
-                                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                                .bodyValue(formData)
-                                .retrieve()
-                                .bodyToMono(AccessTokenResp.class).block();
+                AccessTokenResp accessTokenResp = null;
+                try {
+                        accessTokenResp = webClient.post()
+                                        .uri(properties.getAuthUrl())
+                                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                                        .bodyValue(formData)
+                                        .retrieve()
+                                        .bodyToMono(AccessTokenResp.class).block();
+                } catch (Exception e) {
+
+                        log.error("Failed to get access token: {}", e.getMessage());
+                        throw new RuntimeException("Failed to get access token", e);
+                }
+
                 String accessToken = accessTokenResp.getAccess_token();
 
                 return accessToken;
@@ -145,7 +157,7 @@ public class DeliveryService {
 
                 // 3. WebClient 호출
                 return webClient.post()
-                                .uri(GRAPHQL_API_URL) // GraphQL API URL
+                                .uri(properties.getGraphqlApiUrl()) // GraphQL API URL
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken) // Bearer 토큰 인증
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(requestBody) // requestBody 객체가 JSON으로 변환되어 전송됨
@@ -176,7 +188,7 @@ public class DeliveryService {
                                 .build();
 
                 return webClient.post()
-                                .uri(GRAPHQL_API_URL)
+                                .uri(properties.getGraphqlApiUrl())
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(requestBody)

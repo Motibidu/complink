@@ -6,22 +6,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+
+import com.pcgear.complink.pcgear.properties.RecaptchaProperties;
+
+import lombok.RequiredArgsConstructor;
+
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class RecaptchaService {
 
     private final RestTemplate restTemplate;
-
-    // @Value("${recaptcha.secret-key}")
-    private String secretKey = "6LfEFNIrAAAAAPC_kAnhZ1heNPqKSexPsoFFxUg7";
-
-    // @Value("${recaptcha.verify-url}")
-    private String verifyUrl = "https://www.google.com/recaptcha/api/siteverify";
-
-    public RecaptchaService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
+    private final RecaptchaProperties recaptchaProperties;
 
     public boolean verifyRecaptcha(String recaptchaToken) {
         if (recaptchaToken == null || recaptchaToken.isEmpty()) {
@@ -29,12 +26,13 @@ public class RecaptchaService {
         }
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("secret", secretKey);
+        body.add("secret", recaptchaProperties.getSecretKey());
         body.add("response", recaptchaToken);
 
         try {
             // Google 서버에 POST 요청을 보냄
-            Map<String, Object> response = restTemplate.postForObject(verifyUrl, body, Map.class);
+            Map<String, Object> response = restTemplate.postForObject(recaptchaProperties.getVerifyUrl(), body,
+                    Map.class);
 
             if (response == null || !response.containsKey("success")) {
                 return false;

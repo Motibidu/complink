@@ -36,12 +36,7 @@ import java.util.Map;
 @RequestMapping("/payment") // 이 컨트롤러의 모든 API는 /api/payment로 시작합니다.
 public class PaymentController {
 
-    private final SellService sellService;
-    // @Value("${portone.webhook.secret}")
-    private String portoneWebHookSecret = "whsec_JLpNT1u+qOJbJ8zFwa2Ff8Fn0MAiG8HpgoJFL+ZFL1I=";
     private final PaymentService paymentService;
-    private final PaymentLinkService paymentLinkService;
-    private final OrderService orderService;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final SimpMessagingTemplate messagingTemplate;

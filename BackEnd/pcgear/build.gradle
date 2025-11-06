@@ -56,10 +56,9 @@ jar {
     enabled = false
 }
 
-// 명확하고 권장되는 단일 설정만 남깁니다.
-tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs.add("-parameters")
-}
+ tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs.add("-parameters")
+    }
 
 bootRun {
     systemProperties['spring.profiles.active'] = 'dev'

@@ -1,4 +1,4 @@
-FROM openjdk:21-jdk
+FROM eclipse-temurin:21-jre-alpine
 
 COPY build/libs/*SNAPSHOT.jar app.jar
 

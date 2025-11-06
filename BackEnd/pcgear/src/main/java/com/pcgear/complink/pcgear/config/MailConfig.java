@@ -1,7 +1,10 @@
+
+
 package com.pcgear.complink.pcgear.config;
 
 import java.util.Properties;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -9,6 +12,10 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 @Configuration
 public class MailConfig {
+
+        @Value("${recaptcha.mail-sender.password}")
+        private String javaMailSenderPassword;
+
         @Bean
         public JavaMailSender javaMailService() {
                 JavaMailSenderImpl javaMailSender = new JavaMailSenderImpl();
@@ -17,7 +24,7 @@ public class MailConfig {
                 javaMailSender.setHost("smtp.gmail.com");
                 javaMailSender.setPort(587);
                 javaMailSender.setUsername("jack981109@gmail.com");
-                javaMailSender.setPassword("wmuskpxglwikoutn");
+                javaMailSender.setPassword(javaMailSenderPassword);
 
                 // 추가적인 JavaMail 속성 설정
                 Properties props = javaMailSender.getJavaMailProperties();
@@ -35,3 +42,4 @@ public class MailConfig {
                 return javaMailSender;
         }
 }
+

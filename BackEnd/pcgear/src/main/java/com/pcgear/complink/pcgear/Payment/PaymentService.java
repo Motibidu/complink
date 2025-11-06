@@ -16,6 +16,7 @@ import com.pcgear.complink.pcgear.Payment.model.SubscriptionRequest;
 import com.pcgear.complink.pcgear.Sell.SellService;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
 import com.pcgear.complink.pcgear.User.repository.UserRepository;
+import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
 import io.portone.sdk.server.webhook.WebhookVerificationException;
 import io.portone.sdk.server.webhook.WebhookVerifier;
@@ -43,16 +44,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentService {
 
-    // @Value("${portone.api.secret}")
-    private String portoneApiSecret = "FkLCYZzsKhVsoZxz8aZEWXTiRsRYisWO9CBuzCUuooCjBU78TCMCEmdt3NydMvlG63zysLVjQMLAsdA1";
-
-    @Value("${portone.webhook-url}")
-    private String portoneWebhookUrl;
-
-    @Value("${portone.webhook.secret}")
-    private String portoneWebhookSecret;
-
-    private final String portoneUrl = "https://api.portone.io";
+    private final PortoneProperties portoneProperties;
 
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
@@ -64,8 +56,6 @@ public class PaymentService {
     private final OrderService orderService;
     private final ItemService itemService;
 
-    private static final String ACCESS_TOKEN_URI = "https://api.iamport.kr/users/getToken";
-
     private final WebClient webClient;
 
     public Mono<Payment> executeImmediatePayment(UserEntity user, SubscriptionRequest subscriptionRequest) {
@@ -73,7 +63,7 @@ public class PaymentService {
 
         final String paymentId = "payment-" + UUID.randomUUID().toString();
         // API 경로: /payments/{payment_id}/billing-key
-        final String uri = String.format(portoneUrl + "/payments/" + paymentId + "/billing-key");
+        final String uri = String.format(portoneProperties.getApiUrl() + "/payments/" + paymentId + "/billing-key");
 
         // 요청 본문 구성
         Map<String, Object> requestBody = Map.of(
@@ -87,7 +77,7 @@ public class PaymentService {
         return webClient.post()
                 .uri(uri)
                 .header("Authorization",
-                        "PortOne " + "er40Yffs4tpK8lCwHuNr3Itr7olpBAzArIvThA5DQZ1t52TOAkeRVwHqpyXkqIVbIkP8XNMHz3DPNMxd")
+                        "PortOne " + portoneProperties.getApiSecret())
                 .contentType(MediaType.APPLICATION_JSON) // JSON으로 요청 본문을 보냅니다.
                 .bodyValue(requestBody)
                 .retrieve()
@@ -152,7 +142,7 @@ public class PaymentService {
             throws WebhookVerificationException {
         log.info("웹훅검증==========================================================");
         // 1. 웹훅을 보낸 이가 포트원이 맞는지 검증합니다.
-        WebhookVerifier verifier = new WebhookVerifier(portoneWebhookSecret);
+        WebhookVerifier verifier = new WebhookVerifier(portoneProperties.getWebhookSecret());
         try {
             verifier.verify(payload, webhookId, webhookSignature, webhookTimestamp);
             log.info("WebhookVerifier 검증 성공: {}", webhookId);
@@ -181,8 +171,8 @@ public class PaymentService {
         String paymentId = extractPaymentIdFromPayload(payload);
         Map<String, Object> paymentDetail = webClient
                 .get()
-                .uri("https://api.portone.io/payments/{paymentId}", paymentId)
-                .header("Authorization", "PortOne " + portoneApiSecret)
+                .uri(portoneProperties.getApiUrl() + "/payments/{paymentId}", paymentId)
+                .header("Authorization", "PortOne " + portoneProperties.getApiSecret())
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block();
@@ -277,157 +267,6 @@ public class PaymentService {
 
     }
 
-    // public void webhookVerify(String payload, String webhookId, String
-    // webhookSignature, String webhookTimestamp,
-    // UserDetails userDetails) throws WebhookVerificationException {
-
-    // // 1. 웹훅을 보낸 이가 포트원이 맞는지 검증합니다.
-    // WebhookVerifier verifier = new WebhookVerifier(portoneWebhookSecret);
-    // try {
-    // verifier.verify(payload, webhookId, webhookSignature, webhookTimestamp);
-    // log.info("WebhookVerifier 검증 성공: {}", webhookId);
-    // } catch (WebhookVerificationException e) {
-    // e.printStackTrace();
-    // throw new WebhookVerificationException(webhookTimestamp, e);
-    // }
-
-    // // 2. 포트원에서 단건내역을 조회합니다.
-    // String paymentId = extractPaymentIdFromPayload(payload);
-    // Map<String, Object> paymentDetail = webClient
-    // .get()
-    // .uri("https://api.portone.io/payments/{paymentId}", paymentId)
-    // .header("Authorization", "PortOne " + portoneApiSecret)
-    // .retrieve()
-    // .bodyToMono(Map.class)
-    // .block();
-    // log.info("paymentDetail: {}", paymentDetail);
-
-    // // 3. db에서 단건내역을 조회합니다.
-    // Optional<Payment> existingPayment =
-    // paymentRepository.findByPaymentId(paymentId);
-
-    // Payment dbPayment;
-    // boolean isNewPayment = existingPayment.isEmpty();
-
-    // // 3-1. db에 내역이 없다면 예약결제에 대한 웹훅 입니다.내역이 없다면 새로운 Payment를 생성합니다.
-    // if (isNewPayment) {
-    // log.info("예약 결제 웹훅 수신! 결제 ID {}에 대한 새로운 Payment를 생성합니다.", paymentId);
-
-    // dbPayment = Payment.builder()
-    // .paymentId((String) paymentDetail.get("id")) // paymentId가 "id" 필드에 있음
-    // .userId(userDetails.getUsername())
-    // .amount((Integer) ((Map<String, Object>)
-    // paymentDetail.get("amount")).get("total"))
-    // .paymentMethod((String) ((Map<String, Object>)
-    // paymentDetail.get("method")).get("provider"))
-    // .paymentStatus(PaymentStatus.PAID)
-    // .paidAt(LocalDateTime.ofInstant(
-    // Instant.parse((String) paymentDetail.get("paidAt")),
-    // ZoneId.systemDefault()))
-    // .build();
-
-    // } else {
-    // // 3-2. db에 내역이 있다면 단건 결제에 대한 웹훅 입니다.
-    // dbPayment = existingPayment.get();
-
-    // // 4. 결제 금액을 비교합니다.
-    // Integer apiAmount = (Integer) ((Map<String, Object>)
-    // paymentDetail.get("amount")).get("total");
-    // Integer dbOrderAmount = dbPayment.getAmount();
-
-    // if (!apiAmount.equals(dbOrderAmount)) {
-    // log.error("금액 위변조 의심: 주문 금액({})과 실제 결제 금액({})이 일치하지 않습니다.", dbOrderAmount,
-    // apiAmount);
-    // throw new PaymentVerificationException("결제 금액 불일치");
-    // }
-
-    // String apiStatus = (String) paymentDetail.get("status");
-    // PaymentStatus apiStatusEnum = PaymentStatus.fromNameIgnoreCase(apiStatus);
-    // // DBStatus== READY|| FAILED|| CANCELLED && APIStatus==PAID일 때만 로직 실행
-    // if (PaymentStatus.PAID.equals(apiStatusEnum) &&
-    // !PaymentStatus.PAID.equals(dbPayment.getPaymentStatus())) {
-    // dbPayment.setPaymentStatus(PaymentStatus.PAID);
-    // paymentRepository.save(dbPayment);
-    // log.info("✅ 결제 ID {}의 상태를 PAID로 성공적으로 업데이트했습니다.", paymentId);
-
-    // } else {
-    // log.warn("이미 처리된 결제이거나(DB 상태: {}), API 상태가 PAID가 아닙니다(API 상태: {}).",
-    // dbPayment.getPaymentStatus().name(), apiStatus);
-    // }
-
-    // UserEntity userEntity = userRepository.findByUsername(dbPayment.getUserId())
-    // .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
-
-    // SubscriptionRequest subscriptionRequest = SubscriptionRequest.builder()
-    // .billingKey((String) paymentDetail.get("billingKey"))
-    // .orderName((String) paymentDetail.get("orderName"))
-    // .amount(((Integer) ((Map<String, Object>)
-    // paymentDetail.get("amount")).get("total")))
-    // .build();
-
-    // subscriptionService.scheduleNextPayment(userEntity,
-    // subscriptionRequest, 5).subscribe();
-    // }
-
-    // }
-
-    // public void webhookVerify(String payload, String webhookId, String
-    // webhookSignature, String webhookTimestamp,
-    // @AuthenticationPrincipal UserDetails userDetails) throws
-    // WebhookVerificationException {
-
-    // // 웹훅을 보낸 이가 포트원이 맞는지 검증합니다.
-    // WebhookVerifier verifier = new WebhookVerifier(portoneWebhookSecret);
-    // try {
-    // verifier.verify(payload, webhookId, webhookSignature, webhookTimestamp);
-    // log.info("WebhookVerifier 검증 성공: {}", webhookId);
-    // } catch (WebhookVerificationException e) {
-    // e.printStackTrace();
-    // throw new WebhookVerificationException(webhookTimestamp, e);
-    // }
-
-    // String paymentId = extractPaymentIdFromPayload(payload);
-    // Map<String, Object> paymentDetail = webClient
-    // .get()
-    // .uri("https://api.portone.io/payments/{paymentId}", paymentId)
-    // .header("Authorization", "PortOne " + portoneApiSecret)
-    // .retrieve()
-    // .bodyToMono(Map.class)
-    // .block();
-
-    // log.info("paymentDetail: {}", paymentDetail);
-
-    // String apiStatus = (String) paymentDetail.get("status");
-    // PaymentStatus apiStatusEnum = PaymentStatus.fromNameIgnoreCase(apiStatus);
-    // Payment dbPayment = paymentRepository.findByPaymentId(paymentId)
-    // .orElseThrow(() -> new RuntimeException("DB에 존재하지 않는 결제 ID: " + paymentId));
-
-    // // DB상태가 READY| FAILED| CANCELLED 이면서 API 상태가 PAID일 때만 로직 실행
-    // if (PaymentStatus.PAID.equals(apiStatusEnum) &&
-    // !PaymentStatus.PAID.equals(dbPayment.getPaymentStatus())) {
-    // dbPayment.setPaymentStatus(PaymentStatus.PAID);
-    // paymentRepository.save(dbPayment);
-    // log.info("✅ 결제 ID {}의 상태를 PAID로 성공적으로 업데이트했습니다.", paymentId);
-
-    // UserEntity userEntity = userRepository.findByUsername(dbPayment.getUserId())
-    // .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
-
-    // SubscriptionRequest subscriptionRequest = SubscriptionRequest.builder()
-    // .billingKey((String) paymentDetail.get("billingKey"))
-    // .orderName((String) paymentDetail.get("orderName"))
-    // .amount(((Integer) ((Map<String, Object>)
-    // paymentDetail.get("amount")).get("total")))
-    // .build();
-
-    // subscriptionService.scheduleNextPayment(userEntity,
-    // subscriptionRequest, 5).subscribe();
-    // } else {
-    // log.warn("이미 처리된 결제이거나(DB 상태: {}), API 상태가 PAID가 아닙니다(API 상태: {}).",
-    // dbPayment.getPaymentStatus().name(), apiStatus);
-    // }
-
-    // }
-
     private String extractPaymentIdFromPayload(String payload) {
         try {
             Map<String, Object> payloadMap = objectMapper.readValue(payload, new TypeReference<>() {
@@ -486,12 +325,12 @@ public class PaymentService {
 
     public String getAccessToken() {
         Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("imp_key", "4813120024707813");
-        requestBody.put("imp_secret",
-                "TXhW1M23idXFaD4LkF3Qyj7FrLQicFbs6A6naVLgj3WK3h2yostgXhpNaO1w3bPBstm6agBunAVn5dxL");
+        requestBody.put("imp_key", portoneProperties.getImpKey());
+        requestBody.put("imp_secret", portoneProperties.getImpSecret());
 
         return webClient.post()
-                .uri(ACCESS_TOKEN_URI)
+                .uri(portoneProperties.getAccessTokenUrl())
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(requestBody)
                 .retrieve()

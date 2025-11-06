@@ -1,12 +1,11 @@
 package com.pcgear.complink.pcgear.SMS;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Order.service.OrderService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.nurigo.sdk.NurigoApp;
 import net.nurigo.sdk.message.model.Message;
@@ -21,10 +20,8 @@ public class SmsService {
         private final DefaultMessageService messageService;
         private final OrderService orderService;
 
-        public SmsService(OrderService orderService) {
-                this.messageService = NurigoApp.INSTANCE.initialize("NCSG95R1WQVSPGI9",
-
-                                "RWEAMPOKTAXIQE1KBARPUVKZOIB1CQEJ", "https://api.coolsms.co.kr");
+        public SmsService(DefaultMessageService messageService, OrderService orderService) {
+                this.messageService = messageService;
                 this.orderService = orderService;
         }
 
@@ -32,16 +29,13 @@ public class SmsService {
                 log.info("sendOneRequest: {}", sendOneRequest);
 
                 String text = buildPaymentSmsText(sendOneRequest);
-                String toPhoneNumber = "01062301825"; // **TODO: cleanPhoneNumber로 변경 필요**
-                // String tooPhoneNumber =
-                // sendOneRequest.getCustomerPhoneNumber().replaceAll("-", "");
+                String toPhoneNumber = "01062301825";
 
                 SingleMessageSentResponse response = sendSms(toPhoneNumber, text);
 
                 log.info("SMS 발송 완료. Response: {}", response);
                 orderService.updateOrderStatus(sendOneRequest.getOrderId(), OrderStatus.PAYMENT_PENDING);
 
-                
         }
 
         private SingleMessageSentResponse sendSms(String to, String text) {

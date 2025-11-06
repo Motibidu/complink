@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.pcgear.complink.pcgear.Payment.model.SubscriptionRequest;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
+import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,14 +26,14 @@ public class SubscriptionService {
 
         private final WebClient webClient;
         private final SubscriptionRepository subscriptionRepository;
-        private final String portoneUrl = "https://api.portone.io";
+        private final PortoneProperties portoneProperties;
 
         public Mono<Subscription> scheduleNextPayment(UserEntity user, SubscriptionRequest request, int seconds) {
                 log.info("결제예약==========================================================");
 
                 final String paymentId = "payment-" + UUID.randomUUID().toString();
                 // API 경로: /payments/{payment_id}/schedule
-                final String uri = portoneUrl + String.format("/payments/%s/schedule", paymentId);
+                final String uri = portoneProperties.getApiUrl() + String.format("/payments/%s/schedule", paymentId);
 
                 // 다음 결제일 설정
                 LocalDateTime nextPaymentTime = LocalDateTime.now().plusSeconds(seconds);
@@ -70,7 +71,7 @@ public class SubscriptionService {
                 return webClient.post()
                                 .uri(uri)
                                 .header("Authorization", "PortOne "
-                                                + "FkLCYZzsKhVsoZxz8aZEWXTiRsRYisWO9CBuzCUuooCjBU78TCMCEmdt3NydMvlG63zysLVjQMLAsdA1")
+                                                + portoneProperties.getApiSecret())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(requestBody)
                                 .retrieve()
