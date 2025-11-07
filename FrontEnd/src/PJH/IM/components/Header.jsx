@@ -71,7 +71,7 @@ const Header = () => {
       customer: {
         customerId: userId,
       },
-      noticeUrls: ["https://6b6b37142cd4.ngrok-free.app/payment/webhook-verify"],
+      noticeUrls: ["https://ff7624d03459.ngrok-free.app/payment/webhook-verify"],
     });
 
     if (response.code) {

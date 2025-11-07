@@ -2,10 +2,16 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+ARG VITE_PORTONE_STORE_ID
+ARG VITE_PORTONE_TOSSPAY_CHANNEL_KEY
+
 # package.json만 먼저 복사하여 의존성 캐싱 활용
 COPY package.json ./
 COPY package-lock.json ./
 RUN npm install
+
+ENV VITE_PORTONE_STORE_ID=$VITE_PORTONE_STORE_ID
+ENV VITE_PORTONE_TOSSPAY_CHANNEL_KEY=$VITE_PORTONE_TOSSPAY_CHANNEL_KEY
 
 # 소스 코드 전체 복사
 COPY . ./

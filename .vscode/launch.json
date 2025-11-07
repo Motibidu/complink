@@ -6,7 +6,7 @@
                         "request": "launch",
                         "cwd": "${workspaceFolder}",
                         "mainClass": "com.pcgear.complink.pcgear.PcgearApplication",
-                        "vmArgs": "-Dspring.profiles.active=dev",
+                        "vmArgs": "-Dspring.profiles.active=prod",
                         "projectName": "pcgear",
                         "args": "",
                         "envFile": "${workspaceFolder}/.env"

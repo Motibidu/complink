@@ -69,7 +69,11 @@ services:
     restart: on-failure
 
   frontend:
-    build: ./FrontEnd
+    build: 
+      context: ./FrontEnd
+      args:
+        VITE_PORTONE_STORE_ID: ${VITE_PORTONE_STORE_ID}
+        VITE_PORTONE_TOSSPAY_CHANNEL_KEY: ${VITE_PORTONE_TOSSPAY_CHANNEL_KEY}
     ports:
       - "80:80"
     depends_on:
