@@ -2,3 +2,5 @@
 *.env
 mysql_data/*
 /FrontEnd/dist/
+/.vscode/*
+/logs/*

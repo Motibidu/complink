@@ -2,6 +2,8 @@ package com.pcgear.complink.pcgear.Item;
 
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -20,15 +22,25 @@ import lombok.extern.slf4j.Slf4j;
 public class ItemService {
         private final ItemRepository itemRepository;
 
+        @Cacheable("items")
         public List<Item> readItems() {
+                log.info("오예예");
                 return itemRepository.findAll();
         }
 
+        @Cacheable("items_temp")
+        public List<Item> findFirstThreeItems() {
+                PageRequest pageable = PageRequest.of(0, 3, Sort.by("itemId").ascending());
+                return itemRepository.findAll(pageable).getContent();
+        }
+
+        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         public Item createItem(Item item) {
                 return itemRepository.save(item);
         }
 
         @Transactional
+        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         public void updateItem(Integer itemId, Item itemDetails) {
                 Item existingItem = itemRepository.findById(itemId)
                                 .orElseThrow(() -> new EntityNotFoundException("해당 ID의 품목을 찾을 수 없습니다: " + itemId));
@@ -39,13 +51,11 @@ public class ItemService {
                 existingItem.setPurchasePrice(itemDetails.getPurchasePrice());
                 existingItem.setSellingPrice(itemDetails.getSellingPrice());
 
-                // 3. 변경된 엔티티를 저장합니다.
-                // @Transactional 안에서는 변경 감지(Dirty Checking)에 의해 save를 호출하지 않아도
-                // 메서드가 끝날 때 자동으로 UPDATE 쿼리가 실행되지만, 명시적으로 호출하는 것도 좋은 방법입니다.
                 itemRepository.save(existingItem);
         }
 
         @Transactional
+        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         public void deleteItems(List<Integer> itemIds) {
                 itemRepository.deleteAllByItemIdIn(itemIds);
         }
@@ -69,11 +79,6 @@ public class ItemService {
                         item.setQuantityOnHand(currentStock - orderedQuantity);
                         itemRepository.save(item);
                 }
-        }
-
-        public List<Item> findFirstThreeItems() {
-                PageRequest pageable = PageRequest.of(0, 3, Sort.by("itemId").ascending());
-                return itemRepository.findAll(pageable).getContent();
         }
 
 }
