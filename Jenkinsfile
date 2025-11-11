@@ -37,7 +37,6 @@ pipeline {
         // 4. Docker 이미지 빌드
         stage('3. Build Docker Images') {
             steps {
-                // (가정: docker-compose.yml이 현재 디렉토리에 있음)
                 echo 'Building backend and frontend Docker images...'
                 
                 // docker-compose.yml에 정의된 'build' 섹션을 실행
