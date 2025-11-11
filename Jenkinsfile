@@ -1,57 +1,61 @@
 pipeline {
-    // Jenkins가 설치된 호스트(EC2)의 Docker를 사용합니다.
     agent any
 
-    // 1. Jenkins Credentials에 등록해야 할 ID 목록
     environment {
-        // (필수) docker-compose.yml이 사용할 .env 파일의 Credential ID
         ENV_CREDENTIAL_ID = 'pcgear-prod-env'
     }
 
     stages {
         
+        // 1. .env 파일 생성
         stage('1. Prepare Environment File') {
             steps {
                 echo "Loading production secrets..."
-                // Jenkins에 등록된 "Secret file" (pcgear-prod-env)을
-                // $ENV_FILE 변수로 로드합니다.
                 withCredentials([file(credentialsId: ENV_CREDENTIAL_ID, variable: 'ENV_FILE')]) {
-                    
-                    echo "Creating .env file for docker-compose..."
-                    // SCM이 받아온 코드와 같은 위치에 .env 파일을 생성합니다.
                     sh 'cp $ENV_FILE .env'
                 }
             }
         }
 
-        // 3. Docker 이미지 빌드
-        stage('2. Build Docker Images') {
+        // 📌 [추가된 단계] Spring Boot 앱(JAR 파일)을 빌드합니다.
+        stage('2. Build Spring Boot App') {
+            steps {
+                echo 'Building Spring Boot JAR file...'
+                
+                // 1. BackEnd/pcgear 프로젝트 폴더로 이동합니다.
+                dir('BackEnd/pcgear') {
+                    // 2. gradlew 파일에 실행 권한을 부여합니다.
+                    sh 'chmod +x ./gradlew'
+                    
+                    // 3. Gradle 빌드를 실행합니다. (JAR 파일 생성)
+                    sh './gradlew clean build'
+                }
+            }
+        }
+
+        // 3. Docker 이미지 빌드 (이제 JAR 파일이 존재합니다)
+        stage('3. Build Docker Images') {
             steps {
                 echo 'Building backend and frontend Docker images...'
-                
-                // 이제 docker-compose.yml 파일이 존재하므로 정상 실행됩니다.
                 sh 'docker-compose build --no-cache'
             }
         }
 
         // 4. 애플리케이션 배포
-        stage('3. Deploy Application Stack') {
+        stage('4. Deploy Application Stack') {
             steps {
                 echo 'Stopping and removing old containers (if any)...'
-                // 기존 컨테이너 중지 및 제거
                 sh 'docker-compose down'
                 
-                echo 'Starting all services (db, redis, backend, frontend)...'
-                // .env 파일을 사용하여 모든 서비스를 백그라운드로 시작
+                echo 'Starting all services...'
                 sh 'docker-compose up -d'
             }
         }
         
         // 5. (선택적) EC2 서버 용량 확보
-        stage('4. Clean Docker System') {
+        stage('5. Clean Docker System') {
             steps {
                 echo 'Cleaning up dangling Docker images...'
-                // 빌드 과정에서 사용된 중간 이미지(dangling images)를 삭제
                 sh 'docker image prune -f'
             }
         }
@@ -61,7 +65,6 @@ pipeline {
     post {
         always {
             echo 'Cleaning up secrets...'
-            // 젠킨스 파이프라인이 빌드 과정에서 '임시'로 생성했던 .env 파일을 삭제합니다.
             sh 'rm -f .env'
         }
     }
