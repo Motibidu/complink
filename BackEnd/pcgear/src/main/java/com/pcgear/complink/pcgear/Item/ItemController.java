@@ -20,11 +20,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Tag(name = "품목 API", description = "품목 정보를 관리하는 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/items")
+@Slf4j
 public class ItemController {
 
         private final ItemService itemService;
@@ -32,8 +34,14 @@ public class ItemController {
         @Operation(summary = "품목 목록 조회")
         @GetMapping
         public ResponseEntity<List<Item>> readItems() {
-                List<Item> items = itemService.readItems();
-                return ResponseEntity.ok(items);
+                // log.info("지화자 좋다 호롤로ㅇㅇㅇ");
+                try {
+                        List<Item> items = itemService.readItems();
+                        return ResponseEntity.ok(items);
+                } catch (Exception e) {
+                        log.error("Error reading items", e);
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                }
         }
 
         @GetMapping("/temps")

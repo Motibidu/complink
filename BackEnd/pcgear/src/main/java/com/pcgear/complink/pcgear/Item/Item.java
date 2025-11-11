@@ -3,6 +3,8 @@ package com.pcgear.complink.pcgear.Item;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,6 +30,7 @@ public class Item {
         @Schema(description = "품목명", example = "GIGABYTE 지포스 RTX 4070 SUPER")
         private String itemName;
 
+        @Enumerated(EnumType.STRING)
         private ItemCategory itemCategory;
 
         private Integer QuantityOnHand;

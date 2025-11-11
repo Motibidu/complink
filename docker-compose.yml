@@ -22,12 +22,19 @@ services:
     build:
       context: ./BackEnd/pcgear
     ports:
-      - "8080:8080" # 포트 노출
+      - "8080:8080" 
+      # - "35729:35729"
+    # volumes:
+      # 호스트의 컴파일된 클래스 파일 -> 컨테이너의 /app/classes로 마운트
+      # - ./BackEnd/pcgear/build/classes/java/main:/app/classes
+      # 호스트의 리소스 파일 -> 컨테이너의 /app/resources로 마운트
+      # - ./BackEnd/pcgear/src/main/resources:/app/resources
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/pcgear?allowPublicKeyRetrieval=true&useSSL=false
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod} 
+      # - SPRING_DEVTOOLS_RESTART_ENABLED=true
       # 2. EMAIL SECRETS
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
@@ -61,10 +68,18 @@ services:
       - DELIVERY_TRACKER_CLIENT_SECRET=${DELIVERY_TRACKER_CLIENT_SECRET}
       - DELIVERY_TRACKER_AUTH_URL=${DELIVERY_TRACKER_AUTH_URL}
       - DELIVERY_TRACKER_GRAPHQL_API_URL=${DELIVERY_TRACKER_GRAPHQL_API_URL}
+
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
       - TZ=Asia/Seoul
+    # command: >
+    #   java -cp /app/classes:/app/resources:/app/app.jar 
+    #   org.springframework.boot.loader.JarLauncher
 
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: on-failure
 

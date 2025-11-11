@@ -1,5 +1,10 @@
 package com.pcgear.complink.pcgear.config;
 
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.cache.annotation.EnableCaching; // 1. import 추가
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,7 +41,26 @@ public class RedisConfig {
                                 .serializeKeysWith(RedisSerializationContext.SerializationPair
                                                 .fromSerializer(new StringRedisSerializer()))
                                 // Value Serializer는 JSON으로 설정 (여기서 SerializationException 해결)
-                                      .serializeValuesWith(RedisSerializationContext.SerializationPair
+                                .serializeValuesWith(RedisSerializationContext.SerializationPair
                                                 .fromSerializer(new GenericJackson2JsonRedisSerializer()));
+        }
+
+        @Bean
+        public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer(
+                        RedisCacheConfiguration cacheConfiguration) {
+
+                return (builder) -> {
+                        Map<String, RedisCacheConfiguration> configurations = new HashMap<>();
+
+                        // 1. 'items' 캐시: JSON 직렬화 + 12시간 TTL
+                        configurations.put("items", cacheConfiguration
+                                        .entryTtl(Duration.ofHours(12)));
+
+                        // 2. 'items_temp' 캐시: JSON 직렬화 + 30분 TTL
+                        configurations.put("items_temp", cacheConfiguration
+                                        .entryTtl(Duration.ofMinutes(30)));
+
+                        builder.withInitialCacheConfigurations(configurations);
+                };
         }
 }
