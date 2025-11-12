@@ -2,6 +2,10 @@ package com.pcgear.complink.pcgear.Item;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,10 +37,12 @@ public class ItemController {
 
         @Operation(summary = "품목 목록 조회")
         @GetMapping
-        public ResponseEntity<List<Item>> readItems() {
+        public ResponseEntity<ItemPageDto> readItems(
+                        @PageableDefault(size = 10, sort = "itemId", direction = Sort.Direction.DESC) Pageable pageable) {
                 try {
-                        List<Item> items = itemService.readItems();
-                        return ResponseEntity.ok(items);
+                        // 2. Service가 이제 ItemPageDto를 반환
+                        ItemPageDto itemPageDto = itemService.readItems(pageable);
+                        return ResponseEntity.ok(itemPageDto);
                 } catch (Exception e) {
                         log.error("Error reading items", e);
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -76,7 +82,7 @@ public class ItemController {
         @Operation(summary = "품목 삭제")
         @ApiResponse(responseCode = "204", description = "품목 삭제 성공")
         @DeleteMapping
-        public ResponseEntity<Void> deleteItems(@RequestParam List<Integer> ids) {
+        public ResponseEntity<Void> deleteItems(@RequestParam(name = "ids") List<Integer> ids) {
                 itemService.deleteItems(ids);
                 return ResponseEntity.noContent().build();
         }

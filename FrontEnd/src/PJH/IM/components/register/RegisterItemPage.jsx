@@ -1,18 +1,22 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios"; // 데이터 전송을 위해 axios 사용
 import qs from "qs";
+import { Pagination } from "react-bootstrap"; // React-Bootstrap의 Pagination 컴포넌트
 
-
-// useCallback이 fetchItems라는 함수를 한 번만 만듭니다 (의존성 배열이 []이므로).
-
-// useEffect는 fetchItems 함수를 감시하고 있습니다.
-
-// 하지만 fetchItems 함수는 useCallback 덕분에 절대 변하지 않는 고정된 값이 되었습니다.
-
-// 따라서 useEffect는 컴포넌트가 맨 처음 화면에 나타날 때 fetchItems를 한 번 실행한 뒤, 그 이후로는 fetchItems가 변하지 않으니 다시는 실행되지 않습니다.
 const RegisterItemPage = () => {
   // 폼 데이터를 한 번에 관리하기 위한 state
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState([]); // 현재 페이지의 아이템 목록
+
+  // 페이징 관련 상태
+  const [currentPage, setCurrentPage] = useState(0); // 0-indexed (Spring Pageable의 기본값)
+  const [pageData, setPageData] = useState({
+    content: [], // 현재 페이지의 데이터 목록
+    totalPages: 0, // 전체 페이지 수
+    number: 0, // 현재 페이지 번호 (0부터 시작)
+    first: true, // 첫 페이지인지
+    last: true, // 마지막 페이지인지
+  });
+
   const [selectedItems, setSelectedItems] = useState([]);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [newFormData, setNewFormData] = useState({
@@ -30,26 +34,36 @@ const RegisterItemPage = () => {
   });
   const [tableLoading, setTableLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // (삭제/수정/등록 시 로딩 상태)
 
-  const fetchItems = useCallback(async () => {
+  // API로부터 데이터를 불러오는 함수
+  const fetchItems = async (pageToFetch) => {
     setTableLoading(true);
     try {
-      const response = await axios.get("/api/items");
-      //console.log("response.data: ", response.data);
+      // API 호출 시 page, size, sort 파라미터를 params로 전달
+      const response = await axios.get("/api/items", {
+        params: {
+          page: pageToFetch,
+          size: 15,
+          sort: "itemId,desc", // 최신순 정렬
+        },
+      });
 
-      const itemsData = Array.isArray(response.data) ? response.data : [];
-      setItems(itemsData);
+      // Spring Boot가 보낸 Page 객체를 상태에 저장
+      const itemsData = response.data.content || [];
+      setItems(itemsData); // 테이블 렌더링을 위해 items 상태 업데이트
+      setPageData(response.data); // 페이지네이션 UI를 위해 pageData 상태 업데이트
     } catch (error) {
       console.error("품목 목록을 불러오는 데 실패했습니다.", error);
     } finally {
       setTableLoading(false);
     }
-  }, []);
+  };
 
+  // useEffect가 currentPage(페이지 번호)가 바뀔 때마다 실행되도록 변경
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+    fetchItems(currentPage);
+  }, [currentPage]); // currentPage가 변경되면 목록을 다시 불러옵니다.
 
   //handle select
   const handleSelectAll = (e) => {
@@ -93,7 +107,13 @@ const RegisterItemPage = () => {
         });
 
         alert("선택된 품목들이 삭제되었습니다.");
-        fetchItems(); // 목록 새로고침
+        
+        // 목록 새로고침 (현재 페이지 유지 또는 이전 페이지로 이동)
+        if (pageData.content.length === selectedItems.length && currentPage > 0) {
+            setCurrentPage(currentPage - 1); // useEffect가 알아서 fetchItems 호출
+        } else {
+            fetchItems(currentPage); // 현재 페이지만 새로고침
+        }
         setSelectedItems([]); // 선택 상태 초기화
       } catch (error) {
         console.error("품목 삭제 중 오류 발생:", error);
@@ -129,7 +149,7 @@ const RegisterItemPage = () => {
       return;
     }
 
-    setLoading(true);
+    setLoading(true); // formLoading -> loading으로 통일
     setMessage({ type: "", text: "" });
 
     try {
@@ -147,7 +167,10 @@ const RegisterItemPage = () => {
           sellingPrice: "",
         });
 
-        fetchItems();
+        // 새 항목은 1페이지에 있으므로 0페이지로 이동
+        setCurrentPage(0); 
+        // fetchItems(0); // (setCurrentPage(0)가 useEffect를 트리거하므로 중복 호출 불필요)
+
         alert("품목 등록이 성공적으로 완료되었습니다.");
         const modalElement = document.getElementById("newFormModal");
         const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
@@ -163,7 +186,7 @@ const RegisterItemPage = () => {
     } finally {
       setLoading(false);
     }
-  }; // <-- FIX: Added the missing closing brace here
+  }; 
 
   const handleEditFormSubmit = async (e) => {
     e.preventDefault();
@@ -182,10 +205,9 @@ const RegisterItemPage = () => {
 
     try {
       const response = await axios.put(
-        "/api/items/" + editFormData.itemId, // Corrected URL concatenation
+        "/api/items/" + editFormData.itemId,
         {
           ...editFormData,
-          // BUG FIX: Changed newFormData to editFormData
           purchasePrice: Number(editFormData.purchasePrice),
           sellingPrice: Number(editFormData.sellingPrice),
         }
@@ -199,7 +221,10 @@ const RegisterItemPage = () => {
           purchasePrice: "",
           sellingPrice: "",
         });
-        fetchItems();
+        
+        // 목록 새로고침 (현재 페이지 유지)
+        fetchItems(currentPage); 
+
         const modalElement = document.getElementById("editFormModal");
         const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) {
@@ -211,11 +236,9 @@ const RegisterItemPage = () => {
       let errorMsg = "품목 수정 중 오류가 발생했습니다.";
       if (error.response?.data) {
         console.error(error);
-        // 백엔드가 { fieldName: "error message" } 형태로 보낸 경우
         if (typeof error.response.data === "object") {
           errorMsg = Object.values(error.response.data).join(", ");
         }
-        // 백엔드가 문자열로 보낸 경우
         else if (typeof error.response.data === "string") {
           errorMsg = error.response.data;
         }
@@ -234,6 +257,39 @@ const RegisterItemPage = () => {
       purchasePrice: itemToEdit.purchasePrice || "",
       sellingPrice: itemToEdit.sellingPrice || "",
     });
+  };
+
+  // 페이지네이션 UI를 위한 페이지 변경 핸들러
+  const handlePageChange = (pageNumber) => {
+    // Pagination 컴포넌트는 1부터 시작, API는 0부터 시작하므로 -1
+    setCurrentPage(pageNumber - 1);
+  };
+  
+  // 페이지네이션 아이템을 동적으로 생성하는 헬퍼 함수
+  const createPaginationItems = () => {
+    let pages = [];
+    const maxPagesToShow = 5; // 한 번에 보여줄 최대 페이지 버튼 수
+    let startPage = Math.max(0, pageData.number - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(pageData.totalPages - 1, startPage + maxPagesToShow - 1);
+
+    // 페이지 수가 maxPagesToShow보다 적을 때, startPage가 0이 되도록 조정
+    if (endPage - startPage + 1 < maxPagesToShow) {
+        startPage = Math.max(0, endPage - maxPagesToShow + 1);
+    }
+
+    // 페이지 번호 (1부터 시작하도록 +1)
+    for (let number = startPage; number <= endPage; number++) {
+      pages.push(
+        <Pagination.Item
+          key={number}
+          active={number === pageData.number}
+          onClick={() => setCurrentPage(number)}
+        >
+          {number + 1}
+        </Pagination.Item>
+      );
+    }
+    return pages;
   };
 
   return (
@@ -262,48 +318,92 @@ const RegisterItemPage = () => {
             </tr>
           </thead>
           <tbody>
-            {items
-              ? items.map((item) => (
-                  <tr key={item.itemId}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.includes(item.itemId)}
-                        onChange={() => handleSelectItem(item.itemId)}
-                      />
+            {/* items.map -> pageData.content.map 또는 items.map (items가 pageData.content로 업데이트되므로) */}
+            {tableLoading ? (
+                <tr>
+                    <td colSpan="6" className="text-center">
+                        <div className="spinner-border spinner-border-sm" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                        </div>
                     </td>
-                    <td>{item.itemId}</td>
-                    <td>
-                      <a
-                        onClick={() => handleEditClick(item)}
-                        href="#"
-                        data-bs-toggle="modal"
-                        data-bs-target="#editFormModal"
-                      >
-                        {item.itemName}
-                      </a>
-                    </td>
-                    <td>{item.itemCategory}</td>
-                    <td>{item.purchasePrice}</td>
-                    <td>{item.sellingPrice}</td>
-                  </tr>
-                ))
-              : ""}
+                </tr>
+            ) : items && items.length > 0 ? (
+              items.map((item) => (
+                <tr key={item.itemId}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.includes(item.itemId)}
+                      onChange={() => handleSelectItem(item.itemId)}
+                    />
+                  </td>
+                  <td>{item.itemId}</td>
+                  <td>
+                    <a
+                      onClick={() => handleEditClick(item)}
+                      href="#"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editFormModal"
+                    >
+                      {item.itemName}
+                    </a>
+                  </td>
+                  <td>{item.itemCategory}</td>
+                  <td>{item.purchasePrice}</td>
+                  <td>{item.sellingPrice}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" className="text-center">데이터가 없습니다.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-      <footer className="mt-3">
-        <button
-          className="btn btn-primary mx-3"
-          data-bs-toggle="modal"
-          data-bs-target="#newFormModal"
-        >
-          신규 품목 등록
-        </button>
-        <button className="btn btn-primary me-3" onClick={handleDeleteSelected}>
-          삭제
-        </button>
+      
+      {/* footer 구조 변경 (버튼 그룹 + 페이지네이션) */}
+      <footer className="mt-3 d-flex justify-content-between align-items-center">
+        {/* 버튼 그룹 */}
+        <div>
+          <button
+            className="btn btn-primary mx-3"
+            data-bs-toggle="modal"
+            data-bs-target="#newFormModal"
+          >
+            신규 품목 등록
+          </button>
+          <button className="btn btn-danger me-3" onClick={handleDeleteSelected}>
+            선택 삭제
+          </button>
+        </div>
+
+        {/* 페이지네이션 UI (React-Bootstrap) */}
+        {pageData && pageData.totalPages > 1 && (
+          <Pagination className="mb-0">
+            <Pagination.First 
+              onClick={() => setCurrentPage(0)} 
+              disabled={pageData.first} 
+            />
+            <Pagination.Prev 
+              onClick={() => setCurrentPage(currentPage - 1)} 
+              disabled={pageData.first} 
+            />
+            {/* 동적으로 생성된 페이지 번호들 */}
+            {createPaginationItems()}
+            <Pagination.Next 
+              onClick={() => setCurrentPage(currentPage + 1)} 
+              disabled={pageData.last} 
+            />
+            <Pagination.Last 
+              onClick={() => setCurrentPage(pageData.totalPages - 1)} 
+              disabled={pageData.last} 
+            />
+          </Pagination>
+        )}
       </footer>
+
+      {/* 신규 등록 모달 */}
       <div
         className="modal fade"
         id="newFormModal"
@@ -415,14 +515,20 @@ const RegisterItemPage = () => {
                 >
                   닫기
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  저장하기
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  {loading ? (
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  ) : (
+                    "저장하기"
+                  )}
                 </button>
               </div>
             </form>
           </div>
         </div>
       </div>
+
+      {/* 수정 모달 */}
       <div
         className="modal fade"
         id="editFormModal"
@@ -533,8 +639,12 @@ const RegisterItemPage = () => {
                 >
                   닫기
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  저장하기
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  {loading ? (
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  ) : (
+                    "저장하기"
+                  )}
                 </button>
               </div>
             </form>

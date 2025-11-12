@@ -1,10 +1,22 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import "./RegisterManagerPage.css";
 import axios from "axios";
 import qs from "qs";
+import { Pagination } from "react-bootstrap"; // React-Bootstrap의 Pagination 컴포넌트
 
 const ManagerPage = () => {
-  const [managers, setManagers] = useState([]);
+  const [managers, setManagers] = useState([]); // 현재 페이지의 담당자 목록
+
+  // 페이징 관련 상태
+  const [currentPage, setCurrentPage] = useState(0); // 0-indexed
+  const [pageData, setPageData] = useState({
+    content: [], // 현재 페이지의 데이터 목록
+    totalPages: 0, // 전체 페이지 수
+    number: 0, // 현재 페이지 번호 (0부터 시작)
+    first: true, // 첫 페이지인지
+    last: true, // 마지막 페이지인지
+  });
+
   const [selectedManagers, setSelectedManagers] = useState([]);
   const [newFormData, setNewFormData] = useState({
     managerId: "MGR-0025",
@@ -28,12 +40,24 @@ const ManagerPage = () => {
   // --- 데이터 처리 함수 ---
 
   // 백엔드에서 담당자 목록을 불러오는 함수
-  const fetchManagers = useCallback(async () => {
+  const fetchManagers = async (pageToFetch) => {
     setTableLoading(true);
     try {
-      const response = await axios.get("/api/managers");
-      const data = Array.isArray(response.data) ? response.data : [];
-      setManagers(data);
+      // API 호출 시 page, size, sort 파라미터를 params로 전달
+      const response = await axios.get("/api/managers", {
+        params: {
+          page: pageToFetch,
+          size: 15, // 한 페이지에 10개씩
+          sort: "managerId,desc", // 최신순 정렬 (백엔드 엔티티 필드명 기준)
+        },
+      });
+
+      // Spring Boot가 보낸 Page 객체를 상태에 저장
+      const managersData = response.data.content || [];
+      console.log("response: ", response);
+      setManagers(managersData); // 테이블 렌더링을 위해 managers 상태 업데이트
+      setPageData(response.data); // 페이지네이션 UI를 위해 pageData 상태 업데이트
+
     } catch (error) {
       console.error("담당자 목록을 불러오는 데 실패했습니다.", error);
       setMessage({
@@ -43,12 +67,12 @@ const ManagerPage = () => {
     } finally {
       setTableLoading(false);
     }
-  }, []);
+  };
 
-  // 컴포넌트가 처음 마운트될 때 담당자 목록을 불러옵니다.
+  // 컴포넌트가 처음 마운트될 때 + currentPage가 변경될 때 담당자 목록을 불러옵니다.
   useEffect(() => {
-    fetchManagers();
-  }, [fetchManagers]);
+    fetchManagers(currentPage);
+  }, [currentPage]);
 
   // 전체 선택/해제 핸들러
   const handleSelectAll = (e) => {
@@ -73,6 +97,7 @@ const ManagerPage = () => {
       setSelectedManagers((prevSelected) => [...prevSelected, managerId]);
     }
   };
+  
   const handleDeleteSelected = async () => {
     if (selectedManagers.length === 0) {
       alert("삭제할 담당자를 선택해주세요.");
@@ -85,19 +110,23 @@ const ManagerPage = () => {
       )
     ) {
       try {
-        // 백엔드에 삭제 API(POST /api/managers/delete) 요청
         await axios.delete("/api/managers", {
           params: {
             ids: selectedManagers,
           },
-          // 2. paramsSerializer 옵션을 추가합니다.
           paramsSerializer: (params) => {
             return qs.stringify(params, { arrayFormat: "comma" });
           },
         });
 
         alert("선택된 담당자가 삭제되었습니다.");
-        fetchManagers(); // 목록 새로고침
+        
+        // 목록 새로고침 (현재 페이지 유지 또는 이전 페이지로 이동)
+        if (pageData.content.length === selectedManagers.length && currentPage > 0) {
+            setCurrentPage(currentPage - 1); // useEffect가 알아서 fetchManagers 호출
+        } else {
+            fetchManagers(currentPage); // 현재 페이지만 새로고침
+        }
         setSelectedManagers([]); // 선택 상태 초기화
       } catch (error) {
         console.error("담당자 삭제 중 오류 발생:", error);
@@ -133,7 +162,10 @@ const ManagerPage = () => {
       if (response.status === 201 || response.status === 200) {
         alert("담당자가 성공적으로 등록되었습니다.");
         // 성공 시, 목록을 새로고침하고 폼을 초기화합니다.
-        fetchManagers();
+        
+        // 새 항목은 1페이지에 있으므로 0페이지로 이동
+        setCurrentPage(0);
+        
         setNewFormData({
           managerId: "",
           managerName: "",
@@ -174,8 +206,10 @@ const ManagerPage = () => {
       );
       if (response.status === 200) {
         alert("담당자 정보 수정이 성공적으로 등록되었습니다.");
-        // 성공 시, 목록을 새로고침하고 폼을 초기화합니다.
-        fetchManagers();
+        
+        // 목록 새로고침 (현재 페이지 유지)
+        fetchManagers(currentPage);
+        
         setEditFormData({
           managerId: "",
           managerName: "",
@@ -209,6 +243,39 @@ const ManagerPage = () => {
     });
   };
 
+  // 페이지네이션 UI를 위한 페이지 변경 핸들러
+  const handlePageChange = (pageNumber) => {
+    // Pagination 컴포넌트는 1부터 시작, API는 0부터 시작하므로 -1
+    setCurrentPage(pageNumber - 1);
+  };
+  
+  // 페이지네이션 아이템을 동적으로 생성하는 헬퍼 함수
+  const createPaginationItems = () => {
+    let pages = [];
+    const maxPagesToShow = 5; // 한 번에 보여줄 최대 페이지 버튼 수
+    let startPage = Math.max(0, pageData.number - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(pageData.totalPages - 1, startPage + maxPagesToShow - 1);
+
+    // 페이지 수가 maxPagesToShow보다 적을 때, startPage가 0이 되도록 조정
+    if (endPage - startPage + 1 < maxPagesToShow) {
+        startPage = Math.max(0, endPage - maxPagesToShow + 1);
+    }
+
+    // 페이지 번호 (1부터 시작하도록 +1)
+    for (let number = startPage; number <= endPage; number++) {
+      pages.push(
+        <Pagination.Item
+          key={number}
+          active={number === pageData.number}
+          onClick={() => setCurrentPage(number)}
+        >
+          {number + 1}
+        </Pagination.Item>
+      );
+    }
+    return pages;
+  };
+
   return (
     <>
       <header className="mb-3">
@@ -221,9 +288,7 @@ const ManagerPage = () => {
               <th>
                 <input
                   type="checkbox"
-                  // `onChange`가 발생하면 `handleSelectAll` 함수를 호출합니다.
                   onChange={handleSelectAll}
-                  // 전체 담당자 수와 선택된 담당자 수가 같을 때만 체크됩니다.
                   checked={
                     managers.length > 0 &&
                     selectedManagers.length === managers.length
@@ -237,48 +302,89 @@ const ManagerPage = () => {
             </tr>
           </thead>
           <tbody>
-            {managers.map((manager) => (
-              <tr key={manager.managerId}>
-                <td>
-                  <input
-                    type="checkbox"
-                    // `checked` 속성은 React의 `selectedManagers` state에 의해 결정됩니다.
-                    checked={selectedManagers.includes(manager.managerId)}
-                    // `onChange` 이벤트가 발생하면, `handleSelectManager` 함수를 호출하여 state를 업데이트합니다.
-                    onChange={() => handleSelectManager(manager.managerId)}
-                  />
-                </td>
-                <td>{manager.managerId}</td>
-                <td>
-                  <a
-                    onClick={() => handleEditClick(manager)}
-                    href="#"
-                    data-bs-toggle="modal"
-                    data-bs-target="#managerEditModal"
-                  >
-                    {manager.managerName}
-                  </a>
-                </td>
-                <td>{manager.phoneNumber}</td>
-                <td>{manager.email}</td>
+            {tableLoading ? (
+                <tr>
+                    <td colSpan="5" className="text-center">
+                        <div className="spinner-border spinner-border-sm" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                        </div>
+                    </td>
+                </tr>
+            ) : managers && managers.length > 0 ? (
+              managers.map((manager) => (
+                <tr key={manager.managerId}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedManagers.includes(manager.managerId)}
+                      onChange={() => handleSelectManager(manager.managerId)}
+                    />
+                  </td>
+                  <td>{manager.managerId}</td>
+                  <td>
+                    <a
+                      onClick={() => handleEditClick(manager)}
+                      href="#"
+                      data-bs-toggle="modal"
+                      data-bs-target="#managerEditModal"
+                    >
+                      {manager.managerName}
+                    </a>
+                  </td>
+                  <td>{manager.phoneNumber}</td>
+                  <td>{manager.email}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" className="text-center">데이터가 없습니다.</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
 
-      <footer className="mt-3">
-        <button
-          className="btn btn-primary mx-3"
-          data-bs-toggle="modal"
-          data-bs-target="#managerFormModal"
-        >
-          신규 담당자 등록
-        </button>
-        <button className="btn btn-primary me-3" onClick={handleDeleteSelected}>
-          삭제
-        </button>
+      {/* footer 구조 변경 (버튼 그룹 + 페이지네이션) */}
+      <footer className="mt-3 d-flex justify-content-between align-items-center">
+        {/* 버튼 그룹 */}
+        <div>
+          <button
+            className="btn btn-primary mx-3"
+            data-bs-toggle="modal"
+            data-bs-target="#managerFormModal"
+          >
+            신규 담당자 등록
+          </button>
+          <button className="btn btn-danger me-3" onClick={handleDeleteSelected}>
+            선택 삭제
+          </button>
+        </div>
+
+        {/* 페이지네이션 UI (React-Bootstrap) */}
+        {pageData && pageData.totalPages > 1 && (
+          <Pagination className="mb-0">
+            <Pagination.First 
+              onClick={() => setCurrentPage(0)} 
+              disabled={pageData.first} 
+            />
+            <Pagination.Prev 
+              onClick={() => setCurrentPage(currentPage - 1)} 
+              disabled={pageData.first} 
+            />
+            {createPaginationItems()}
+            <Pagination.Next 
+              onClick={() => setCurrentPage(currentPage + 1)} 
+              disabled={pageData.last} 
+            />
+            <Pagination.Last 
+              onClick={() => setCurrentPage(pageData.totalPages - 1)} 
+              disabled={pageData.last} 
+            />
+          </Pagination>
+        )}
       </footer>
+
+      {/* 신규 등록 모달 */}
       <div
         className="modal fade"
         id="managerFormModal"
@@ -377,6 +483,8 @@ const ManagerPage = () => {
           </div>
         </div>
       </div>
+
+      {/* 수정 모달 */}
       <div
         className="modal fade"
         id="managerEditModal"

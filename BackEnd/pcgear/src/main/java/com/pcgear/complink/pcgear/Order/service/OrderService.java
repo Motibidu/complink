@@ -30,6 +30,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -68,6 +69,7 @@ public class OrderService {
         this.messagingTemplate = messagingTemplate;
     }
 
+    @CacheEvict(value = { "dashboard-summary" }, allEntries = true)
     @Transactional
     public Order createOrder(OrderRequestDto requestDto) {
         log.info("requestDto: {}", requestDto);
@@ -138,6 +140,7 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = "dashboard-summary", allEntries = true)
     public void deleteOrder(Integer orderId) {
         orderRepository.deleteById(orderId);
     }
@@ -148,6 +151,7 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = "dashboard-summary", allEntries = true)
     public Order updateOrderStatus(Integer orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(
@@ -200,6 +204,7 @@ public class OrderService {
 
     }
 
+    @CacheEvict(value = "dashboard-summary", allEntries = true)
     @Transactional
     public AssemblyDetailRespDto processAssemblyStatus(Integer orderId, AssemblyDetailReqDto assemblyDetailReqDto) {
         updateAssemblyStatus(orderId, assemblyDetailReqDto.getNextAssemblyStatus());

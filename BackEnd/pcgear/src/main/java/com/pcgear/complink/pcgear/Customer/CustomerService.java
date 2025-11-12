@@ -2,8 +2,11 @@ package com.pcgear.complink.pcgear.Customer;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.pcgear.complink.pcgear.Item.ItemPageDto;
 import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
 
 import jakarta.persistence.EntityExistsException;
@@ -58,6 +61,11 @@ public class CustomerService {
                         // 주문서가 없으면 삭제 진행
                         customerRepository.deleteById(customerId);
                 }
+        }
+
+        public Page<Customer> getAllCustomers(Pageable pageable) {
+                Page<Customer> customerPage = customerRepository.findAll(pageable);
+                return customerPage;
         }
 
 }

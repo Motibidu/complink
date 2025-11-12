@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -23,9 +25,12 @@ public class ItemService {
         private final ItemRepository itemRepository;
 
         @Cacheable("items")
-        public List<Item> readItems() {
-                log.info("오예예");
-                return itemRepository.findAll();
+        public ItemPageDto readItems(Pageable pageable) {
+                // DB에서 Page<Item>을 조회
+                Page<Item> itemPage = itemRepository.findAll(pageable);
+
+                // 4. [수정] Page<Item>을 ItemPageDto로 변환하여 반환
+                return new ItemPageDto(itemPage);
         }
 
         @Cacheable("items_temp")

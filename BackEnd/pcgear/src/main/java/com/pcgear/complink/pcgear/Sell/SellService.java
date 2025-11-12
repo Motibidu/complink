@@ -3,6 +3,7 @@ package com.pcgear.complink.pcgear.Sell;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class SellService {
         // 1. 주문 상태를 'PAID'로 변경
         // 2. 재고 수량 변경
         // 3. Sell 데이터 생성
+        @CacheEvict(value = "dashboard-summary", allEntries = true)
         @Transactional
         public Sell createSell(Order order) {
                 // 3. 판매(Sell) 데이터 생성
@@ -35,8 +37,6 @@ public class SellService {
 
                 return sellRepository.save(newSell);
         }
-
-
 
         public List<Sell> readSells() {
                 return sellRepository.findAll();

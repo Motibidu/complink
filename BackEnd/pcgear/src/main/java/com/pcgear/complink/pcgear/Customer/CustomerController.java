@@ -2,6 +2,10 @@ package com.pcgear.complink.pcgear.Customer;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,9 +35,11 @@ public class CustomerController {
 
         @Operation(summary = "거래처 목록 조회")
         @GetMapping
-        public ResponseEntity<List<Customer>> readCustomers() {
-                List<Customer> Customers = customerService.readCustomers();
-                return ResponseEntity.ok(Customers);
+        public ResponseEntity<Page<Customer>> getAllCustomers(
+                        // 📌 @PageableDefault로 기본 페이징 규칙 설정
+                        @PageableDefault(size = 15, sort = "customerId", direction = Sort.Direction.DESC) Pageable pageable) {
+                Page<Customer> customerPage = customerService.getAllCustomers(pageable);
+                return ResponseEntity.ok(customerPage);
         }
 
         @Operation(summary = "신규 거래처 등록")

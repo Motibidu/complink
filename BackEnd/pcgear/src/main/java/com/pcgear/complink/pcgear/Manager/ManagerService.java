@@ -2,8 +2,11 @@ package com.pcgear.complink.pcgear.Manager;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Item.ItemRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -16,10 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ManagerService {
         private final ManagerRepository managerRepository;
-
-        public List<Manager> readManagers() {
-                return managerRepository.findAll();
-        }
 
         public Manager createManager(Manager manager) {
                 return managerRepository.save(manager);
@@ -40,6 +39,11 @@ public class ManagerService {
         @Transactional
         public void deleteManagers(List<String> managerIds) {
                 managerRepository.deleteAllByManagerIdIn(managerIds);
+        }
+
+        public Page<Manager> getAllManagers(Pageable pageable) {
+                Page<Manager> customerPage = managerRepository.findAll(pageable);
+                return customerPage;
         }
 
 }
