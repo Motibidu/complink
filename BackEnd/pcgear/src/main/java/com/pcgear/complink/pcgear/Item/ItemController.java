@@ -34,7 +34,6 @@ public class ItemController {
         @Operation(summary = "품목 목록 조회")
         @GetMapping
         public ResponseEntity<List<Item>> readItems() {
-                // log.info("지화자 좋다 호롤로ㅇㅇㅇ");
                 try {
                         List<Item> items = itemService.readItems();
                         return ResponseEntity.ok(items);

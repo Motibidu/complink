@@ -92,7 +92,7 @@ function SignUp() {
                 {/* 5. ReCAPTCHA 컴포넌트 추가 */}
                 <div style={{ margin: '20px 0', display: 'flex', justifyContent: 'center' }}>
                     <ReCAPTCHA
-                        sitekey="6LfEFNIrAAAAAClFR_7VR3Js_LBkerQdrbVNIlg9"
+                        sitekey="6LdsBAksAAAAAK5a92FVxROAaZozOutlOvISxn6t"
                         onChange={(token) => setRecaptchaToken(token)}
                         onExpired={() => setRecaptchaToken(null)}
                     />

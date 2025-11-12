@@ -79,8 +79,7 @@ public class OrderController {
 
         List<OrderStatus> statusesToFind = (orderStatus == null || orderStatus.isEmpty())
                 ? List.of(OrderStatus.PAID, OrderStatus.PREPARING_PRODUCT, OrderStatus.SHIPPING_PENDING,
-                        OrderStatus.SHIPPING,
-                        OrderStatus.DELIVERED)
+                        OrderStatus.SHIPPING)
                 : orderStatus;
 
         List<AssemblyQueueRespDto> orders = orderService.readAssemblyQueueOrders(statusesToFind);

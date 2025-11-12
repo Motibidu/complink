@@ -60,6 +60,9 @@ public class RedisConfig {
                         configurations.put("items_temp", cacheConfiguration
                                         .entryTtl(Duration.ofMinutes(30)));
 
+                        configurations.put("dashboard-summary", cacheConfiguration
+                                        .entryTtl(Duration.ofSeconds(30)));
+
                         builder.withInitialCacheConfigurations(configurations);
                 };
         }

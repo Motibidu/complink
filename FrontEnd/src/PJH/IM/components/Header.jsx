@@ -108,7 +108,7 @@ const Header = () => {
     <>
       <header className="header">
         <div className="header__container">
-          <a className="header__logo">PCGear</a>
+          <a className="header__logo" href="/">PCGear</a>
           <div class="header__controls">
             {userRole == "ADMIN" ? (
               <div className="dropdown- header__admin-link">

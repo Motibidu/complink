@@ -20,6 +20,7 @@ import NotificationComponent from "./PJH/IM/components/NotificationComponent";
 import SignUpApprove from "./PJH/IM/components/SignUpApprove";
 import AssemblyQueue from "./PJH/IM/components/assembly/AssemblyQueue";
 import AssemblyDetail from "./PJH/IM/components/assembly/AssemblyDetail";
+import Dashboard from "./PJH/IM/components/Dashboard/Dashboard";
 
 function App() {
   return (
@@ -36,9 +37,8 @@ function App() {
 
           {/* 보호된 라우트들 */}
           <Route element={<ProtectedRoute />}>
-            {" "}
             {/* ProtectedRoute로 감싸기 */}
-            <Route path="/" element={<RegisterItemPage />} />{" "}
+            <Route path="/" element={<Dashboard/>} />
             {/* 초기 페이지는 공개 */}
             <Route path="/orders/new" element={<OrderFormPage />} />
             <Route path="/orders/search" element={<OrderSearchPage />} />

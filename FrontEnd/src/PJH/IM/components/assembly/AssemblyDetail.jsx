@@ -633,7 +633,7 @@ const AssemblyDetail = () => {
                       }`}
                     >
                       <td className="py-3 fw-medium text-dark small">
-                        {orderItem.category}
+                        {orderItem.itemCategory}
                       </td>
                       <td className="py-3 text-secondary small font-monospace">
                         {orderItem.itemName}

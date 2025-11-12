@@ -6,26 +6,40 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
+import com.pcgear.complink.pcgear.Assembly.AssemblyStatus;
 import com.pcgear.complink.pcgear.Order.model.Order;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
-    boolean existsByCustomerCustomerId(String customerId);
+        boolean existsByCustomerCustomerId(String customerId);
 
-    List<Order> findByOrderStatus(OrderStatus orderStatus);
+        List<Order> findByOrderStatus(OrderStatus orderStatus);
 
-    Optional<Order> findByMerchantUid(String merchantUid);
+        Optional<Order> findByMerchantUid(String merchantUid);
 
-    List<Order> findAllByOrderStatusIn(List<OrderStatus> orderStatuses);
+        List<Order> findAllByOrderStatusIn(List<OrderStatus> orderStatuses);
 
-    // @Param 어노테이션을 사용하여 :orderId와 매개변수 orderId를 명시적으로 연결해야 합니다.
-    @Query("SELECT o FROM Order o " +
-            "JOIN FETCH o.orderItems oi " +
-            "JOIN FETCH o.customer c " +
-            "WHERE o.orderId = :orderId")
-    Optional<Order> findByIdWithItemsAndCustomer(@Param("orderId") Integer orderId);
+        // @Param 어노테이션을 사용하여 :orderId와 매개변수 orderId를 명시적으로 연결해야 합니다.
+        @Query("SELECT o FROM Order o " +
+                        "JOIN FETCH o.orderItems oi " +
+                        "JOIN FETCH o.customer c " +
+                        "WHERE o.orderId = :orderId")
+        Optional<Order> findByIdWithItemsAndCustomer(@Param("orderId") Integer orderId);
+
+        @Query("SELECT COUNT(o) FROM Order o " +
+                        "WHERE o.createdAt BETWEEN :startOfDay AND :endOfDay")
+        Integer getNewOrdersToday(
+                        @Param("startOfDay") LocalDateTime startOfDay,
+                        @Param("endOfDay") LocalDateTime endOfDay);
+
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.orderStatus = :status")
+        Integer countByOrderStatus(@Param("status") OrderStatus status);
+
+        @Query("SELECT COUNT(o) FROM Order o WHERE o.orderStatus IN :statuses")
+        Integer countByOrderStatusIn(@Param("statuses") List<OrderStatus> statuses);
 
 }

@@ -1,6 +1,5 @@
 package com.pcgear.complink.pcgear.User.service;
 
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -112,27 +111,27 @@ public class UserService {
 	}
 
 	@Transactional(readOnly = true)
-    public Page<SignupRespDto> readSignupReq(Pageable pageable) {
-        Page<UserEntity> userPage = userRepository.findAllByIsApprovedFalse(pageable);
-        
-        return userPage.map(userEntity -> 
-        SignupRespDto.builder()
-            .id(userEntity.getUsername())
-            .name(userEntity.getName())
-            .email(userEntity.getEmail())
-            .requestDate(userEntity.getCreatedAt())
-            .build()
-    );
-    }
+	public Page<SignupRespDto> readSignupReq(Pageable pageable) {
+		Page<UserEntity> userPage = userRepository.findAllByIsApprovedFalse(pageable);
 
-        public void signupApprove(String email) {
-		UserEntity userEntity = userRepository.findByEmail(email).orElseThrow(()->(new EntityNotFoundException("해당 email의 요청을 찾을 수 없습니다."+ email)));
+		return userPage.map(userEntity -> SignupRespDto.builder()
+				.id(userEntity.getUsername())
+				.name(userEntity.getName())
+				.email(userEntity.getEmail())
+				.requestDate(userEntity.getCreatedAt())
+				.build());
+	}
+
+	public void signupApprove(String email) {
+		UserEntity userEntity = userRepository.findByEmail(email)
+				.orElseThrow(() -> (new EntityNotFoundException("해당 email의 요청을 찾을 수 없습니다." + email)));
 		userEntity.setApproved(true);
 		userRepository.save(userEntity);
-        }
+	}
 
-        public void signupReject(String email) {
-                UserEntity userEntity = userRepository.findByEmail(email).orElseThrow(()->(new EntityNotFoundException("해당 email의 요청을 찾을 수 없습니다."+ email)));
-                userRepository.delete(userEntity);
-        }
+	public void signupReject(String email) {
+		UserEntity userEntity = userRepository.findByEmail(email)
+				.orElseThrow(() -> (new EntityNotFoundException("해당 email의 요청을 찾을 수 없습니다." + email)));
+		userRepository.delete(userEntity);
+	}
 }
