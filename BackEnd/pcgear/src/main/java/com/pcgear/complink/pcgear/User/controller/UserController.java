@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -74,20 +75,33 @@ public class UserController {
     }
 
     @GetMapping("/userRole")
-    public ResponseEntity<UserRole> getUserRole(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<String> getUserRole(@AuthenticationPrincipal UserDetails userDetails) {
 
-        String authorityString = userDetails.getAuthorities().iterator().next().getAuthority();
+        // String authorityString =
+        // userDetails.getAuthorities().iterator().next().getAuthority();
 
-        String roleKey = authorityString.replaceFirst("ROLE_", "");
-        log.info("roleKey: {}", roleKey);
+        // String roleKey = authorityString.replaceFirst("ROLE_", "");
+        // log.info("roleKey: {}", roleKey);
 
-        try {
-            UserRole role = UserRole.valueOf(roleKey);
-            return ResponseEntity.ok(role);
-        } catch (IllegalArgumentException e) {
-            System.err.println("ERROR: Undefined UserRole value from authority: " + roleKey + " | " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        // try {
+        // UserRole role = UserRole.valueOf(roleKey);
+        // return ResponseEntity.ok(role);
+        // } catch (IllegalArgumentException e) {
+        // System.err.println("ERROR: Undefined UserRole value from authority: " +
+        // roleKey + " | " + e.getMessage());
+        // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        // }
+        String role = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority) // "ROLE_USER", "ROLE_SUBSCRIBER"
+                .filter(authString -> authString.equals("ROLE_ADMIN") || authString.equals("ROLE_USER"))
+                .findFirst()
+                .orElse("ROLE_USER"); // 기본값
+
+        // "ROLE_" 접두어 제거 (예: "USER" 또는 "ADMIN")
+        String roleKey = role.replace("ROLE_", "");
+        log.info("roleKey: {}", roleKey); // "USER" 또는 "ADMIN"
+
+        return ResponseEntity.ok(roleKey);
     }
 
     @PostMapping("/signup-approve/{email}")

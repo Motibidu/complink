@@ -8,6 +8,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.pcgear.complink.pcgear.User.dto.SubscriptionStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -50,6 +52,9 @@ public class UserEntity extends BaseTimeEntity implements UserDetails {
 	private String address;
 
 	private String billingKey;
+
+	@Enumerated(EnumType.STRING)
+	private SubscriptionStatus subscriptionStatus;
 
 	@Enumerated(EnumType.STRING) // Enum 타입을 DB에 String으로 저장
 	@Column(nullable = false)

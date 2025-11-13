@@ -36,13 +36,24 @@ public class SecurityConfig {
                                 })
                                                 .failureHandler(customAuthFailureHandler))
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(HttpMethod.GET, "/users/signup-req").hasRole("ADMIN")
+                                                .requestMatchers("/admin/**")
+                                                .hasAnyAuthority("ADMIN")
+                                                .requestMatchers(HttpMethod.GET, "/users/signup-req")
+                                                .hasAnyAuthority("ADMIN")
                                                 .requestMatchers(HttpMethod.POST, "/users/signup-approve/**")
-                                                .hasRole("ADMIN")
+                                                .hasAnyAuthority("ADMIN")
                                                 .requestMatchers("/payment/webhook/verify/paymentLink").permitAll()
                                                 .requestMatchers("/payment/webhook-verify").permitAll()
                                                 .requestMatchers("/delivery/webhook").permitAll()
                                                 .requestMatchers("/users/isLoggedIn").authenticated()
+                                                .requestMatchers(
+                                                                "/items/**",
+                                                                "/orders/**",
+                                                                "/customers/**",
+                                                                "/managers/**",
+                                                                "/sells/**",
+                                                                "/dashboard/**")
+                                                .hasAuthority("ROLE_SUBSCRIBER")
 
                                                 .requestMatchers(
                                                                 "/users/register", "/users/login-process",
@@ -59,7 +70,9 @@ public class SecurityConfig {
                                                                 "/v3/api-docs/**",
                                                                 "/swagger-resources/**")
                                                 .permitAll()
+
                                                 .anyRequest().authenticated())
+
                                 .exceptionHandling(exceptionHandling -> exceptionHandling
                                                 .authenticationEntryPoint((request, response, authException) -> {
                                                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

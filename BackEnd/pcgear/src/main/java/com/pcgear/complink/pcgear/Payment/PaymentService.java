@@ -14,6 +14,7 @@ import com.pcgear.complink.pcgear.Payment.model.PaymentStatus;
 import com.pcgear.complink.pcgear.Payment.model.SingleInquiryResponse;
 import com.pcgear.complink.pcgear.Payment.model.SubscriptionRequest;
 import com.pcgear.complink.pcgear.Sell.SellService;
+import com.pcgear.complink.pcgear.User.dto.SubscriptionStatus;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
 import com.pcgear.complink.pcgear.User.repository.UserRepository;
 import com.pcgear.complink.pcgear.properties.PortoneProperties;
@@ -228,7 +229,7 @@ public class PaymentService {
             String trackingId = extractTrackingIdFromOrderName(apiOrderName);
             if (trackingId == null) {
                 log.error("OrderName에서 trackingId ID를 추출할 수 없습니다: {}", apiOrderName);
-                throw new PaymentVerificationException("trackingId ID 누락");
+                throw new PaymentVerificationException("trackingId누락");
             }
 
             Subscription subscription = subscriptionRepository.findByTrackingId(trackingId)
@@ -254,9 +255,17 @@ public class PaymentService {
                     .build();
         }
 
+        // 사용자의 구독 상태를 ACTIVE로 변경합니다.
         UserEntity userEntity = userRepository.findByUsername(dbPayment.getUserId())
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
+        if (userEntity.getSubscriptionStatus() != SubscriptionStatus.ACTIVE) {
+            userEntity.setSubscriptionStatus(SubscriptionStatus.ACTIVE);
+            userRepository.save(userEntity);
+            log.info("✅ 사용자 {}의 구독 상태를 ACTIVE로 변경했습니다.", userEntity.getUsername());
+        }
+
+        // 5. 다음 정기결제를 예약합니다.
         SubscriptionRequest subscriptionRequest = SubscriptionRequest.builder()
                 .billingKey((String) paymentDetail.get("billingKey"))
                 .amount(((Integer) ((Map<String, Object>) paymentDetail.get("amount")).get("total")))

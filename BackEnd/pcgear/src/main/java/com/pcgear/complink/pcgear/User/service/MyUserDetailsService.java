@@ -1,10 +1,16 @@
 package com.pcgear.complink.pcgear.User.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import com.pcgear.complink.pcgear.User.dto.SubscriptionStatus;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
 import com.pcgear.complink.pcgear.User.repository.UserRepository;
 import com.pcgear.complink.pcgear.exception.UserNotApprovedAuthenticationException;
@@ -22,19 +28,28 @@ public class MyUserDetailsService implements UserDetailsService {
         public UserDetails loadUserByUsername(String username) throws UserNotFoundException {
 
                 UserEntity userEntity = userRepository.findByUsername(username)
-                // Case 1: 존재하지 않는 사용자 ID (404)
-                // Spring Security 표준 예외: UsernameNotFoundException을 던집니다.
-                .orElseThrow(() -> new UserNotFoundException("해당 사용자를 찾을 수 없습니다: " + username));
+                                .orElseThrow(() -> new UserNotFoundException("해당 사용자를 찾을 수 없습니다: " + username));
 
-        // Case 2: 승인 대기 중인 ID (403)
-        // UserEntity에 isApproved() 메서드가 존재한다고 가정합니다.
-        if (!userEntity.isApproved()) {
-            // 새로 정의한 Custom 예외를 던집니다.
-            throw new UserNotApprovedAuthenticationException("회원가입 승인이 아직 완료되지 않았습니다. 관리자에게 문의하세요.");
-        }
+                // 승인 대기중이면 예외 반환
+                if (!userEntity.isApproved()) {
+                        throw new UserNotApprovedAuthenticationException("회원가입 승인이 아직 완료되지 않았습니다. 관리자에게 문의하세요.");
+                }
 
-        // Case 3: 정상적인 사용자 (로그인 성공)
-        return userEntity;
+                List<GrantedAuthority> authorities = new ArrayList<>();
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + userEntity.getRole().name()));
+                if (userEntity.getSubscriptionStatus() == SubscriptionStatus.ACTIVE) {
+                        authorities.add(new SimpleGrantedAuthority("ROLE_SUBSCRIBER"));
+                }
+
+                return new org.springframework.security.core.userdetails.User(
+                                userEntity.getUsername(),
+                                userEntity.getPassword(),
+                                userEntity.isEnabled(), // enabled (계정 활성화 여부)
+                                true, // accountNonExpired
+                                true, // credentialsNonExpired
+                                true, // accountNonLocked
+                                authorities // ⬅️ [수정됨] 최종 권한 목록
+                );
 
         }
 }
