@@ -2,6 +2,9 @@ package com.pcgear.complink.pcgear.Sell;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,8 +33,14 @@ public class SellController {
     // }
 
     @GetMapping
-    public ResponseEntity<List<Sell>> readSells() {
-        List<Sell> sells = sellService.readSells();
-        return ResponseEntity.status(HttpStatus.CREATED).body(sells);
+    public ResponseEntity<Page<Sell>> readSells(
+        @PageableDefault(size = 10, sort = "sellId", direction = org.springframework.data.domain.Sort.Direction.DESC)Pageable pageable)
+    {
+        // List<Sell> sells = sellService.readSells();
+        // return ResponseEntity.status(HttpStatus.CREATED).body(sells);
+
+        Page<Sell> sells= sellService.getAllSells(pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(sells);
+
     }
 }

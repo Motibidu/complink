@@ -69,7 +69,7 @@ public class ManagerController {
         @Operation(summary = "담당자 삭제")
         @ApiResponse(responseCode = "204", description = "담당자 삭제 성공")
         @DeleteMapping
-        public ResponseEntity<Void> deleteManagers(@RequestParam List<String> ids) {
+        public ResponseEntity<Void> deleteManagers(@RequestParam(name="ids") List<String> ids) {
                 managerService.deleteManagers(ids);
                 return ResponseEntity.noContent().build();
         }

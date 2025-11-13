@@ -72,7 +72,7 @@ public class CustomerController {
                         @ApiResponse(responseCode = "409", description = "주문서에 할당된 이력이 있어 삭제 불가")
         })
         @DeleteMapping
-        public ResponseEntity<Void> deleteCustomers(@RequestParam List<String> ids) {
+        public ResponseEntity<Void> deleteCustomers(@RequestParam(name="ids") List<String> ids) {
                 customerService.deleteCustomers(ids);
                 return ResponseEntity.noContent().build();
         }

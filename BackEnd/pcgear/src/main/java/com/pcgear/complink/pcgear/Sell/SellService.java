@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,6 +64,10 @@ public class SellService {
                                 .memo(null) // 초기 메모는 비워둠
 
                                 .build();
+        }
+
+        public Page<Sell> getAllSells(Pageable pageable) {
+                return sellRepository.findAll(pageable);
         }
 
 }
