@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -172,6 +174,10 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    public Page<AssemblyQueueRespDto> getAllAssemblyQueue(List<OrderStatus> statusesToFind, Pageable pageable) {
+        return orderRepository.findAllByOrderStatusIn(statusesToFind, pageable).map(AssemblyQueueRespDto::new);
+    }
+
     @Transactional(readOnly = true)
     public AssemblyDetailRespDto getAssemblyDetailRespDto(Integer orderId) {
         Order order = orderRepository.findByIdWithItemsAndCustomer(orderId)
@@ -256,4 +262,6 @@ public class OrderService {
 
         return orderRepository.save(order);
     }
+
+    
 }

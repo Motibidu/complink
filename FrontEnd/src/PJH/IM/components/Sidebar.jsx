@@ -52,7 +52,7 @@ const Sidebar = () => {
       icon: <MdSell />,
       children: [
         // 하위 메뉴 항목 추가
-        { name: "판매입력", path: "/sells/new" },
+        // { name: "판매입력", path: "/sells/new" },
         { name: "판매조회", path: "/sells/search" },
       ],
     },
@@ -62,6 +62,7 @@ const Sidebar = () => {
       children: [
         // 하위 메뉴 항목 추가
         { name: "조립/출고 대기 리스트", path: "/orders/assembly-queue" },
+        { name: "배송상태 조회", path: "/orders/shipping-tracking" },
       ],
     },
   ];

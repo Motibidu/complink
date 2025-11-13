@@ -6,13 +6,18 @@ import org.springframework.web.bind.annotation.RestController;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingResponse;
 import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
 import com.pcgear.complink.pcgear.Delivery.model.WebhookReq;
+import com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
+
+import java.util.List;
 import java.util.Optional;
 import com.pcgear.complink.pcgear.Order.service.OrderService;
 
 import jakarta.persistence.EntityNotFoundException;
 
 import com.pcgear.complink.pcgear.Delivery.entity.Delivery;
+import com.pcgear.complink.pcgear.Delivery.model.DeliveryStatus;
+import com.pcgear.complink.pcgear.Delivery.model.ShippingListDto;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
 
 import lombok.RequiredArgsConstructor;
@@ -22,6 +27,10 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -74,13 +83,23 @@ public class DelieveryController {
 
         // Delivery, Order의 status 업데이트
         String currentStatus = deliveryService.extractDeliveryStatus(trackingResponse);
+
         log.info("currentStatus: {}", currentStatus);
         String trackingNumber = webhookReq.getTrackingNumber();
 
         // log.info("currentStatus: {}", currentStatus);
-        deliveryService.updateDeiliveryStatus(trackingNumber, currentStatus);
+        deliveryService.updateDeiliveryStatus(trackingNumber, DeliveryStatus.fromDescription(currentStatus));
 
         return ResponseEntity.ok("웹훅 수신완료!");
+    }
+
+    @GetMapping("/shipping-list")
+    public ResponseEntity<Page<ShippingListDto>> getAllShippingList(
+            @PageableDefault(size = 15, sort = "orderId", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<ShippingListDto> deliveryPage = deliveryService.getAllDeliveries(pageable);
+
+        return ResponseEntity.ok(deliveryPage);
     }
 
 }

@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -18,12 +20,15 @@ import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Customer.CustomerRepository;
 import com.pcgear.complink.pcgear.Delivery.entity.Delivery;
 import com.pcgear.complink.pcgear.Delivery.model.AccessTokenResp;
+import com.pcgear.complink.pcgear.Delivery.model.DeliveryStatus;
 import com.pcgear.complink.pcgear.Delivery.model.GraphQLRequest;
 import com.pcgear.complink.pcgear.Delivery.model.RegisterWebhookResp;
+import com.pcgear.complink.pcgear.Delivery.model.ShippingListDto;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingResponse;
 import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
 import com.pcgear.complink.pcgear.Delivery.model.WebhookReq;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
+import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
 import com.pcgear.complink.pcgear.Order.service.OrderService;
 import com.pcgear.complink.pcgear.properties.DeliveryTrackerProperties;
 
@@ -44,6 +49,7 @@ public class DeliveryService {
         private final WebClient webClient;
         private final OrderService orderService;
         private final CustomerRepository customerRepository;
+        private final OrderRepository orderRepository;
         private final DeliveryRepository deliveryRepository;
         private final SimpMessagingTemplate messagingTemplate;
         private final DeliveryTrackerProperties properties;
@@ -246,16 +252,16 @@ public class DeliveryService {
         }
 
         @Transactional
-        public Delivery updateDeiliveryStatus(String trackingNumber, String currentStatus) {
+        public Delivery updateDeiliveryStatus(String trackingNumber, DeliveryStatus deliveryStatus) {
                 Delivery delivery = deliveryRepository.findByTrackingNumber(trackingNumber);
 
-                delivery.setCurrentStatus(currentStatus);
+                delivery.setDeliveryStatus(deliveryStatus);
                 String message = "주문번호: " + delivery.getOrderId() + "의 배송상태가 "
-                                + currentStatus + "로 변경되었습니다. 배송조회에서 확인해주세요!";
+                                + deliveryStatus + "로 변경되었습니다. 배송조회에서 확인해주세요!";
                 messagingTemplate.convertAndSend("/topic/notifications", message);
 
                 // 배송 상태가 배송완료일 시 order의 status를 배송중-> 배송완료로 변경
-                if ("배송완료".equals(currentStatus)) {
+                if ("배송완료".equals(deliveryStatus)) {
                         orderService.updateOrderStatus(delivery.getOrderId(), OrderStatus.DELIVERED);
                 } else {
                         // 배송 완료 외에는 배송중으로 변경
@@ -263,6 +269,10 @@ public class DeliveryService {
                 }
 
                 return deliveryRepository.save(delivery);
+        }
+
+        public Page<ShippingListDto> getAllDeliveries(Pageable pageable) {
+                return orderRepository.findShippingList(pageable);
         }
 
         private Delivery createDelivery(TrackingNumberReq trackingNumberReq) {

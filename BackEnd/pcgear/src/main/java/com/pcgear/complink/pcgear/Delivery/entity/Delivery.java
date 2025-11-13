@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.pcgear.complink.pcgear.Delivery.model.DeliveryStatus;
+
 @Entity
 @Table(name = "delivery")
 @Data
@@ -37,9 +39,11 @@ public class Delivery {
 
         private String recipientAddr;
 
-        private String currentStatus;
+        @Enumerated(EnumType.STRING)
+        private DeliveryStatus deliveryStatus;
 
         @Column(name = "created_at", updatable = false)
+
         private LocalDateTime createdAt;
 
         private LocalDateTime completedAt;
@@ -48,8 +52,8 @@ public class Delivery {
         @PrePersist
         protected void onCreate() {
                 this.createdAt = LocalDateTime.now();
-                if (this.currentStatus == null) {
-                        this.currentStatus = "접수"; // 기본 상태
+                if (this.deliveryStatus == null) {
+                        this.deliveryStatus = DeliveryStatus.UNKNOWN; // 기본 상태
                 }
         }
 }

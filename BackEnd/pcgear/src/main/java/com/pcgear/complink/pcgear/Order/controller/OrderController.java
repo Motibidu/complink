@@ -3,6 +3,10 @@ package com.pcgear.complink.pcgear.Order.controller;
 import java.util.List;
 
 import org.apache.catalina.connector.Response;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -74,18 +78,23 @@ public class OrderController {
     }
 
     @GetMapping("/assembly-queue")
-    public ResponseEntity<List<AssemblyQueueRespDto>> readAssemblyQueueOrders(
-            @RequestParam(name = "orderStatus", required = false) List<OrderStatus> orderStatus) {
+    public ResponseEntity<Page<AssemblyQueueRespDto>> readAssemblyQueueOrders(
+            @RequestParam(name = "orderStatus", required = false) List<OrderStatus> orderStatus,
+            @PageableDefault(size = 15, sort = "orderId", direction = Sort.Direction.DESC) Pageable pageable) {
 
         List<OrderStatus> statusesToFind = (orderStatus == null || orderStatus.isEmpty())
                 ? List.of(OrderStatus.PAID, OrderStatus.PREPARING_PRODUCT, OrderStatus.SHIPPING_PENDING,
                         OrderStatus.SHIPPING)
                 : orderStatus;
 
-        List<AssemblyQueueRespDto> orders = orderService.readAssemblyQueueOrders(statusesToFind);
+        //List<AssemblyQueueRespDto> orders = orderService.readAssemblyQueueOrders(statusesToFind);
+        Page<AssemblyQueueRespDto> assemblyQueuePage = orderService.getAllAssemblyQueue(statusesToFind, pageable);
 
-        return ResponseEntity.ok(orders);
+
+        return ResponseEntity.ok(assemblyQueuePage);
     }
+
+    
 
     @PostMapping("/{orderId}/assembly-status")
     public ResponseEntity<AssemblyDetailRespDto> updateAssemblyStatus(

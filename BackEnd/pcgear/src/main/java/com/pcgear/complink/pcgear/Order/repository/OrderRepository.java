@@ -1,5 +1,7 @@
 package com.pcgear.complink.pcgear.Order.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -7,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Assembly.AssemblyStatus;
+import com.pcgear.complink.pcgear.Delivery.model.ShippingListDto;
 import com.pcgear.complink.pcgear.Order.model.Order;
 
 import java.time.LocalDateTime;
@@ -24,7 +27,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
         List<Order> findAllByOrderStatusIn(List<OrderStatus> orderStatuses);
 
         // @Param 어노테이션을 사용하여 :orderId와 매개변수 orderId를 명시적으로 연결해야 합니다.
-        @Query("SELECT o FROM Order o " +
+        @Query("SELECT DISTINCT o FROM Order o " +
                         "JOIN FETCH o.orderItems oi " +
                         "JOIN FETCH o.customer c " +
                         "WHERE o.orderId = :orderId")
@@ -41,5 +44,20 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
         @Query("SELECT COUNT(o) FROM Order o WHERE o.orderStatus IN :statuses")
         Integer countByOrderStatusIn(@Param("statuses") List<OrderStatus> statuses);
+
+        Page<Order> findAllByOrderStatusIn(List<OrderStatus> orderStatuses, Pageable pageable);
+
+        @Query("SELECT new com.pcgear.complink.pcgear.Delivery.model.ShippingListDto(" +
+                        " o.orderId, " +
+                        " o.customer.customerName, " + // Order -> Customer JOIN
+                        " d.createdAt, " +
+                        " d.trackingNumber, " + // Order -> Delivery JOIN (수동)
+                        " d.carrierId, " +
+                        " d.deliveryStatus " +
+                        ") " +
+                        "FROM Order o " +
+                        "JOIN o.customer c " + // (o.customer는 매핑되어 있다고 가정)
+                        "JOIN Delivery d ON d.orderId = o.orderId ")
+        Page<ShippingListDto> findShippingList(Pageable pageable);
 
 }
