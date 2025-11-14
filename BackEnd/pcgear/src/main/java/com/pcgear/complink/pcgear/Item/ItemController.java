@@ -37,16 +37,19 @@ public class ItemController {
 
         @Operation(summary = "품목 목록 조회")
         @GetMapping
-        public ResponseEntity<ItemPageDto> readItems(
+        public ResponseEntity<ItemPageDto> getAllItems(
+                        @RequestParam(name = "search", required = false) String search,
                         @PageableDefault(size = 10, sort = "itemId", direction = Sort.Direction.DESC) Pageable pageable) {
-                try {
-                        // 2. Service가 이제 ItemPageDto를 반환
-                        ItemPageDto itemPageDto = itemService.readItems(pageable);
-                        return ResponseEntity.ok(itemPageDto);
-                } catch (Exception e) {
-                        log.error("Error reading items", e);
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-                }
+                // try {
+                // // 2. Service가 이제 ItemPageDto를 반환
+                // ItemPageDto itemPageDto = itemService.readItems(pageable);
+                // return ResponseEntity.ok(itemPageDto);
+                // } catch (Exception e) {
+                // log.error("Error reading items", e);
+                // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                // }
+                ItemPageDto itemPageDto = itemService.getAllItems(search, pageable);
+                return ResponseEntity.ok(itemPageDto);
         }
 
         @GetMapping("/temps")

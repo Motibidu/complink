@@ -38,8 +38,9 @@ public class ManagerController {
         @Operation(summary = "담당자 목록 조회")
         @GetMapping
         public ResponseEntity<Page<Manager>> getAllManagers(
+                        @RequestParam(name = "search", required = false) String search,
                         @PageableDefault(size = 15, sort = "managerId", direction = Sort.Direction.DESC) Pageable pageable) {
-                Page<Manager> managerPage = managerService.getAllManagers(pageable);
+                Page<Manager> managerPage = managerService.getAllManagers(search, pageable);
                 return ResponseEntity.ok(managerPage);
         }
 
@@ -69,7 +70,7 @@ public class ManagerController {
         @Operation(summary = "담당자 삭제")
         @ApiResponse(responseCode = "204", description = "담당자 삭제 성공")
         @DeleteMapping
-        public ResponseEntity<Void> deleteManagers(@RequestParam(name="ids") List<String> ids) {
+        public ResponseEntity<Void> deleteManagers(@RequestParam(name = "ids") List<String> ids) {
                 managerService.deleteManagers(ids);
                 return ResponseEntity.noContent().build();
         }

@@ -1,40 +1,97 @@
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import axios from "axios";
-import { useState, useMemo } from "react";
-import { IoReorderThree, IoReorderFourOutline } from "react-icons/io5";
-const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
-  const [customers, setCustomers] = useState([]);
-  const [managers, setManagers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+import qs from "qs";
+import { Pagination } from "react-bootstrap";
+import { IoReorderFourOutline } from "react-icons/io5";
 
-  const fetchCustomers = async () => {
+// OrderHeader 컴포넌트
+const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
+  
+  // --- 모달 상태 관리 ---
+  const [loading, setLoading] = useState(false);
+  
+  // [거래처 모달] 상태
+  const [customerInputValue, setCustomerInputValue] = useState(""); // 1. 타이핑용
+  const [customerSearchTerm, setCustomerSearchTerm] = useState(""); // 2. API 호출용
+  const [customerCurrentPage, setCustomerCurrentPage] = useState(0);
+  const [customerPageData, setCustomerPageData] = useState({
+    content: [],
+    totalPages: 0,
+    number: 0,
+    first: true,
+    last: true,
+  });
+
+  // [담당자 모달] 상태
+  const [managerInputValue, setManagerInputValue] = useState(""); // 1. 타이핑용
+  const [managerSearchTerm, setManagerSearchTerm] = useState(""); // 2. API 호출용
+  const [managerCurrentPage, setManagerCurrentPage] = useState(0);
+  const [managerPageData, setManagerPageData] = useState({
+    content: [],
+    totalPages: 0,
+    number: 0,
+    first: true,
+    last: true,
+  });
+
+  // --- API 호출 함수 ---
+
+  // [거래처] API 호출
+  const fetchCustomers = useCallback(async (pageToFetch, searchTerm) => {
     setLoading(true);
     try {
-      const response = await axios.get("/api/customers");
-      const data = Array.isArray(response.data) ? response.data : [];
-      setCustomers(data);
+      const response = await axios.get("/api/customers", {
+        params: {
+          page: pageToFetch,
+          size: 10,
+          sort: "customerId,desc",
+          search: searchTerm, // ⬅️ "확정된" 검색어 사용
+        },
+      });
+      setCustomerPageData(response.data);
     } catch (err) {
       console.error("거래처 목록 로드 실패:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []); 
 
-  const fetchManagers = async () => {
+  // [담당자] API 호출
+  const fetchManagers = useCallback(async (pageToFetch, searchTerm) => {
     setLoading(true);
     try {
-      const response = await axios.get("/api/managers");
-      const data = Array.isArray(response.data) ? response.data : [];
-      setManagers(data);
+      const response = await axios.get("/api/managers", {
+        params: {
+          page: pageToFetch,
+          size: 10,
+          sort: "managerId,desc",
+          search: searchTerm, // ⬅️ "확정된" 검색어 사용
+        },
+      });
+      setManagerPageData(response.data);
     } catch (err) {
-      console.err("담당자 목록 로드 실패: ", err);
+      console.error("담당자 목록 로드 실패: ", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []); 
+
+  // --- useEffect 훅 ---
+
+  // [거래처] "확정된" 검색어(customerSearchTerm)나 페이지가 바뀔 때만 API 호출
+  useEffect(() => {
+    fetchCustomers(customerCurrentPage, customerSearchTerm);
+  }, [customerCurrentPage, customerSearchTerm, fetchCustomers]);
+
+  // [담당자] "확정된" 검색어(managerSearchTerm)나 페이지가 바뀔 때만 API 호출
+  useEffect(() => {
+    fetchManagers(managerCurrentPage, managerSearchTerm);
+  }, [managerCurrentPage, managerSearchTerm, fetchManagers]);
+  
+
+  // --- 핸들러 함수 ---
 
   const handleCustomerSelect = (customer) => {
-    // 부모 컴포넌트의 상태를 업데이트
     handleHeaderChange({
       target: { name: "customerId", value: customer.customerId },
     });
@@ -44,7 +101,6 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
   };
 
   const handleManagerSelect = (manager) => {
-    // 부모 컴포넌트의 상태를 업데이트
     handleHeaderChange({
       target: { name: "managerId", value: manager.managerId },
     });
@@ -53,28 +109,57 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
     });
   };
 
-  // 검색어에 따라 고객 목록 필터링
-  const filteredCustomers = useMemo(() => {
-    if (!customers) return [];
-    return customers.filter(
-      (customer) =>
-        customer.customerName
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        customer.customerId.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [customers, searchTerm]);
+  // [거래처] 검색창 "타이핑" 핸들러
+  const handleCustomerInputChange = (e) => {
+    setCustomerInputValue(e.target.value);
+  };
+  
+  // [거래처] "검색" 버튼 클릭 또는 Enter 핸들러
+  const handleCustomerSearchSubmit = () => {
+    setCustomerSearchTerm(customerInputValue); // API 호출 트리거
+    setCustomerCurrentPage(0); // 1페이지로 리셋
+  };
+  
+  // [담당자] 검색창 "타이핑" 핸들러
+  const handleManagerInputChange = (e) => {
+    setManagerInputValue(e.target.value);
+  };
 
-  const filteredManagers = useMemo(() => {
-    if (!managers) return [];
-    return managers.filter(
-      (managers) =>
-        managers.managerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        managers.managerId.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [managers, searchTerm]);
+  // [담당자] "검색" 버튼 클릭 또는 Enter 핸들러
+  const handleManagerSearchSubmit = () => {
+    setManagerSearchTerm(managerInputValue); // API 호출 트리거
+    setManagerCurrentPage(0); // 1페이지로 리셋
+  };
+
+  // [공용] 페이지네이션 UI 생성 헬퍼
+  const createPaginationItems = (pageData, setCurrentPage) => {
+    let pages = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(0, pageData.number - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(pageData.totalPages - 1, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage + 1 < maxPagesToShow) {
+        startPage = Math.max(0, endPage - maxPagesToShow + 1);
+    }
+
+    for (let number = startPage; number <= endPage; number++) {
+      pages.push(
+        <Pagination.Item
+          key={number}
+          active={number === pageData.number}
+          onClick={() => setCurrentPage(number)}
+        >
+          {number + 1}
+        </Pagination.Item>
+      );
+    }
+    return pages;
+  };
+
+  // --- 렌더링 ---
   return (
     <>
+      {/* --- (주문 기본 정보 UI - 변경 없음) --- */}
       <div className="orderHeader">
         <h3 className="orderHeader__title">주문 기본 정보</h3>
         <div className="orderHeader__group">
@@ -92,7 +177,6 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
             <span>
               담당자
               <IoReorderFourOutline
-                onClick={fetchManagers}
                 className="orderHeader__list"
                 size={25}
                 data-bs-toggle="modal"
@@ -107,7 +191,6 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               value={orderHeader.managerId}
               onChange={handleHeaderChange}
               placeholder="담당자 코드"
-              onClick={fetchManagers}
               data-bs-toggle="modal"
               data-bs-target="#managerListModal"
               readOnly
@@ -119,7 +202,6 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               value={orderHeader.managerName}
               onChange={handleHeaderChange}
               placeholder="담당자명"
-              onClick={fetchManagers}
               data-bs-toggle="modal"
               data-bs-target="#managerListModal"
               readOnly
@@ -131,7 +213,6 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               <IoReorderFourOutline
                 className="orderHeader__list"
                 size={25}
-                onClick={fetchCustomers} // 아이콘 클릭 시 데이터 로드
                 data-bs-toggle="modal"
                 data-bs-target="#customerListModal"
               />
@@ -143,10 +224,9 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               value={orderHeader.customerId}
               onChange={handleHeaderChange}
               placeholder="거래처 코드"
-              onClick={fetchCustomers} // 아이콘 클릭 시 데이터 로드
               data-bs-toggle="modal"
               data-bs-target="#customerListModal"
-              readOnly // 모달에서 선택하도록 읽기 전용으로
+              readOnly
             />
             <input
               className="orderHeader__input"
@@ -155,7 +235,6 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               value={orderHeader.customerName}
               onChange={handleHeaderChange}
               placeholder="거래처명"
-              onClick={fetchCustomers} // 아이콘 클릭 시 데이터 로드
               data-bs-toggle="modal"
               data-bs-target="#customerListModal"
               readOnly
@@ -174,6 +253,7 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
         </div>
       </div>
 
+      {/* --- [거래처 선택 모달] (검색 버튼 적용) --- */}
       <div
         className="modal fade"
         id="customerListModal"
@@ -182,8 +262,6 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
         aria-hidden="true"
       >
         <div className="modal-dialog modal-dialog-scrollable">
-          {" "}
-          {/* 스크롤 가능하도록 클래스 추가 */}
           <div className="modal-content">
             <div className="modal-header">
               <h1 className="modal-title fs-5" id="customerModalLabel">
@@ -197,17 +275,24 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               ></button>
             </div>
 
-            {/* 모달 Body 수정 */}
             <div className="modal-body">
-              {/* 1. 검색창 추가 */}
-              <div className="mb-3">
+              {/* [수정] 1. 검색창 + 검색 버튼 (Input Group) */}
+              <div className="input-group mb-3">
                 <input
                   type="text"
                   className="form-control"
                   placeholder="거래처 코드 또는 이름으로 검색..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={customerInputValue} // ⬅️ 타이핑용 state
+                  onChange={handleCustomerInputChange} // ⬅️ 타이핑 핸들러
+                  onKeyDown={(e) => {if(e.key === 'Enter'){ e.preventDefault();handleCustomerSearchSubmit()}}} // ⬅️ Enter 키 핸들러
                 />
+                <button 
+                  className="btn btn-primary" 
+                  type="button" 
+                  onClick={handleCustomerSearchSubmit} // ⬅️ 검색 버튼 핸들러
+                >
+                  검색
+                </button>
               </div>
 
               {/* 2. 로딩 상태 표시 */}
@@ -220,9 +305,9 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               )}
 
               {/* 3. 데이터가 있을 때 List Group으로 표시 */}
-              {!loading && filteredCustomers.length > 0 && (
+              {!loading && customerPageData.content.length > 0 && (
                 <div className="list-group customer-list">
-                  {filteredCustomers.map((customer) => (
+                  {customerPageData.content.map((customer) => (
                     <button
                       type="button"
                       key={customer.customerId}
@@ -247,16 +332,38 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               )}
 
               {/* 4. 데이터가 없거나, 검색 결과가 없을 때 */}
-              {!loading && filteredCustomers.length === 0 && (
+              {!loading && customerPageData.content.length === 0 && (
                 <div className="text-center text-muted py-5">
-                  {customers.length === 0
-                    ? "등록된 거래처가 없습니다."
-                    : "검색 결과가 없습니다."}
+                  {customerSearchTerm
+                    ? "검색 결과가 없습니다."
+                    : "등록된 거래처가 없습니다."}
                 </div>
               )}
             </div>
 
-            <div className="modal-footer">
+            <div className="modal-footer d-flex justify-content-between">
+              {/* 5. 모달 내 페이지네이션 (거래처 전용) */}
+              {customerPageData && customerPageData.totalPages > 1 && (
+                  <Pagination className="mb-0">
+                    <Pagination.First 
+                      onClick={() => setCustomerCurrentPage(0)} 
+                      disabled={customerPageData.first} 
+                    />
+                    <Pagination.Prev 
+                      onClick={() => setCustomerCurrentPage(customerCurrentPage - 1)} 
+                      disabled={customerPageData.first} 
+                    />
+                    {createPaginationItems(customerPageData, setCustomerCurrentPage)}
+                    <Pagination.Next 
+                      onClick={() => setCustomerCurrentPage(customerCurrentPage + 1)} 
+                      disabled={customerPageData.last} 
+                    />
+                    <Pagination.Last 
+                      onClick={() => setCustomerCurrentPage(customerPageData.totalPages - 1)} 
+                      disabled={customerPageData.last} 
+                    />
+                  </Pagination>
+              )}
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -268,6 +375,8 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
           </div>
         </div>
       </div>
+
+      {/* --- [담당자 선택 모달] (검색 버튼 적용) --- */}
       <div
         className="modal fade"
         id="managerListModal"
@@ -276,8 +385,6 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
         aria-hidden="true"
       >
         <div className="modal-dialog modal-dialog-scrollable">
-          {" "}
-          {/* 스크롤 가능하도록 클래스 추가 */}
           <div className="modal-content">
             <div className="modal-header">
               <h1 className="modal-title fs-5" id="managerModalLabel">
@@ -291,17 +398,24 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               ></button>
             </div>
 
-            {/* 모달 Body 수정 */}
             <div className="modal-body">
-              {/* 1. 검색창 추가 */}
-              <div className="mb-3">
+              {/* [수정] 1. 검색창 + 검색 버튼 (Input Group) */}
+              <div className="input-group mb-3">
                 <input
                   type="text"
                   className="form-control"
                   placeholder="담당자 코드 또는 이름으로 검색..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={managerInputValue} // ⬅️ 타이핑용 state
+                  onChange={handleManagerInputChange} // ⬅️ 타이핑 핸들러
+                  onKeyDown={(e) => {if(e.key === 'Enter'){e.preventDefault();handleManagerSearchSubmit()}}} // ⬅️ Enter 키 핸들러
                 />
+                 <button 
+                  className="btn btn-primary" 
+                  type="button" 
+                  onClick={handleManagerSearchSubmit} // ⬅️ 검색 버튼 핸들러
+                >
+                  검색
+                </button>
               </div>
 
               {/* 2. 로딩 상태 표시 */}
@@ -314,12 +428,12 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               )}
 
               {/* 3. 데이터가 있을 때 List Group으로 표시 */}
-              {!loading && filteredManagers.length > 0 && (
+              {!loading && managerPageData.content.length > 0 && (
                 <div className="list-group manager-list">
-                  {filteredManagers.map((manager) => (
+                  {managerPageData.content.map((manager) => (
                     <button
                       type="button"
-                      key={manager.customerId}
+                      key={manager.managerId}
                       className="list-group-item list-group-item-action"
                       data-bs-dismiss="modal"
                       onClick={() => handleManagerSelect(manager)}
@@ -337,16 +451,38 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
               )}
 
               {/* 4. 데이터가 없거나, 검색 결과가 없을 때 */}
-              {!loading && filteredManagers.length === 0 && (
+              {!loading && managerPageData.content.length === 0 && (
                 <div className="text-center text-muted py-5">
-                  {managers.length === 0
-                    ? "등록된 담당자가 없습니다."
-                    : "검색 결과가 없습니다."}
+                  {managerSearchTerm
+                    ? "검색 결과가 없습니다."
+                    : "등록된 담당자가 없습니다."}
                 </div>
               )}
             </div>
 
-            <div className="modal-footer">
+            <div className="modal-footer d-flex justify-content-between">
+              {/* 5. 모달 내 페이지네이션 (담당자 전용) */}
+              {managerPageData && managerPageData.totalPages > 1 && (
+                  <Pagination className="mb-0">
+                    <Pagination.First 
+                      onClick={() => setManagerCurrentPage(0)} 
+                      disabled={managerPageData.first} 
+                    />
+                    <Pagination.Prev 
+                      onClick={() => setManagerCurrentPage(managerCurrentPage - 1)} 
+                      disabled={managerPageData.first} 
+                    />
+                    {createPaginationItems(managerPageData, setManagerCurrentPage)}
+                    <Pagination.Next 
+                      onClick={() => setManagerCurrentPage(managerCurrentPage + 1)} 
+                      disabled={managerPageData.last} 
+                    />
+                    <Pagination.Last 
+                      onClick={() => setManagerCurrentPage(managerPageData.totalPages - 1)} 
+                      disabled={managerPageData.last} 
+                    />
+                  </Pagination>
+              )}
               <button
                 type="button"
                 className="btn btn-secondary"

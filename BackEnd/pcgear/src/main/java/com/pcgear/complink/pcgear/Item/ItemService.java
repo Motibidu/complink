@@ -25,12 +25,15 @@ public class ItemService {
         private final ItemRepository itemRepository;
 
         @Cacheable("items")
-        public ItemPageDto readItems(Pageable pageable) {
-                // DB에서 Page<Item>을 조회
-                Page<Item> itemPage = itemRepository.findAll(pageable);
+        public ItemPageDto getAllItems(String search, Pageable pageable) {
+                if (search != null && !search.isEmpty()) {
+                        Page<Item> itemPage = itemRepository.findByItemNameContaining(search, pageable);
+                        return new ItemPageDto(itemPage);
+                } else {
+                        Page<Item> itemPage = itemRepository.findAll(pageable);
+                        return new ItemPageDto(itemPage);
 
-                // 4. [수정] Page<Item>을 ItemPageDto로 변환하여 반환
-                return new ItemPageDto(itemPage);
+                }
         }
 
         @Cacheable("items_temp")

@@ -41,9 +41,15 @@ public class ManagerService {
                 managerRepository.deleteAllByManagerIdIn(managerIds);
         }
 
-        public Page<Manager> getAllManagers(Pageable pageable) {
-                Page<Manager> customerPage = managerRepository.findAll(pageable);
-                return customerPage;
+        public Page<Manager> getAllManagers(String search, Pageable pageable) {
+                if(search!=null && !search.isEmpty()){
+                        Page<Manager> managerPage = managerRepository.findByManagerNameContaining(search, pageable);
+                        return managerPage;
+                }
+                else{
+                        Page<Manager> managerPage = managerRepository.findAll(pageable);
+                        return managerPage;
+                }
         }
 
 }

@@ -68,4 +68,15 @@ public class CustomerService {
                 return customerPage;
         }
 
+        public Page<Customer> getAllCustomers(String search, Pageable pageable) {
+                if (search != null && !search.isEmpty()) {
+                        Page<Customer> customerPage = customerRepository.findByCustomerNameContaining(search, pageable);
+                        return customerPage;
+                } else {
+                        Page<Customer> customerPage = customerRepository.findAll(pageable);
+                        return customerPage;
+                }
+
+        }
+
 }

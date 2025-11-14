@@ -36,9 +36,9 @@ public class CustomerController {
         @Operation(summary = "거래처 목록 조회")
         @GetMapping
         public ResponseEntity<Page<Customer>> getAllCustomers(
-                        // 📌 @PageableDefault로 기본 페이징 규칙 설정
+                        @RequestParam(name = "search", required = false) String search,
                         @PageableDefault(size = 15, sort = "customerId", direction = Sort.Direction.DESC) Pageable pageable) {
-                Page<Customer> customerPage = customerService.getAllCustomers(pageable);
+                Page<Customer> customerPage = customerService.getAllCustomers(search, pageable);
                 return ResponseEntity.ok(customerPage);
         }
 
@@ -72,7 +72,7 @@ public class CustomerController {
                         @ApiResponse(responseCode = "409", description = "주문서에 할당된 이력이 있어 삭제 불가")
         })
         @DeleteMapping
-        public ResponseEntity<Void> deleteCustomers(@RequestParam(name="ids") List<String> ids) {
+        public ResponseEntity<Void> deleteCustomers(@RequestParam(name = "ids") List<String> ids) {
                 customerService.deleteCustomers(ids);
                 return ResponseEntity.noContent().build();
         }
