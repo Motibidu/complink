@@ -24,12 +24,15 @@ import lombok.extern.slf4j.Slf4j;
 public class ItemService {
         private final ItemRepository itemRepository;
 
-        @Cacheable("items")
+        @Cacheable(value = "items", condition = "#p0 == null", key = "#p1.toString()")
         public ItemPageDto getAllItems(String search, Pageable pageable) {
-                if (search != null && !search.isEmpty()) {
+
+                if (search != null && !search.isBlank()) {
+                        log.info("getAllItems");
                         Page<Item> itemPage = itemRepository.findByItemNameContaining(search, pageable);
                         return new ItemPageDto(itemPage);
                 } else {
+                        log.info("getAllItems");
                         Page<Item> itemPage = itemRepository.findAll(pageable);
                         return new ItemPageDto(itemPage);
 
@@ -68,6 +71,7 @@ public class ItemService {
                 itemRepository.deleteAllByItemIdIn(itemIds);
         }
 
+        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         public void updateItemQuantityOnHand(Order order) {
 
                 List<OrderItem> itemsFromOrder = order.getOrderItems();

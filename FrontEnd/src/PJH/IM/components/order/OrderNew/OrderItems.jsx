@@ -34,7 +34,7 @@ const OrderItems = ({
       const response = await axios.get("/api/items", {
         params: {
             page: pageToFetch,
-            size: 10, // 모달에서는 10개씩
+            size: 15, // 모달에서는 10개씩
             sort: "itemId,desc",
             search: currentSearchTerm,
         }
