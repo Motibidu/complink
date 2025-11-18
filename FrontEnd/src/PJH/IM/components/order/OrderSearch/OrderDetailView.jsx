@@ -5,7 +5,12 @@ import {
 } from "../../../utils/formatters";
 import axios from "axios";
 
-const OrderDetailView = ({ order, onDeleteOrder, onSubmit, onStatusUpdate }) => {
+const OrderDetailView = ({
+  order,
+  handleCancelOrder,
+  onSubmit,
+  onStatusUpdate,
+}) => {
   const badgeColors = getStatusBadgeVariant(order.orderStatusDesc);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,11 +29,13 @@ const OrderDetailView = ({ order, onDeleteOrder, onSubmit, onStatusUpdate }) => 
         await axios.post("/api/sms/send-one", requestBody);
         alert("결제 링크가 성공적으로 전송되었습니다.");
 
-        const updatedOrderResponse = await axios.get("/api/orders/"+order.orderId);
+        const updatedOrderResponse = await axios.get(
+          "/api/orders/" + order.orderId
+        );
         console.log("updatedOrderResponse: ", updatedOrderResponse);
         const newOrderData = updatedOrderResponse.data;
         if (onStatusUpdate) {
-            onStatusUpdate(order.orderId, newOrderData);
+          onStatusUpdate(order.orderId, newOrderData);
         }
       }
     } catch (error) {
@@ -50,6 +57,7 @@ const OrderDetailView = ({ order, onDeleteOrder, onSubmit, onStatusUpdate }) => 
       setIsSubmitting(false);
     }
   };
+  const cancellableStatuses = ["주문 접수", "결제 대기", "결제 완료"];
 
   return (
     <div className="order-detail-view">
@@ -60,7 +68,7 @@ const OrderDetailView = ({ order, onDeleteOrder, onSubmit, onStatusUpdate }) => 
         >
           {order.orderStatusDesc}
         </span>
-        {onDeleteOrder ? (
+        {/* {onDeleteOrder ? (
           <div className="ms-auto d-flex gap-2">
             <button
               className={`badge fs-6 rounded-pill ${badgeColors.text}`}
@@ -71,7 +79,20 @@ const OrderDetailView = ({ order, onDeleteOrder, onSubmit, onStatusUpdate }) => 
           </div>
         ) : (
           ""
-        )}
+        )} */}
+        {
+          /* 취소 가능한 상태 목록을 배열로 정의 */
+
+          /* 배열에 현재 주문 상태가 포함되어 있는지 확인 */
+          cancellableStatuses.includes(order.orderStatusDesc) && (
+            <button
+              className={`badge fs-6 rounded-pill ms-auto ${badgeColors.text}`}
+              onClick={() => handleCancelOrder(order.orderId)}
+            >
+              주문취소
+            </button>
+          )
+        }
       </div>
       <p className="text-muted mb-4">주문번호: {order.orderId}</p>
 

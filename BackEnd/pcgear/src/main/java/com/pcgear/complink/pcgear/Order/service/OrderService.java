@@ -7,6 +7,7 @@ import com.pcgear.complink.pcgear.Delivery.DeliveryService;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
 import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
 import com.pcgear.complink.pcgear.Item.ItemRepository;
+import com.pcgear.complink.pcgear.Item.ItemService;
 import com.pcgear.complink.pcgear.Manager.Manager;
 import com.pcgear.complink.pcgear.Manager.ManagerRepository;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailReqDto;
@@ -18,7 +19,14 @@ import com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto;
 import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderItem;
 import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
+import com.pcgear.complink.pcgear.Payment.OrderPayment;
 import com.pcgear.complink.pcgear.Payment.PaymentLinkService;
+import com.pcgear.complink.pcgear.Payment.PaymentRepository;
+import com.pcgear.complink.pcgear.Payment.model.PaymentStatus;
+import com.pcgear.complink.pcgear.Sell.Sell;
+import com.pcgear.complink.pcgear.Sell.SellRepository;
+import com.pcgear.complink.pcgear.Sell.SellService;
+import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -43,12 +51,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class OrderService {
 
+    private final PaymentRepository paymentRepository;
+
     private final OrderRepository orderRepository;
     private final ManagerRepository managerRepository;
     private final CustomerRepository customerRepository;
     private final PaymentLinkService paymentLinkService;
+    private final SellService sellService;
     private final ItemRepository itemRepository;
     private final DeliveryService deliveryService;
+    private final ItemService itemService;
+    private final SellRepository sellRepository;
+    private final PortoneProperties portoneProperties;
+    private final OrderService self;
 
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -61,7 +76,11 @@ public class OrderService {
             PaymentLinkService paymentLinkService,
             ItemRepository itemRepository,
             @Lazy DeliveryService deliveryService, // 👈 4. 순환 참조 대상에 @Lazy 추가
-            SimpMessagingTemplate messagingTemplate) {
+            SimpMessagingTemplate messagingTemplate,
+            ItemService itemService,
+            PortoneProperties portoneProperties, PaymentRepository paymentRepository, SellRepository sellRepository,
+            SellService sellService,
+            @Lazy OrderService self) {
         this.orderRepository = orderRepository;
         this.managerRepository = managerRepository;
         this.customerRepository = customerRepository;
@@ -69,57 +88,81 @@ public class OrderService {
         this.itemRepository = itemRepository;
         this.deliveryService = deliveryService;
         this.messagingTemplate = messagingTemplate;
+        this.itemService = itemService;
+        this.portoneProperties = portoneProperties;
+        this.paymentRepository = paymentRepository;
+        this.sellRepository = sellRepository;
+        this.sellService = sellService;
+        this.self = self;
     }
 
     @CacheEvict(value = { "dashboard-summary" }, allEntries = true)
-    @Transactional
     public Order createOrder(OrderRequestDto requestDto) {
         log.info("requestDto: {}", requestDto);
         Customer customer = customerRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("거래처 정보를 찾을 수 없습니다. ID: " + requestDto.getCustomerId()));
-
-        Manager manager = null;
-        if (requestDto.getManagerName() != null) {
-            manager = managerRepository.findById(requestDto.getManagerId())
-                    .orElseThrow(
-                            () -> new EntityNotFoundException("담당자 정보를 찾을 수 없습니다. ID: " + requestDto.getManagerId()));
-        }
-
-        // 2. DTO -> Entity 변환
-        Order order = new Order();
-        order.setOrderDate(requestDto.getOrderDate());
-        order.setDeliveryDate(requestDto.getDeliveryDate());
-        order.setOrderStatus(OrderStatus.ORDER_RECEIVED);
-
-        order.setCustomer(customer);
-        order.setManager(manager);
-
-        order.setTotalAmount(requestDto.getTotalAmount());
-        order.setVatAmount(requestDto.getVatAmount());
-        order.setGrandAmount(requestDto.getGrandAmount());
+        String uuid = UUID.randomUUID().toString();
+        String merchantUid = "PCG-" + uuid;
+        String paymentLink;
 
         try {
-            String uuid = UUID.randomUUID().toString();
-            String merchantUid = "PCG-" + uuid;
-
-            String paymentLink = paymentLinkService.createPaymentLink(
+            paymentLink = paymentLinkService.createPaymentLink(
                     merchantUid,
                     requestDto.getGrandAmount().intValue(),
                     customer.getCustomerName() + "님의 주문",
-                    customer.getPhoneNumber());
-            order.setPaymentLink(paymentLink);
-            order.setMerchantUid(merchantUid);
+                    customer.getPhoneNumber()).block(); // 👈 여기서 3초가 걸려도 DB에는 아무 영향이 없습니다.
         } catch (RuntimeException e) {
             throw new RuntimeException("주문 생성 중 결제 링크 생성 실패: " + e.getMessage(), e);
         }
 
-        // 3. 주문 아이템 리스트 변환 및 추가
+        String message = "주문서가 성공적으로 생성되었습니다.";
+        messagingTemplate.convertAndSend("/topic/notifications", message);
+
+        // 4. Repository를 통해 DB에 저장
+        try {
+            return self.processOrderCreation(requestDto, merchantUid, paymentLink);
+        } catch (Exception e) {
+            paymentLinkService.cancelPaymentLink(paymentLink).subscribe();
+            log.error("주문 생성 트랜잭션 롤백 및 결제 링크 취소: {}", e.getMessage());
+            throw new RuntimeException("주문 생성 중 오류 발생 및 결제 링크 취소 완료", e);
+
+        }
+    }
+
+    @Transactional // 👈 여기서 트랜잭션 시작! (DB 커넥션 획득)
+    public Order processOrderCreation(OrderRequestDto requestDto, String merchantUid, String paymentLink) {
+        log.info("processOrderCreation 시작 - DB 저장 트랜잭션 시작");
+
+        // 고객 정보 다시 조회 (영속성 컨텍스트 안에 올리기 위해. PK 조회라 매우 빠름)
+        Customer customer = customerRepository.findById(requestDto.getCustomerId())
+                .orElseThrow(() -> new EntityNotFoundException("거래처 정보를 찾을 수 없습니다."));
+
+        Manager manager = manager = managerRepository.findById(requestDto.getManagerId())
+                .orElseThrow(() -> new EntityNotFoundException("담당자 정보를 찾을 수 없습니다."));
+
+        // 엔티티 생성
+        Order order = new Order();
+        order.setOrderDate(requestDto.getOrderDate());
+        order.setDeliveryDate(requestDto.getDeliveryDate());
+        order.setOrderStatus(OrderStatus.ORDER_RECEIVED);
+        order.setCustomer(customer);
+        order.setManager(manager);
+        order.setTotalAmount(requestDto.getTotalAmount());
+        order.setVatAmount(requestDto.getVatAmount());
+        order.setGrandAmount(requestDto.getGrandAmount());
+
+        // [중요] 아까 밖에서 만들어온 값을 세팅
+        order.setMerchantUid(merchantUid);
+        order.setPaymentLink(paymentLink);
+
+        // 아이템 추가 로직
         for (OrderRequestDto.OrderItemDto itemDto : requestDto.getItems()) {
             OrderItem orderItem = new OrderItem();
+            // ... (기존 아이템 매핑 로직과 동일) ...
             orderItem.setItemCategory(itemDto.getItemCategory());
             orderItem.setSerialNumRequired(itemDto.getItemCategory().isSerialNumRequired());
             orderItem.setItem(itemRepository.findById(itemDto.getItemId())
-                    .orElseThrow(() -> new EntityNotFoundException("품목 정보를 찾을 수 없습니다. ID: " + itemDto.getItemId())));
+                    .orElseThrow(() -> new EntityNotFoundException("품목 찾기 실패")));
             orderItem.setItemName(itemDto.getItemName());
             orderItem.setQuantity(itemDto.getQuantity());
             orderItem.setUnitPrice(itemDto.getUnitPrice());
@@ -128,12 +171,10 @@ public class OrderService {
             order.addItem(orderItem);
         }
 
-        String message = "주문서가 성공적으로 생성되었습니다.";
-        messagingTemplate.convertAndSend("/topic/notifications", message);
+        messagingTemplate.convertAndSend("/topic/notifications", "주문서가 성공적으로 생성되었습니다.");
 
-        // 4. Repository를 통해 DB에 저장
-        return orderRepository.save(order);
-    }
+        return orderRepository.save(order); // 저장 후 즉시 커밋
+    } // 👈 트랜잭션 종료 (DB 커넥션 반납)
 
     @Transactional(readOnly = true) // 이 어노테이션이 반드시 있어야 합니다.
     public List<OrderResponseDto> findAllOrders() {
@@ -263,5 +304,25 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    
+    @Transactional
+    public Order finalizeCancellation(Integer orderId) {
+
+        // 판매기록에 - 매출 데이터 추가
+        sellService.createNegateSell(orderId);
+
+        // 주문상태 주문취소로 업데이트
+        Order order = updateOrderStatus(orderId, OrderStatus.CANCELLED);
+
+        // 결제상태 결제취소로 업데이트
+        paymentRepository.findByOrder_OrderId(orderId)
+                .ifPresent(payment -> {
+                    payment.setPaymentStatus(PaymentStatus.CANCELLED);
+                    paymentRepository.save(payment);
+                });
+
+        // 가용재고 +1
+        itemService.restoreItemAvailableQuantity(orderId);
+        return order;
+    }
+
 }

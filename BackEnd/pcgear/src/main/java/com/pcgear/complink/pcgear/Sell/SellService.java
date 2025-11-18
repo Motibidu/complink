@@ -46,13 +46,11 @@ public class SellService {
 
         private Sell mapOrderToSell(Order order) {
                 return Sell.builder()
-                                .orderId(order.getOrderId())
+                                .order(order)
 
                                 // 고객 및 담당자 ID/Name
-                                .customerId(order.getCustomer().getCustomerId())
-                                .customerName(order.getCustomer().getCustomerName())
-                                .managerId(order.getManager().getManagerId())
-                                .managerName(order.getManager().getManagerName())
+                                .customer(order.getCustomer())
+                                .manager(order.getManager())
 
                                 // 금액 정보 (Integer로 형 변환)
                                 .totalAmount(order.getTotalAmount())
@@ -66,8 +64,28 @@ public class SellService {
                                 .build();
         }
 
-        public Page<Sell> getAllSells(Pageable pageable) {
-                return sellRepository.findAll(pageable);
+        public Page<SellResponseDto> getAllSells(Pageable pageable) {
+                Page<Sell> sellPage = sellRepository.findAllWithDetails(pageable);
+
+                return sellPage.map(SellResponseDto::from);
+        }
+
+        // 판매기록에 -매출 데이터 추가
+        public void createNegateSell(Integer orderId) {
+
+                sellRepository.findByOrder_OrderId(orderId)
+                                .ifPresent(sell -> {
+                                        Sell newSell = Sell.builder()
+                                                        .sellDate(LocalDateTime.now())
+                                                        .customer(sell.getCustomer())
+                                                        .manager(sell.getManager())
+                                                        .vatAmount(sell.getVatAmount().negate())
+                                                        .totalAmount(sell.getTotalAmount().negate())
+                                                        .grandAmount(sell.getGrandAmount().negate())
+                                                        .order(sell.getOrder())
+                                                        .build();
+                                        sellRepository.save(newSell);
+                                });
         }
 
 }

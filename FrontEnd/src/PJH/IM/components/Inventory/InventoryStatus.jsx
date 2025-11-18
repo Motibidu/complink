@@ -31,7 +31,7 @@ function InventoryStatus() {
               sort: "itemId,desc", 
             },
           });
-
+          console.log("response: ", response);
         const itemsData = response.data.content || [];
         setItems(itemsData);
         setPageData(response.data); // 페이지 정보 저장
@@ -98,6 +98,7 @@ function InventoryStatus() {
               <th>품목 코드</th>
               <th>이름 및 카테고리</th>
               <th>총재고수량</th>
+              <th>가용재고수량</th>
               <th>입고단가</th>
               <th>금액</th>
             </tr>
@@ -120,6 +121,7 @@ function InventoryStatus() {
                     {item.itemName}({item.itemCategory}) {/* 9. [수정] category -> itemCategory */}
                   </td>
                   <td>{item.quantityOnHand}</td>
+                  <td>{item.availableQuantity}</td>
                   <td>{item.purchasePrice.toLocaleString()}</td>
                   <td>
                     {(item.quantityOnHand * item.purchasePrice).toLocaleString()}

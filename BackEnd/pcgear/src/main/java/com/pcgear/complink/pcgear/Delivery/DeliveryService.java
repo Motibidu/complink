@@ -27,6 +27,8 @@ import com.pcgear.complink.pcgear.Delivery.model.ShippingListDto;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingResponse;
 import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
 import com.pcgear.complink.pcgear.Delivery.model.WebhookReq;
+import com.pcgear.complink.pcgear.Item.ItemService;
+import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
 import com.pcgear.complink.pcgear.Order.service.OrderService;
@@ -49,6 +51,7 @@ public class DeliveryService {
         private final WebClient webClient;
         private final OrderService orderService;
         private final CustomerRepository customerRepository;
+        private final ItemService itemService;
         private final OrderRepository orderRepository;
         private final DeliveryRepository deliveryRepository;
         private final SimpMessagingTemplate messagingTemplate;
@@ -206,7 +209,8 @@ public class DeliveryService {
                                 });
         }
 
-        // 전달 받은 운송장번호로 배송조회에 완료 하면 유효한 운송장번호
+        // 전달 받은 운송장번호로 배송조회에 성공하면 유효한 운송장번호
+        @Transactional
         public Mono<ValidationResult> isValidDelivery(TrackingNumberReq trackingNumberReq,
                         String accessToken) {
                 return this.trackDelivery(trackingNumberReq.getCarrierId(), trackingNumberReq.getTrackingNumber(),
@@ -233,6 +237,14 @@ public class DeliveryService {
                                                 log.info("No trackDelivery Response");
                                         }
                                         createDelivery(trackingNumberReq);
+
+                                        // 실제 재고 차감
+                                        Order order = orderRepository.findById(trackingNumberReq.getOrderId())
+                                                        .orElseThrow(() -> new EntityNotFoundException(
+                                                                        "해당 ID의 주문을 찾을 수 없습니다." + trackingNumberReq
+                                                                                        .getOrderId()));
+                                        itemService.updateItemQuantityOnHand(order);
+
                                         return new ValidationResult(true, "배송 조회에 성공했습니다.");
                                 });
         }

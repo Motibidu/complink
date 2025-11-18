@@ -6,11 +6,19 @@ import java.time.LocalDateTime;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.pcgear.complink.pcgear.Customer.Customer;
+import com.pcgear.complink.pcgear.Manager.Manager;
+import com.pcgear.complink.pcgear.Order.model.Order;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,15 +44,18 @@ public class Sell {
 
         private LocalDateTime sellDate;
 
-        private Integer orderId;
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "order_id") // 실제 DB 컬럼명
+        private Order order;
 
-        private String customerId;
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "customer_id")
+        private Customer customer;
 
-        private String customerName;
-
-        private String managerId;
-
-        private String managerName;
+        // [변경 3] String managerId -> Manager(Member) 객체
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "manager_id")
+        private Manager manager;
 
         private BigDecimal totalAmount;
 
@@ -56,5 +67,4 @@ public class Sell {
 
         @CreatedDate
         private LocalDateTime createdAt;
-
 }

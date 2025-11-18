@@ -35,6 +35,8 @@ public class Item {
 
         private Integer QuantityOnHand;
 
+        private Integer AvailableQuantity;
+
         @NotNull(message = "입고단가는 필수 입력 항목입니다.")
         @PositiveOrZero(message = "입고단가는 0 또는 양수여야 합니다.")
         private Integer purchasePrice;

@@ -59,7 +59,7 @@ public class PaymentService {
 
     private final WebClient webClient;
 
-    public Mono<Payment> executeImmediatePayment(UserEntity user, SubscriptionRequest subscriptionRequest) {
+    public Mono<OrderPayment> executeImmediatePayment(UserEntity user, SubscriptionRequest subscriptionRequest) {
         log.info("단건결제==========================================================");
 
         final String paymentId = "payment-" + UUID.randomUUID().toString();
@@ -113,7 +113,7 @@ public class PaymentService {
                         Instant instant = Instant.parse(paidAtString);
                         LocalDateTime paidAt = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
-                        Payment payment = Payment.builder()
+                        OrderPayment payment = OrderPayment.builder()
                                 .paymentId(paymentId)
                                 .userId(user.getUsername())
                                 .amount(subscriptionRequest.getAmount())
@@ -180,9 +180,9 @@ public class PaymentService {
         log.info("paymentDetail: {}", paymentDetail);
 
         // 3-2. db에서 단건내역을 조회합니다.
-        Optional<Payment> existingPayment = paymentRepository.findByPaymentId(paymentId);
+        Optional<OrderPayment> existingPayment = paymentRepository.findByPaymentId(paymentId);
 
-        Payment dbPayment;
+        OrderPayment dbPayment;
         boolean isNewPayment = existingPayment.isEmpty();
 
         // 3-3. db에 내역이 있다면 단건 결제에 대한 웹훅 입니다.
@@ -243,9 +243,8 @@ public class PaymentService {
             } else {
                 log.info("정기 결제 금액 일치합니다. 다음 정기 결제를 예약합니다.");
             }
-            dbPayment = Payment.builder()
+            dbPayment = OrderPayment.builder()
                     .paymentId((String) paymentDetail.get("id")) // paymentId가 "id" 필드에 있음
-                    .userId(((Map<String, Object>) paymentDetail.get("customer")).get("id").toString())
                     .amount((Integer) ((Map<String, Object>) paymentDetail.get("amount")).get("total"))
                     .paymentMethod((String) ((Map<String, Object>) paymentDetail.get("method")).get("provider"))
                     .paymentStatus(PaymentStatus.PAID)
@@ -353,22 +352,42 @@ public class PaymentService {
                 .block();
     }
 
+    public void cancelPayment() {
+
+    }
+
     @Transactional
     public void finalizeOrderPayment(Order order) {
-
-        Integer orderId = order.getOrderId();
 
         // 1. 판매 기록 생성 (매출 테이블에 반영)
         sellService.createSell(order);
 
         // 2. 주문 상태를 상품준비중으로 업데이트
-        orderService.updateOrderStatus(orderId, OrderStatus.PAID);
+        orderService.updateOrderStatus(order.getOrderId(), OrderStatus.PAID);
 
         // 3. 주문 결제 날짜를 설정
         orderService.setPaidAt(order);
 
         // 4. 재고 차감 (재고 수량(QOH)을 업데이트)
         // 이 과정에서 재고 부족 등으로 예외가 발생하면 전체 트랜잭션이 롤백됩니다.
-        itemService.updateItemQuantityOnHand(order);
+        itemService.updateItemAvailableQuantity(order);
+
+        // 5. 결제기록 생성
+        createPayment(order);
+
+    }
+
+    private void createPayment(Order order) {
+        final String paymentId = "payment-" + UUID.randomUUID().toString();
+        OrderPayment payment = OrderPayment.builder()
+                .paymentId(paymentId)
+                .order(order)
+                .userId("AAA")
+                .amount(order.getGrandAmount().intValue())
+                .paymentMethod("EASY_PAY")
+                .paymentStatus(PaymentStatus.PAID)
+                .paidAt(LocalDateTime.now())
+                .build();
+        paymentRepository.save(payment);
     }
 }

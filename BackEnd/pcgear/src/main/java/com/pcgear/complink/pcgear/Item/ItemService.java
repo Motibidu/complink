@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderItem;
+import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -23,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ItemService {
         private final ItemRepository itemRepository;
+        private final OrderRepository orderRepository;
 
         @Cacheable(value = "items", condition = "#p0 == null", key = "#p1.toString()")
         public ItemPageDto getAllItems(String search, Pageable pageable) {
@@ -75,6 +77,7 @@ public class ItemService {
         public void updateItemQuantityOnHand(Order order) {
 
                 List<OrderItem> itemsFromOrder = order.getOrderItems();
+
                 for (OrderItem orderItem : itemsFromOrder) {
                         log.info("orderItem: {}", orderItem);
                         Item item = orderItem.getItem();
@@ -93,4 +96,41 @@ public class ItemService {
                 }
         }
 
+        public void updateItemAvailableQuantity(Order order) {
+
+                List<OrderItem> itemsFromOrder = order.getOrderItems();
+
+                for (OrderItem orderItem : itemsFromOrder) {
+                        log.info("orderItem: {}", orderItem);
+                        Item item = orderItem.getItem();
+
+                        int orderedQuantity = orderItem.getQuantity();
+                        int currentAvailableQuantity = item.getAvailableQuantity();
+
+                        if (currentAvailableQuantity < orderedQuantity) {
+                                throw new IllegalStateException(
+                                                "가용 재고 부족: 품목 '" + item.getItemName()
+                                                                + "'의 가용 재고가 충분하지 않습니다. (현재 가용 재고: "
+                                                                + currentAvailableQuantity + ", 주문 수량: "
+                                                                + orderedQuantity
+                                                                + ")");
+                        }
+
+                        item.setAvailableQuantity(currentAvailableQuantity - orderedQuantity);
+                        itemRepository.save(item);
+                }
+        }
+
+        
+
+        public void restoreItemAvailableQuantity(Integer orderId) {
+                Order order = orderRepository.findById(orderId).orElseThrow(()-> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
+                List<OrderItem> itemsFromOrder = order.getOrderItems();
+                
+                for (OrderItem orderItem : itemsFromOrder) {
+                        Item item= orderItem.getItem();
+                        item.setAvailableQuantity(item.getAvailableQuantity()+orderItem.getQuantity());
+                        itemRepository.save(item);
+                }
+        }
 }

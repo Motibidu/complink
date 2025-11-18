@@ -25,29 +25,29 @@ const SellsSearchPage = () => {
     start: "",
     end: new Date().toISOString().slice(0, 10), // 오늘 날짜를 기본값으로 설정
   });
-  const [TrackingNumberReq, setTrackingNumberReq] = useState({
-    orderId: "",
-    customerId: "",
-    trackingNumber: "508368319105",
-    carrierId: "kr.cjlogistics",
-  });
+  // const [TrackingNumberReq, setTrackingNumberReq] = useState({
+  //   orderId: "",
+  //   customerId: "",
+  //   trackingNumber: "508368319105",
+  //   carrierId: "kr.cjlogistics",
+  // });
 
   // 상세 조회를 위한 state
   const [selectedSell, setSelectedSell] = useState(null); // 'selectedsell' -> 'selectedSell' (카멜케이스)
 
-  const openTrackingNumberReqModal = (sell) => {
-    setTrackingNumberReq({
-      orderId: sell.orderId,
-      customerId: sell.customerId,
-      trackingNumber: TrackingNumberReq.trackingNumber,
-      carrierId: TrackingNumberReq.carrierId,
-    });
-    setMessage({ type: "", text: "" }); // 메시지 초기화
-  };
+  // const openTrackingNumberReqModal = (sell) => {
+  //   setTrackingNumberReq({
+  //     orderId: sell.orderId,
+  //     customerId: sell.customerId,
+  //     trackingNumber: TrackingNumberReq.trackingNumber,
+  //     carrierId: TrackingNumberReq.carrierId,
+  //   });
+  //   setMessage({ type: "", text: "" }); // 메시지 초기화
+  // };
 
-  const openDeliveryDetailModal = (sell) => {
-    setSelectedSell(sell);
-  };
+  // const openDeliveryDetailModal = (sell) => {
+  //   setSelectedSell(sell);
+  // };
 
   // 📌 [수정] fetchSells가 pageTofetch를 인자로 받고, API 호출 시 params 전달
   const fetchSells = useCallback(async (pageTofetch) => {
@@ -57,10 +57,11 @@ const SellsSearchPage = () => {
       const sellsResponse = await axios.get("/api/sells", {
         params: {
           page: pageTofetch,
-          size: 10,
+          size: 15,
           sort: "sellId,desc", // 📌 (주의) 백엔드 Sell 엔티티의 ID 필드명 (sellId) 기준
         },
       });
+      console.log("sellsResponse: ", sellsResponse);
       const sellsData = sellsResponse.data.content || [];
       const pageInfo = sellsResponse.data;
 
@@ -139,51 +140,51 @@ const SellsSearchPage = () => {
     setSelectedSell(sell);
   };
 
-  const handleWaybillFormChange = (e) => {
-    const { name, value } = e.target;
-    setTrackingNumberReq((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
-  };
+  // const handleWaybillFormChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setTrackingNumberReq((prevState) => ({
+  //     ...prevState,
+  //     [name]: value,
+  //   }));
+  // };
 
-  const trackingNumberReqSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // const trackingNumberReqSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
 
-    try {
-      console.log("TrackingNumberReq: ", TrackingNumberReq);
-      const response = await axios.post(
-        "/api/delivery/trackingNumber",
-        TrackingNumberReq
-      );
-      console.log("response: ", response);
+  //   try {
+  //     console.log("TrackingNumberReq: ", TrackingNumberReq);
+  //     const response = await axios.post(
+  //       "/api/delivery/trackingNumber",
+  //       TrackingNumberReq
+  //     );
+  //     console.log("response: ", response);
 
-      if (response.status === 201 || response.status === 200) {
-        setTrackingNumberReq({
-          trackingNumber: "",
-          carrierId: "",
-        });
-        const modalElement = document.getElementById("trackingNumberReqModal");
-        const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
-        if (modalInstance) {
-          modalInstance.hide();
-        }
+  //     if (response.status === 201 || response.status === 200) {
+  //       setTrackingNumberReq({
+  //         trackingNumber: "",
+  //         carrierId: "",
+  //       });
+  //       const modalElement = document.getElementById("trackingNumberReqModal");
+  //       const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
+  //       if (modalInstance) {
+  //         modalInstance.hide();
+  //       }
 
-        // 📌 [수정] 현재 페이지 새로고침
-        fetchSells(currentPage);
+  //       // 📌 [수정] 현재 페이지 새로고침
+  //       fetchSells(currentPage);
 
-        alert(response.data);
-      }
-    } catch (error) {
-      const errorMsg =
-        error.response?.data?.message ||
-        "운송장 번호 등록 중 오류가 발생했습니다.";
-      setMessage({ type: "danger", text: errorMsg });
-    } finally {
-      setLoading(false);
-    }
-  };
+  //       alert(response.data);
+  //     }
+  //   } catch (error) {
+  //     const errorMsg =
+  //       error.response?.data?.message ||
+  //       "운송장 번호 등록 중 오류가 발생했습니다.";
+  //     setMessage({ type: "danger", text: errorMsg });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   // 📌 [추가] 페이지네이션 UI를 위한 헬퍼 함수
   const createPaginationItems = () => {
@@ -354,7 +355,7 @@ const SellsSearchPage = () => {
       </footer>
 
       {/* 운송장 입력 모달 */}
-      <div className="modal fade" id="trackingNumberReqModal" tabIndex="-1">
+      {/* <div className="modal fade" id="trackingNumberReqModal" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
             <form onSubmit={trackingNumberReqSubmit}>
@@ -442,7 +443,7 @@ const SellsSearchPage = () => {
             </form>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* 판매 상세 정보 모달 */}
       <div className="modal fade" id="sellDetailModal" tabIndex="-1">

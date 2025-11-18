@@ -10,27 +10,38 @@ function OrderSearchPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
 
-  const handleDeleteOrder = async (orderIdToDelete) => {
-    if (window.confirm("정말로 주문을 삭제하시겠습니까?")) {
+  const handleCancelOrder = async (orderIdToCancel) => {
+    if (window.confirm("정말로 주문을 취소하시겠습니까?")) {
       try {
-        const response = await axios.delete(`/api/orders/${orderIdToDelete}`);
+        // 1. API 경로도 일관되게 맞춤
+        const response = await axios.post(
+          `/api/orders/${orderIdToCancel}/cancel`
+        );
 
-        if (response.status === 204) {
-          alert("선택된 주문서가 성공적으로 삭제되었습니다.");
+        // 2. 204 대신 200 OK를 확인
+        if (response.status === 200) {
+          alert("선택된 주문서가 성공적으로 취소되었습니다.");
+
+          // 3. (핵심) response.data로 받은 '최신 주문 객체'로 상태를 업데이트
+          const canceledOrder = response.data;
 
           setOrders(
-            orders.filter((order) => order.orderId !== orderIdToDelete)
+            orders.map((order) =>
+              order.orderId === orderIdToCancel
+                ? canceledOrder // 목록에서 해당 주문을 '최신 데이터'로 교체
+                : order
+            )
           );
 
-          // 2. 현재 선택된 주문이 삭제된 주문이라면, 선택을 해제합니다.
-          if (selectedOrder?.orderId === orderIdToDelete) {
-            setSelectedOrder(null);
+          // 4. 현재 선택된 주문도 최신 데이터로 업데이트
+          if (selectedOrder?.orderId === orderIdToCancel) {
+            setSelectedOrder(canceledOrder);
           }
         } else {
-          throw new Error("삭제에 실패했습니다.");
+          throw new Error("취소에 실패했습니다.");
         }
       } catch (err) {
-        alert("주문서 삭제 중 오류가 발생했습니다.");
+        alert("주문서 취소 중 오류가 발생했습니다.");
         console.error(err);
       }
     }
@@ -73,7 +84,7 @@ function OrderSearchPage() {
         (order) =>
           (statusFilter === "all" || order.status === statusFilter) &&
           (searchTerm === "" ||
-            order.customer.customer_name
+            order.customer.customerName
               .toLowerCase()
               .includes(searchTerm.toLowerCase()) ||
             String(order.orderId).includes(searchTerm))
@@ -107,7 +118,7 @@ function OrderSearchPage() {
           <div className="col-lg-8">
             <OrderDetailPanel
               order={selectedOrder}
-              onDeleteOrder={handleDeleteOrder}
+              handleCancelOrder={handleCancelOrder}
               onStatusUpdate={handleStatusUpdate}
             />
           </div>

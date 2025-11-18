@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pcgear.complink.pcgear.Assembly.AssemblyStatus;
+import com.pcgear.complink.pcgear.Item.ItemService;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailReqDto;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailRespDto;
 import com.pcgear.complink.pcgear.Order.model.OrderRequestDto;
@@ -28,32 +29,40 @@ import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto;
 import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.service.OrderService;
+import com.pcgear.complink.pcgear.Payment.PaymentLinkService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.http.Path;
 
 @Tag(name = "주문서 API", description = "주문서를 관리하는 API")
-@RestController
 @Slf4j
+@RequiredArgsConstructor
 @RequestMapping("/orders")
+@RestController
 public class OrderController {
 
     private final OrderService orderService;
+    private final ItemService itemService;
+    private final PaymentLinkService paymentLinkService;
 
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
-    }
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<Order> cancelOrder(@PathVariable(name = "orderId") Integer orderId) {
 
-    @DeleteMapping("{orderId}")
-    public ResponseEntity deleteOrder(@PathVariable(name = "orderId") Integer orderId) {
-        orderService.deleteOrder(orderId);
-        return ResponseEntity.noContent().build();
+        Order canceledOrder = orderService.finalizeCancellation(orderId);
+
+        // 포트원(외부API)의 결제취소는 DB커넥션 풀 고갈을 유발할 수 있기 때문에 트랜잭션 바깥에 둡니다.
+        if (canceledOrder.getOrderStatus() == OrderStatus.PAID) {
+            paymentLinkService.cancelPayment(orderId, "단순 변심에 의한 취소");
+        }
+        return ResponseEntity.ok(canceledOrder);
     }
 
     @PostMapping
     public ResponseEntity<String> createNewOrder(@RequestBody OrderRequestDto orderRequestDto) {
-        orderService.createOrder(orderRequestDto);
+        Order newOrder = orderService.createOrder(orderRequestDto);
+        itemService.updateItemAvailableQuantity(newOrder);
         return ResponseEntity.status(HttpStatus.CREATED).body("주문이 성공적으로 생성되었습니다.");
     }
 
@@ -87,14 +96,12 @@ public class OrderController {
                         OrderStatus.SHIPPING)
                 : orderStatus;
 
-        //List<AssemblyQueueRespDto> orders = orderService.readAssemblyQueueOrders(statusesToFind);
+        // List<AssemblyQueueRespDto> orders =
+        // orderService.readAssemblyQueueOrders(statusesToFind);
         Page<AssemblyQueueRespDto> assemblyQueuePage = orderService.getAllAssemblyQueue(statusesToFind, pageable);
-
 
         return ResponseEntity.ok(assemblyQueuePage);
     }
-
-    
 
     @PostMapping("/{orderId}/assembly-status")
     public ResponseEntity<AssemblyDetailRespDto> updateAssemblyStatus(

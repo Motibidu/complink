@@ -33,13 +33,10 @@ public class SellController {
     // }
 
     @GetMapping
-    public ResponseEntity<Page<Sell>> readSells(
-        @PageableDefault(size = 10, sort = "sellId", direction = org.springframework.data.domain.Sort.Direction.DESC)Pageable pageable)
-    {
-        // List<Sell> sells = sellService.readSells();
-        // return ResponseEntity.status(HttpStatus.CREATED).body(sells);
+    public ResponseEntity<Page<SellResponseDto>> readSells(
+            @PageableDefault(size = 10, sort = "sellId", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
 
-        Page<Sell> sells= sellService.getAllSells(pageable);
+        Page<SellResponseDto> sells = sellService.getAllSells(pageable);
         return ResponseEntity.status(HttpStatus.OK).body(sells);
 
     }
