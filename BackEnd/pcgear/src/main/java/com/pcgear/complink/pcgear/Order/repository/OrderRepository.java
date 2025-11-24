@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Assembly.AssemblyStatus;
 import com.pcgear.complink.pcgear.Delivery.model.ShippingListDto;
+import com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto;
 import com.pcgear.complink.pcgear.Order.model.Order;
 
 import java.time.LocalDateTime;
@@ -45,7 +46,19 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
         @Query("SELECT COUNT(o) FROM Order o WHERE o.orderStatus IN :statuses")
         Integer countByOrderStatusIn(@Param("statuses") List<OrderStatus> statuses);
 
-        Page<Order> findAllByOrderStatusIn(List<OrderStatus> orderStatuses, Pageable pageable);
+        @Query("SELECT new com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto(" +
+                        " o.orderId, " +
+                        " c.customerName," +
+                        " m.managerName," +
+                        " o.orderStatus," +
+                        " o.assemblyStatus," +
+                        " o.paidAt)" +
+                        " FROM Order o " +
+                        "JOIN o.customer c " +
+                        "JOIN o.manager m " +
+                        "WHERE o.orderStatus IN :orderStatuses")
+        Page<AssemblyQueueRespDto> findAllByOrderStatusIn(@Param("orderStatuses") List<OrderStatus> orderStatuses,
+                        Pageable pageable);
 
         @Query("SELECT new com.pcgear.complink.pcgear.Delivery.model.ShippingListDto(" +
                         " o.orderId, " +

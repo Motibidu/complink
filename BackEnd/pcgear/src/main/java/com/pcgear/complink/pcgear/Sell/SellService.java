@@ -72,6 +72,7 @@ public class SellService {
 
         // 판매기록에 -매출 데이터 추가
         public void createNegateSell(Integer orderId) {
+                log.info("판매기록에 -매출 데이터 추가");
 
                 sellRepository.findByOrder_OrderId(orderId)
                                 .ifPresent(sell -> {

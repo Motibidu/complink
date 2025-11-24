@@ -1,6 +1,8 @@
 package com.pcgear.complink.pcgear.Item;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -52,8 +54,8 @@ public class ItemService {
                 return itemRepository.save(item);
         }
 
-        @Transactional
         @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
+        @Transactional
         public void updateItem(Integer itemId, Item itemDetails) {
                 Item existingItem = itemRepository.findById(itemId)
                                 .orElseThrow(() -> new EntityNotFoundException("해당 ID의 품목을 찾을 수 없습니다: " + itemId));
@@ -67,70 +69,154 @@ public class ItemService {
                 itemRepository.save(existingItem);
         }
 
-        @Transactional
         @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
+        @Transactional
         public void deleteItems(List<Integer> itemIds) {
                 itemRepository.deleteAllByItemIdIn(itemIds);
         }
 
         @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
+        @Transactional
         public void updateItemQuantityOnHand(Order order) {
 
-                List<OrderItem> itemsFromOrder = order.getOrderItems();
+                List<Integer> itemIds = order.getOrderItems().stream()
+                                .map(orderItem -> orderItem.getItem().getItemId())
+                                .collect(Collectors.toList());
 
-                for (OrderItem orderItem : itemsFromOrder) {
+                if (itemIds.isEmpty())
+                        return;
+
+                List<Item> items = itemRepository.findAllByItemIdInWithLock(itemIds);
+
+                Map<Integer, Item> itemMap = items.stream()
+                                .collect(Collectors.toMap(Item::getItemId, item -> item));
+
+                for (OrderItem orderItem : order.getOrderItems()) {
                         log.info("orderItem: {}", orderItem);
-                        Item item = orderItem.getItem();
+                        Item item = itemMap.get(orderItem.getItem().getItemId());
 
                         int orderedQuantity = orderItem.getQuantity();
-                        int currentStock = item.getQuantityOnHand();
+                        int currentQuantity = item.getQuantityOnHand();
 
-                        if (currentStock < orderedQuantity) {
+                        if (currentQuantity < orderedQuantity) {
                                 throw new IllegalStateException(
                                                 "재고 부족: 품목 '" + item.getItemName() + "'의 재고가 충분하지 않습니다. (현재 재고: "
-                                                                + currentStock + ", 주문 수량: " + orderedQuantity + ")");
+                                                                + currentQuantity + ", 주문 수량: " + orderedQuantity
+                                                                + ")");
                         }
 
-                        item.setQuantityOnHand(currentStock - orderedQuantity);
+                        item.setQuantityOnHand(currentQuantity - orderedQuantity);
                         itemRepository.save(item);
                 }
         }
 
+        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
+        @Transactional
         public void updateItemAvailableQuantity(Order order) {
+                log.info("가용재고 차감");
 
-                List<OrderItem> itemsFromOrder = order.getOrderItems();
+                // 1. N+1문제를 발생시키는 엔티티인 items의 ID를 모두 가져온다.
+                List<Integer> itemIds = order.getOrderItems().stream()
+                                .map(orderItem -> orderItem.getItem().getItemId()) // 여기서 아이템 ID만 꺼내는 건 쿼리 안 나감 (보통 FK
+                                                                                   // 가지고 있음)
+                                .collect(Collectors.toList());
 
-                for (OrderItem orderItem : itemsFromOrder) {
-                        log.info("orderItem: {}", orderItem);
-                        Item item = orderItem.getItem();
+                if (itemIds.isEmpty())
+                        return;
+
+                // 2. 락과 함께 아이템 데이터를 전부 가져온다.
+                List<Item> items = itemRepository.findAllByItemIdInWithLock(itemIds);
+
+                Map<Integer, Item> itemMap = items.stream()
+                                .collect(Collectors.toMap(Item::getItemId, item -> item));
+
+                // 3. Item만 따로 가져왔기 때문에 OrderItem의 itemId와 itemId가 같은 item을 찾아야 하는 문제가 발생합니다.
+                // 3-1. 조회 시간복잡도가 O(1)인 Map을 사용합니다.
+                for (OrderItem orderItem : order.getOrderItems()) {
+                        Item item = itemMap.get(orderItem.getItem().getItemId());
 
                         int orderedQuantity = orderItem.getQuantity();
                         int currentAvailableQuantity = item.getAvailableQuantity();
 
                         if (currentAvailableQuantity < orderedQuantity) {
                                 throw new IllegalStateException(
-                                                "가용 재고 부족: 품목 '" + item.getItemName()
-                                                                + "'의 가용 재고가 충분하지 않습니다. (현재 가용 재고: "
-                                                                + currentAvailableQuantity + ", 주문 수량: "
-                                                                + orderedQuantity
+                                                "가용 재고 부족: 품목 '" + item.getItemName() + "' (현재: "
+                                                                + currentAvailableQuantity + ", 주문: " + orderedQuantity
                                                                 + ")");
                         }
 
+                        // 재고 감소 (Dirty Checking 대기 중)
                         item.setAvailableQuantity(currentAvailableQuantity - orderedQuantity);
-                        itemRepository.save(item);
                 }
         }
 
-        
+        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
+        @Transactional
+        public void restoreItemQuantityOnHand(Integer orderId) {
+                Order order = orderRepository.findById(orderId)
+                                .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
 
-        public void restoreItemAvailableQuantity(Integer orderId) {
-                Order order = orderRepository.findById(orderId).orElseThrow(()-> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
                 List<OrderItem> itemsFromOrder = order.getOrderItems();
-                
+
+                // 1. 아이템 ID 목록 추출 (쿼리 X)
+                List<Integer> itemIds = itemsFromOrder.stream()
+                                .map(orderItem -> orderItem.getItem().getItemId())
+                                .collect(Collectors.toList());
+
+                if (itemIds.isEmpty())
+                        return;
+
+                // 2. [핵심] 락 걸고 한 방에 조회 (SELECT 1번)
+                List<Item> items = itemRepository.findAllByItemIdInWithLock(itemIds);
+
+                // 3. Map으로 변환 (검색 속도 O(1))
+                Map<Integer, Item> itemMap = items.stream()
+                                .collect(Collectors.toMap(Item::getItemId, item -> item));
+
+                // 4. 재고 복구 로직
                 for (OrderItem orderItem : itemsFromOrder) {
-                        Item item= orderItem.getItem();
-                        item.setAvailableQuantity(item.getAvailableQuantity()+orderItem.getQuantity());
-                        itemRepository.save(item);
+                        // 락 걸린 최신 엔티티 가져오기
+                        Item item = itemMap.get(orderItem.getItem().getItemId());
+
+                        // 재고 원복 (+Quantity)
+                        item.setQuantityOnHand(item.getQuantityOnHand() + orderItem.getQuantity());
                 }
+
+                // 5. [저장] save() 호출 불필요 (더티 체킹으로 트랜잭션 종료 시 자동 UPDATE)
+        }
+
+        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
+        @Transactional
+        public void restoreItemAvailableQuantity(Integer orderId) {
+                Order order = orderRepository.findById(orderId)
+                                .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
+
+                List<OrderItem> itemsFromOrder = order.getOrderItems();
+
+                // 1. 아이템 ID 목록 추출 (쿼리 X)
+                List<Integer> itemIds = itemsFromOrder.stream()
+                                .map(orderItem -> orderItem.getItem().getItemId())
+                                .collect(Collectors.toList());
+
+                if (itemIds.isEmpty())
+                        return;
+
+                // 2. [핵심] 락 걸고 한 방에 조회 (SELECT 1번)
+                List<Item> items = itemRepository.findAllByItemIdInWithLock(itemIds);
+
+                // 3. Map으로 변환 (검색 속도 O(1))
+                Map<Integer, Item> itemMap = items.stream()
+                                .collect(Collectors.toMap(Item::getItemId, item -> item));
+
+                // 4. 재고 복구 로직
+                for (OrderItem orderItem : itemsFromOrder) {
+                        // 락 걸린 최신 엔티티 가져오기
+                        Item item = itemMap.get(orderItem.getItem().getItemId());
+
+                        // 재고 원복 (+Quantity)
+                        item.setAvailableQuantity(item.getAvailableQuantity() + orderItem.getQuantity());
+                }
+
+                // 5. [저장] save() 호출 불필요 (더티 체킹으로 트랜잭션 종료 시 자동 UPDATE)
         }
 }

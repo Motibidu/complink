@@ -50,19 +50,22 @@ public class OrderController {
     @PostMapping("/{orderId}/cancel")
     public ResponseEntity<Order> cancelOrder(@PathVariable(name = "orderId") Integer orderId) {
 
-        Order canceledOrder = orderService.finalizeCancellation(orderId);
+        // Order canceledOrder = orderService.cancelOrderInDB(orderId);
 
-        // 포트원(외부API)의 결제취소는 DB커넥션 풀 고갈을 유발할 수 있기 때문에 트랜잭션 바깥에 둡니다.
-        if (canceledOrder.getOrderStatus() == OrderStatus.PAID) {
-            paymentLinkService.cancelPayment(orderId, "단순 변심에 의한 취소");
-        }
+        // // 포트원(외부API)의 결제취소는 DB커넥션 풀 고갈을 유발할 수 있기 때문에 트랜잭션 바깥에 둡니다.
+        // if (canceledOrder.getOrderStatus() == OrderStatus.PAID) {
+        //     paymentLinkService.cancelPayment(orderId, "단순 변심에 의한 취소");
+        // }
+
+        Order canceledOrder = orderService.processOrderCancellation(orderId);
+
         return ResponseEntity.ok(canceledOrder);
     }
 
     @PostMapping
     public ResponseEntity<String> createNewOrder(@RequestBody OrderRequestDto orderRequestDto) {
         Order newOrder = orderService.createOrder(orderRequestDto);
-        itemService.updateItemAvailableQuantity(newOrder);
+
         return ResponseEntity.status(HttpStatus.CREATED).body("주문이 성공적으로 생성되었습니다.");
     }
 

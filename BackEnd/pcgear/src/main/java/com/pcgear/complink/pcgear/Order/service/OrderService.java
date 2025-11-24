@@ -99,6 +99,7 @@ public class OrderService {
     @CacheEvict(value = { "dashboard-summary" }, allEntries = true)
     public Order createOrder(OrderRequestDto requestDto) {
         log.info("requestDto: {}", requestDto);
+
         Customer customer = customerRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("거래처 정보를 찾을 수 없습니다. ID: " + requestDto.getCustomerId()));
         String uuid = UUID.randomUUID().toString();
@@ -110,30 +111,33 @@ public class OrderService {
                     merchantUid,
                     requestDto.getGrandAmount().intValue(),
                     customer.getCustomerName() + "님의 주문",
-                    customer.getPhoneNumber()).block(); // 👈 여기서 3초가 걸려도 DB에는 아무 영향이 없습니다.
+                    customer.getPhoneNumber()); // 👈 여기서 3초가 걸려도 DB에는 아무 영향이 없습니다.
         } catch (RuntimeException e) {
             throw new RuntimeException("주문 생성 중 결제 링크 생성 실패: " + e.getMessage(), e);
         }
 
         String message = "주문서가 성공적으로 생성되었습니다.";
-        messagingTemplate.convertAndSend("/topic/notifications", message);
+        try {
+            messagingTemplate.convertAndSend("/topic/notifications", message);
+        } catch (Exception e) {
+            log.info("웹소켓 알림 실패");
+        }
 
         // 4. Repository를 통해 DB에 저장
         try {
             return self.processOrderCreation(requestDto, merchantUid, paymentLink);
         } catch (Exception e) {
-            paymentLinkService.cancelPaymentLink(paymentLink).subscribe();
+            paymentLinkService.cancelPaymentLink(paymentLink);
             log.error("주문 생성 트랜잭션 롤백 및 결제 링크 취소: {}", e.getMessage());
             throw new RuntimeException("주문 생성 중 오류 발생 및 결제 링크 취소 완료", e);
 
         }
     }
 
-    @Transactional // 👈 여기서 트랜잭션 시작! (DB 커넥션 획득)
+    @Transactional
     public Order processOrderCreation(OrderRequestDto requestDto, String merchantUid, String paymentLink) {
         log.info("processOrderCreation 시작 - DB 저장 트랜잭션 시작");
 
-        // 고객 정보 다시 조회 (영속성 컨텍스트 안에 올리기 위해. PK 조회라 매우 빠름)
         Customer customer = customerRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("거래처 정보를 찾을 수 없습니다."));
 
@@ -150,15 +154,12 @@ public class OrderService {
         order.setTotalAmount(requestDto.getTotalAmount());
         order.setVatAmount(requestDto.getVatAmount());
         order.setGrandAmount(requestDto.getGrandAmount());
-
-        // [중요] 아까 밖에서 만들어온 값을 세팅
         order.setMerchantUid(merchantUid);
         order.setPaymentLink(paymentLink);
 
-        // 아이템 추가 로직
+        // 주문 상품 추가
         for (OrderRequestDto.OrderItemDto itemDto : requestDto.getItems()) {
             OrderItem orderItem = new OrderItem();
-            // ... (기존 아이템 매핑 로직과 동일) ...
             orderItem.setItemCategory(itemDto.getItemCategory());
             orderItem.setSerialNumRequired(itemDto.getItemCategory().isSerialNumRequired());
             orderItem.setItem(itemRepository.findById(itemDto.getItemId())
@@ -169,12 +170,19 @@ public class OrderService {
             orderItem.setTotalPrice(itemDto.getTotalPrice());
 
             order.addItem(orderItem);
+
         }
 
-        messagingTemplate.convertAndSend("/topic/notifications", "주문서가 성공적으로 생성되었습니다.");
+        // 가용재고 차감
+        itemService.updateItemAvailableQuantity(order);
+        try {
+            messagingTemplate.convertAndSend("/topic/notifications", "주문서가 성공적으로 생성되었습니다.");
+        } catch (Exception e) {
+            log.info("웹소켓 알림 실패");
+        }
 
         return orderRepository.save(order); // 저장 후 즉시 커밋
-    } // 👈 트랜잭션 종료 (DB 커넥션 반납)
+    }
 
     @Transactional(readOnly = true) // 이 어노테이션이 반드시 있어야 합니다.
     public List<OrderResponseDto> findAllOrders() {
@@ -209,14 +217,8 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public List<AssemblyQueueRespDto> readAssemblyQueueOrders(List<OrderStatus> orderStatus) {
-        return orderRepository.findAllByOrderStatusIn(orderStatus).stream()
-                .map(AssemblyQueueRespDto::new)
-                .collect(Collectors.toList());
-    }
-
     public Page<AssemblyQueueRespDto> getAllAssemblyQueue(List<OrderStatus> statusesToFind, Pageable pageable) {
-        return orderRepository.findAllByOrderStatusIn(statusesToFind, pageable).map(AssemblyQueueRespDto::new);
+        return orderRepository.findAllByOrderStatusIn(statusesToFind, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -276,8 +278,7 @@ public class OrderService {
 
             ValidationResult result = deliveryService
                     .registerWebhookIfValid(accessToken, trackingNumberReq,
-                            DELIVERYTRACKER_WEBHOOK_URL + "/delivery/webhook")
-                    .block();
+                            DELIVERYTRACKER_WEBHOOK_URL + "/delivery/webhook");
 
             if (!result.isValid()) {
                 // 웹훅 등록 실패 시 예외 처리 또는 로그
@@ -304,24 +305,40 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    @Transactional
-    public Order finalizeCancellation(Integer orderId) {
+    public Order processOrderCancellation(Integer orderId) {
 
-        // 판매기록에 - 매출 데이터 추가
-        sellService.createNegateSell(orderId);
+        paymentRepository.findByOrder_OrderId(orderId).ifPresent(payment -> {
+            // 1. 외부 API (포트원) 환불 요청 (트랜잭션 없음)
+            paymentLinkService.cancelPayment(orderId, "단순 변심에 의한 취소");
+        });
+
+        // 2. 내부 DB 상태 변경 (트랜잭션 있음 - 기존 finalizeCancellation)
+        // 이름 변경 제안: finalizeCancellation -> cancelOrderInDB
+        return self.cancelOrderInDB(orderId);
+    }
+
+    @Transactional
+    public Order cancelOrderInDB(Integer orderId) {
+        log.info("주문취소 시작, 주문Id: {}", orderId);
 
         // 주문상태 주문취소로 업데이트
         Order order = updateOrderStatus(orderId, OrderStatus.CANCELLED);
 
-        // 결제상태 결제취소로 업데이트
-        paymentRepository.findByOrder_OrderId(orderId)
-                .ifPresent(payment -> {
-                    payment.setPaymentStatus(PaymentStatus.CANCELLED);
-                    paymentRepository.save(payment);
-                });
-
         // 가용재고 +1
         itemService.restoreItemAvailableQuantity(orderId);
+
+        paymentRepository.findByOrder_OrderId(orderId).ifPresent(payment -> {
+            log.info("Payment 존재");
+
+            // 결제 상태 결제취소로 업데이트
+            payment.setPaymentStatus(PaymentStatus.CANCELLED);
+
+            // 판매기록에 - 매출 데이터 추가
+            sellService.createNegateSell(orderId);
+
+            itemService.restoreItemQuantityOnHand(orderId);
+        });
+
         return order;
     }
 

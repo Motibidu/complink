@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.util.List;
+import java.util.Map;
 
 /**
  * GraphQL 배송 조회 (track Query) API의 최종 응답 구조입니다.
@@ -21,7 +22,7 @@ public class TrackingResponse {
         @AllArgsConstructor
         public static class Error {
                 private String message;
-                private List<Extension> extensions;
+                private Map<String, Object> extensions;
 
                 @Data
                 @NoArgsConstructor
