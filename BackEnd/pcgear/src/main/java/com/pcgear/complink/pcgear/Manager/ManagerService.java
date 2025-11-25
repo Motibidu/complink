@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 
 import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Item.ItemRepository;
+import com.pcgear.complink.pcgear.User.entity.UserEntity;
+import com.pcgear.complink.pcgear.User.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -19,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ManagerService {
         private final ManagerRepository managerRepository;
+        private final UserRepository userRepository;
 
         public Manager createManager(Manager manager) {
                 return managerRepository.save(manager);
@@ -41,13 +44,24 @@ public class ManagerService {
                 managerRepository.deleteAllByManagerIdIn(managerIds);
         }
 
-        public Page<Manager> getAllManagers(String search, Pageable pageable) {
-                if(search!=null && !search.isEmpty()){
-                        Page<Manager> managerPage = managerRepository.findByManagerNameContaining(search, pageable);
+        // public Page<Manager> getAllManagers(String search, Pageable pageable) {
+        // if(search!=null && !search.isEmpty()){
+        // Page<Manager> managerPage =
+        // managerRepository.findByManagerNameContaining(search, pageable);
+        // return managerPage;
+        // }
+        // else{
+        // Page<Manager> managerPage = managerRepository.findAll(pageable);
+        // return managerPage;
+        // }
+        // }
+
+        public Page<UserEntity> getAllManagers(String search, Pageable pageable) {
+                if (search != null && !search.isEmpty()) {
+                        Page<UserEntity> managerPage = userRepository.findByUsernameContaining(search, pageable);
                         return managerPage;
-                }
-                else{
-                        Page<Manager> managerPage = managerRepository.findAll(pageable);
+                } else {
+                        Page<UserEntity> managerPage = userRepository.findAll(pageable);
                         return managerPage;
                 }
         }

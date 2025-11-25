@@ -32,18 +32,18 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    private final RecaptchaService recaptchaService;
 
-    @Operation(summary = "회원 가입", description = "reCAPTCHA 검증에 성공하면 회원가입을 진행합니다.")
+    @Operation(summary = "계정 등록", description = "계정을 등록합니다.")
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody SignRequestDto signRequestDto) {
 
         // reCAPTCHA 검증
-        String recaptchaToken = signRequestDto.getRecaptchaToken();
-        boolean isRecaptchaValid = recaptchaService.verifyRecaptcha(recaptchaToken);
-        if (!isRecaptchaValid) {
-            return ResponseEntity.badRequest().body(Map.of("message", "reCAPTCHA 검증에 실패했습니다."));
-        }
+        // String recaptchaToken = signRequestDto.getRecaptchaToken();
+        // boolean isRecaptchaValid = recaptchaService.verifyRecaptcha(recaptchaToken);
+        // if (!isRecaptchaValid) {
+        // return ResponseEntity.badRequest().body(Map.of("message", "reCAPTCHA 검증에
+        // 실패했습니다."));
+        // }
 
         // reCAPTCHA 검증 성공 시, 기존 회원가입 로직 진행
         Long userId = userService.createUser(signRequestDto);
@@ -66,31 +66,17 @@ public class UserController {
         return ResponseEntity.ok().body(userDetails.getUsername());
     }
 
-    @GetMapping("/signup-req")
-    public ResponseEntity<Page<SignupRespDto>> readSignupReq(
-            // 💡 @PageableDefault로 기본값 설정 (페이지 0, 사이즈 10)
-            @PageableDefault(page = 0, size = 10) Pageable pageable) {
-        Page<SignupRespDto> signupPage = userService.readSignupReq(pageable);
-        return ResponseEntity.ok(signupPage);
-    }
+    // @GetMapping("/signup-req")
+    // public ResponseEntity<Page<SignupRespDto>> readSignupReq(
+    //         // 💡 @PageableDefault로 기본값 설정 (페이지 0, 사이즈 10)
+    //         @PageableDefault(page = 0, size = 10) Pageable pageable) {
+    //     Page<SignupRespDto> signupPage = userService.readSignupReq(pageable);
+    //     return ResponseEntity.ok(signupPage);
+    // }
 
     @GetMapping("/userRole")
     public ResponseEntity<String> getUserRole(@AuthenticationPrincipal UserDetails userDetails) {
 
-        // String authorityString =
-        // userDetails.getAuthorities().iterator().next().getAuthority();
-
-        // String roleKey = authorityString.replaceFirst("ROLE_", "");
-        // log.info("roleKey: {}", roleKey);
-
-        // try {
-        // UserRole role = UserRole.valueOf(roleKey);
-        // return ResponseEntity.ok(role);
-        // } catch (IllegalArgumentException e) {
-        // System.err.println("ERROR: Undefined UserRole value from authority: " +
-        // roleKey + " | " + e.getMessage());
-        // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        // }
         String role = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority) // "ROLE_USER", "ROLE_SUBSCRIBER"
                 .filter(authString -> authString.equals("ROLE_ADMIN") || authString.equals("ROLE_USER"))

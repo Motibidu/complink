@@ -22,7 +22,7 @@ public class LoginResponseDto {
 
 	private final String tel;
 
-	private final String address;
+	//private final String address;
 
 	@Builder
 	public LoginResponseDto(UserEntity userEntity) {
@@ -33,6 +33,6 @@ public class LoginResponseDto {
 		this.password = userEntity.getPassword();
 		this.name = userEntity.getName();
 		this.tel = userEntity.getTel();
-		this.address = userEntity.getAddress();
+		//this.address = userEntity.getAddress();
 	}
 }

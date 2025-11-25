@@ -41,7 +41,6 @@ public class UserEntity extends BaseTimeEntity implements UserDetails {
 	@Column(unique = true, nullable = false)
 	private String username;
 
-	@Column(nullable = false)
 	private String password;
 
 	@Column(nullable = false)
@@ -49,18 +48,18 @@ public class UserEntity extends BaseTimeEntity implements UserDetails {
 
 	private String tel;
 
-	private String address;
+	//private String address;
 
-	private String billingKey;
+	// private String billingKey;
 
-	@Enumerated(EnumType.STRING)
-	private SubscriptionStatus subscriptionStatus;
+	// @Enumerated(EnumType.STRING)
+	// private SubscriptionStatus subscriptionStatus;
 
 	@Enumerated(EnumType.STRING) // Enum 타입을 DB에 String으로 저장
 	@Column(nullable = false)
 	private UserRole role;
 
-	private boolean isApproved;
+	private boolean isActive;
 
 	@Builder
 	public UserEntity(String email, String username, String password, String name, String tel, String address,
@@ -70,9 +69,9 @@ public class UserEntity extends BaseTimeEntity implements UserDetails {
 		this.password = password;
 		this.name = name;
 		this.tel = tel;
-		this.address = address;
+		//this.address = address;
 		this.role = role;
-		this.isApproved = false;
+		this.isActive = true;
 	}
 
 	public void Memberupdate(String email, String name) {
@@ -92,6 +91,6 @@ public class UserEntity extends BaseTimeEntity implements UserDetails {
 	// Spring security가 isEnalbed()가 true일 때만 로그인을 허용함
 	@Override
 	public boolean isEnabled() {
-		return this.isApproved;
+		return this.isActive;
 	}
 }

@@ -49,7 +49,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
         @Query("SELECT new com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto(" +
                         " o.orderId, " +
                         " c.customerName," +
-                        " m.managerName," +
+                        " m.name," +
                         " o.orderStatus," +
                         " o.assemblyStatus," +
                         " o.paidAt)" +

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pcgear.complink.pcgear.Customer.Customer;
+import com.pcgear.complink.pcgear.User.entity.UserEntity;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -37,10 +38,10 @@ public class ManagerController {
 
         @Operation(summary = "담당자 목록 조회")
         @GetMapping
-        public ResponseEntity<Page<Manager>> getAllManagers(
+        public ResponseEntity<Page<UserEntity>> getAllManagers(
                         @RequestParam(name = "search", required = false) String search,
-                        @PageableDefault(size = 15, sort = "managerId", direction = Sort.Direction.DESC) Pageable pageable) {
-                Page<Manager> managerPage = managerService.getAllManagers(search, pageable);
+                        @PageableDefault(size = 15, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+                Page<UserEntity> managerPage = managerService.getAllManagers(search, pageable);
                 return ResponseEntity.ok(managerPage);
         }
 

@@ -289,7 +289,7 @@ const CustomerFormPage = () => {
   return (
     <>
       <header className="mb-3">
-        <h3>거래처등록 리스트</h3>
+        <h3>고객등록 리스트</h3>
       </header>
       <div className="table-responsive table-container-scrollable">
         <table className="table table-hover align-middle">

@@ -36,36 +36,49 @@ public class SecurityConfig {
                                 })
                                                 .failureHandler(customAuthFailureHandler))
                                 .authorizeHttpRequests(auth -> auth
+                                                // 관리자 관련 페이지 경로
                                                 .requestMatchers("/admin/**")
                                                 .hasAnyAuthority("ADMIN")
+
+                                                // 회원가입 요청 페이지 경로
                                                 .requestMatchers(HttpMethod.GET, "/users/signup-req")
                                                 .hasAnyAuthority("ADMIN")
+
+                                                // 회원가입 승인 경로
                                                 .requestMatchers(HttpMethod.POST, "/users/signup-approve/**")
                                                 .hasAnyAuthority("ADMIN")
+
+                                                // 품목 등록, 수정, 삭제
+                                                .requestMatchers(HttpMethod.POST, "/items/**").hasAnyAuthority("ADMIN")
+                                                .requestMatchers(HttpMethod.PUT, "/items/**").hasAnyAuthority("ADMIN")
+                                                .requestMatchers(HttpMethod.DELETE, "/items/**")
+                                                .hasAnyAuthority("ADMIN")
+
+
+                                                
+
+                                                // 웹훅
                                                 .requestMatchers("/payment/webhook/verify/paymentLink").permitAll()
                                                 .requestMatchers("/payment/webhook-verify").permitAll()
                                                 .requestMatchers("/delivery/webhook").permitAll()
-                                                .requestMatchers("/users/isLoggedIn").authenticated()
-                                                .requestMatchers(
-                                                                "/items/**",
-                                                                "/orders/**",
-                                                                "/customers/**",
-                                                                "/managers/**",
-                                                                "/sells/**",
-                                                                "/dashboard/**")
-                                                .hasAuthority("ROLE_SUBSCRIBER")
 
+                                                // 회원가입 여부
+                                                .requestMatchers("/users/isLoggedIn").authenticated()
+
+                                                // 회원가입, 로그인, 이메일 인증
                                                 .requestMatchers(
                                                                 "/users/register", "/users/login-process",
                                                                 "/email-verifications/**")
                                                 .permitAll()
 
+                                                // 로그인, 로그아웃
                                                 .requestMatchers(
                                                                 "/login",
                                                                 "/login-process",
                                                                 "/logout")
                                                 .permitAll()
 
+                                                // swagger
                                                 .requestMatchers("/swagger-ui/**",
                                                                 "/v3/api-docs/**",
                                                                 "/swagger-resources/**")

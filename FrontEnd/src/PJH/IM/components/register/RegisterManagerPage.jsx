@@ -48,7 +48,7 @@ const ManagerPage = () => {
         params: {
           page: pageToFetch,
           size: 15, // 한 페이지에 10개씩
-          sort: "managerId,desc", // 최신순 정렬 (백엔드 엔티티 필드명 기준)
+          sort: "id,desc", // 최신순 정렬 (백엔드 엔티티 필드명 기준)
         },
       });
 
@@ -57,7 +57,6 @@ const ManagerPage = () => {
       console.log("response: ", response);
       setManagers(managersData); // 테이블 렌더링을 위해 managers 상태 업데이트
       setPageData(response.data); // 페이지네이션 UI를 위해 pageData 상태 업데이트
-
     } catch (error) {
       console.error("담당자 목록을 불러오는 데 실패했습니다.", error);
       setMessage({
@@ -97,7 +96,7 @@ const ManagerPage = () => {
       setSelectedManagers((prevSelected) => [...prevSelected, managerId]);
     }
   };
-  
+
   const handleDeleteSelected = async () => {
     if (selectedManagers.length === 0) {
       alert("삭제할 담당자를 선택해주세요.");
@@ -120,12 +119,15 @@ const ManagerPage = () => {
         });
 
         alert("선택된 담당자가 삭제되었습니다.");
-        
+
         // 목록 새로고침 (현재 페이지 유지 또는 이전 페이지로 이동)
-        if (pageData.content.length === selectedManagers.length && currentPage > 0) {
-            setCurrentPage(currentPage - 1); // useEffect가 알아서 fetchManagers 호출
+        if (
+          pageData.content.length === selectedManagers.length &&
+          currentPage > 0
+        ) {
+          setCurrentPage(currentPage - 1); // useEffect가 알아서 fetchManagers 호출
         } else {
-            fetchManagers(currentPage); // 현재 페이지만 새로고침
+          fetchManagers(currentPage); // 현재 페이지만 새로고침
         }
         setSelectedManagers([]); // 선택 상태 초기화
       } catch (error) {
@@ -162,10 +164,10 @@ const ManagerPage = () => {
       if (response.status === 201 || response.status === 200) {
         alert("담당자가 성공적으로 등록되었습니다.");
         // 성공 시, 목록을 새로고침하고 폼을 초기화합니다.
-        
+
         // 새 항목은 1페이지에 있으므로 0페이지로 이동
         setCurrentPage(0);
-        
+
         setNewFormData({
           managerId: "",
           managerName: "",
@@ -206,10 +208,10 @@ const ManagerPage = () => {
       );
       if (response.status === 200) {
         alert("담당자 정보 수정이 성공적으로 등록되었습니다.");
-        
+
         // 목록 새로고침 (현재 페이지 유지)
         fetchManagers(currentPage);
-        
+
         setEditFormData({
           managerId: "",
           managerName: "",
@@ -248,17 +250,23 @@ const ManagerPage = () => {
     // Pagination 컴포넌트는 1부터 시작, API는 0부터 시작하므로 -1
     setCurrentPage(pageNumber - 1);
   };
-  
+
   // 페이지네이션 아이템을 동적으로 생성하는 헬퍼 함수
   const createPaginationItems = () => {
     let pages = [];
     const maxPagesToShow = 5; // 한 번에 보여줄 최대 페이지 버튼 수
-    let startPage = Math.max(0, pageData.number - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(pageData.totalPages - 1, startPage + maxPagesToShow - 1);
+    let startPage = Math.max(
+      0,
+      pageData.number - Math.floor(maxPagesToShow / 2)
+    );
+    let endPage = Math.min(
+      pageData.totalPages - 1,
+      startPage + maxPagesToShow - 1
+    );
 
     // 페이지 수가 maxPagesToShow보다 적을 때, startPage가 0이 되도록 조정
     if (endPage - startPage + 1 < maxPagesToShow) {
-        startPage = Math.max(0, endPage - maxPagesToShow + 1);
+      startPage = Math.max(0, endPage - maxPagesToShow + 1);
     }
 
     // 페이지 번호 (1부터 시작하도록 +1)
@@ -295,24 +303,30 @@ const ManagerPage = () => {
                   }
                 />
               </th>
-              <th>담당자 코드</th>
+              <th>아이디</th>
               <th>이름</th>
               <th>연락처</th>
               <th>email</th>
+              <th>권한</th>
+              <th>상태</th>
+              <th>등록일</th>
             </tr>
           </thead>
           <tbody>
             {tableLoading ? (
-                <tr>
-                    <td colSpan="5" className="text-center">
-                        <div className="spinner-border spinner-border-sm" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
-                </tr>
+              <tr>
+                <td colSpan="5" className="text-center">
+                  <div
+                    className="spinner-border spinner-border-sm"
+                    role="status"
+                  >
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </td>
+              </tr>
             ) : managers && managers.length > 0 ? (
               managers.map((manager) => (
-                <tr key={manager.managerId}>
+                <tr key={manager.username}>
                   <td>
                     <input
                       type="checkbox"
@@ -320,7 +334,7 @@ const ManagerPage = () => {
                       onChange={() => handleSelectManager(manager.managerId)}
                     />
                   </td>
-                  <td>{manager.managerId}</td>
+                  <td>{manager.username}</td>
                   <td>
                     <a
                       onClick={() => handleEditClick(manager)}
@@ -328,16 +342,25 @@ const ManagerPage = () => {
                       data-bs-toggle="modal"
                       data-bs-target="#managerEditModal"
                     >
-                      {manager.managerName}
+                      {manager.name}
                     </a>
                   </td>
-                  <td>{manager.phoneNumber}</td>
+                  <td>{manager.tel}</td>
                   <td>{manager.email}</td>
+                  <td>{manager.role}</td>
+                  {manager.active ? (
+                    <span className="badge bg-success">재직</span>
+                  ) : (
+                    <span className="badge bg-secondary">퇴사</span>
+                  )}
+                  <td>{manager.createdAt}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="text-center">데이터가 없습니다.</td>
+                <td colSpan="5" className="text-center">
+                  데이터가 없습니다.
+                </td>
               </tr>
             )}
           </tbody>
@@ -355,7 +378,10 @@ const ManagerPage = () => {
           >
             신규 담당자 등록
           </button>
-          <button className="btn btn-danger me-3" onClick={handleDeleteSelected}>
+          <button
+            className="btn btn-danger me-3"
+            onClick={handleDeleteSelected}
+          >
             선택 삭제
           </button>
         </div>
@@ -363,22 +389,22 @@ const ManagerPage = () => {
         {/* 페이지네이션 UI (React-Bootstrap) */}
         {pageData && pageData.totalPages > 1 && (
           <Pagination className="mb-0">
-            <Pagination.First 
-              onClick={() => setCurrentPage(0)} 
-              disabled={pageData.first} 
+            <Pagination.First
+              onClick={() => setCurrentPage(0)}
+              disabled={pageData.first}
             />
-            <Pagination.Prev 
-              onClick={() => setCurrentPage(currentPage - 1)} 
-              disabled={pageData.first} 
+            <Pagination.Prev
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={pageData.first}
             />
             {createPaginationItems()}
-            <Pagination.Next 
-              onClick={() => setCurrentPage(currentPage + 1)} 
-              disabled={pageData.last} 
+            <Pagination.Next
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={pageData.last}
             />
-            <Pagination.Last 
-              onClick={() => setCurrentPage(pageData.totalPages - 1)} 
-              disabled={pageData.last} 
+            <Pagination.Last
+              onClick={() => setCurrentPage(pageData.totalPages - 1)}
+              disabled={pageData.last}
             />
           </Pagination>
         )}

@@ -107,25 +107,25 @@ public class UserService {
 				.orElseThrow(() -> new IllegalArgumentException("해당 유저를 찾을 수 없습니다: " + userId));
 
 		// isApproved 필드를 true로 설정
-		userEntity.setApproved(true);
+		userEntity.setActive(true);
 	}
 
-	@Transactional(readOnly = true)
-	public Page<SignupRespDto> readSignupReq(Pageable pageable) {
-		Page<UserEntity> userPage = userRepository.findAllByIsApprovedFalse(pageable);
+	// @Transactional(readOnly = true)
+	// public Page<SignupRespDto> readSignupReq(Pageable pageable) {
+	// 	Page<UserEntity> userPage = userRepository.findAllByIsApprovedFalse(pageable);
 
-		return userPage.map(userEntity -> SignupRespDto.builder()
-				.id(userEntity.getUsername())
-				.name(userEntity.getName())
-				.email(userEntity.getEmail())
-				.requestDate(userEntity.getCreatedAt())
-				.build());
-	}
+	// 	return userPage.map(userEntity -> SignupRespDto.builder()
+	// 			.id(userEntity.getUsername())
+	// 			.name(userEntity.getName())
+	// 			.email(userEntity.getEmail())
+	// 			.requestDate(userEntity.getCreatedAt())
+	// 			.build());
+	// }
 
 	public void signupApprove(String email) {
 		UserEntity userEntity = userRepository.findByEmail(email)
 				.orElseThrow(() -> (new EntityNotFoundException("해당 email의 요청을 찾을 수 없습니다." + email)));
-		userEntity.setApproved(true);
+		userEntity.setActive(true);
 		userRepository.save(userEntity);
 	}
 

@@ -26,6 +26,8 @@ import com.pcgear.complink.pcgear.Payment.model.PaymentStatus;
 import com.pcgear.complink.pcgear.Sell.Sell;
 import com.pcgear.complink.pcgear.Sell.SellRepository;
 import com.pcgear.complink.pcgear.Sell.SellService;
+import com.pcgear.complink.pcgear.User.entity.UserEntity;
+import com.pcgear.complink.pcgear.User.repository.UserRepository;
 import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -54,7 +56,7 @@ public class OrderService {
     private final PaymentRepository paymentRepository;
 
     private final OrderRepository orderRepository;
-    private final ManagerRepository managerRepository;
+    private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final PaymentLinkService paymentLinkService;
     private final SellService sellService;
@@ -71,7 +73,7 @@ public class OrderService {
     private String DELIVERYTRACKER_WEBHOOK_URL;
 
     public OrderService(OrderRepository orderRepository,
-            ManagerRepository managerRepository,
+            UserRepository userRepository,
             CustomerRepository customerRepository,
             PaymentLinkService paymentLinkService,
             ItemRepository itemRepository,
@@ -82,7 +84,7 @@ public class OrderService {
             SellService sellService,
             @Lazy OrderService self) {
         this.orderRepository = orderRepository;
-        this.managerRepository = managerRepository;
+        this.userRepository = userRepository;
         this.customerRepository = customerRepository;
         this.paymentLinkService = paymentLinkService;
         this.itemRepository = itemRepository;
@@ -141,7 +143,7 @@ public class OrderService {
         Customer customer = customerRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("거래처 정보를 찾을 수 없습니다."));
 
-        Manager manager = manager = managerRepository.findById(requestDto.getManagerId())
+        UserEntity manager = manager = userRepository.findByUsername(requestDto.getManagerId())
                 .orElseThrow(() -> new EntityNotFoundException("담당자 정보를 찾을 수 없습니다."));
 
         // 엔티티 생성

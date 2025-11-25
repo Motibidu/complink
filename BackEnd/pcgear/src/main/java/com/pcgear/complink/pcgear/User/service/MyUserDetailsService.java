@@ -31,15 +31,15 @@ public class MyUserDetailsService implements UserDetailsService {
                                 .orElseThrow(() -> new UserNotFoundException("해당 사용자를 찾을 수 없습니다: " + username));
 
                 // 승인 대기중이면 예외 반환
-                if (!userEntity.isApproved()) {
+                if (!userEntity.isActive()) {
                         throw new UserNotApprovedAuthenticationException("회원가입 승인이 아직 완료되지 않았습니다. 관리자에게 문의하세요.");
                 }
 
                 List<GrantedAuthority> authorities = new ArrayList<>();
                 authorities.add(new SimpleGrantedAuthority("ROLE_" + userEntity.getRole().name()));
-                if (userEntity.getSubscriptionStatus() == SubscriptionStatus.ACTIVE) {
-                        authorities.add(new SimpleGrantedAuthority("ROLE_SUBSCRIBER"));
-                }
+                // if (userEntity.getSubscriptionStatus() == SubscriptionStatus.ACTIVE) {
+                //         authorities.add(new SimpleGrantedAuthority("ROLE_SUBSCRIBER"));
+                // }
 
                 return new org.springframework.security.core.userdetails.User(
                                 userEntity.getUsername(),

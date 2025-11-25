@@ -27,7 +27,7 @@ public class SellResponseDto {
                                 .sellId(sell.getSellId())
                                 .orderId(sell.getOrder() != null ? sell.getOrder().getOrderId() : null)
                                 .customerName(sell.getCustomer() != null ? sell.getCustomer().getCustomerName() : null)
-                                .managerName(sell.getManager() != null ? sell.getManager().getManagerName() : null)
+                                .managerName(sell.getManager() != null ? sell.getManager().getName() : null)
                                 .totalAmount(sell.getTotalAmount())
                                 .vatAmount(sell.getVatAmount())
                                 .grandAmount(sell.getGrandAmount())

@@ -147,11 +147,12 @@ const Header = () => {
                 </a>
                 <ul className="dropdown-menu dropdown-menu-end">
                   <li>
-                    <a className="dropdown-item" href="/admin/signup-approve">
-                      회원가입 승인
+                    <a className="dropdown-item" href="/create-user">
+                      계정생성
                     </a>
                   </li>
                 </ul>
+                
               </div>
             ) : (
               ""

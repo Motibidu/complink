@@ -390,7 +390,7 @@ const AssemblyQueue = () => {
                       <td className="text-center fw-medium">{order.orderId}</td>
                       <td className="text-center">{order.customerName}</td>
                       <td className="text-center">
-                        {order.assemblyWorkerId || (
+                        {order.managerName || (
                           <span className="text-muted fst-italic">미배정</span>
                         )}
                       </td>

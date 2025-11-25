@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha'; // 1. ReCAPTCHA 컴포넌트 import
 import './SignUp.css';
 
-function SignUp() {
+function CreateUser() {
     const [formData, setFormData] = useState({
         email: 'jack981109@naver.com',
         username: '123',
@@ -12,12 +12,12 @@ function SignUp() {
         passwordConfirm: '123',
         name: '강감찬',
         tel: '010-3333-2222',
-        address: '탄현동',
+        //address: '탄현동',
     });
 
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    const [recaptchaToken, setRecaptchaToken] = useState(null); // 2. reCAPTCHA 토큰을 저장할 상태 추가
+    //const [recaptchaToken, setRecaptchaToken] = useState(null); // 2. reCAPTCHA 토큰을 저장할 상태 추가
     const navigate = useNavigate();
 
     const handleChange = (event) => {
@@ -34,10 +34,10 @@ function SignUp() {
         }
 
         // 3. reCAPTCHA를 통과했는지 확인
-        if (!recaptchaToken) {
-            setErrorMessage("reCAPTCHA를 완료해주세요.");
-            return;
-        }
+        // if (!recaptchaToken) {
+        //     setErrorMessage("reCAPTCHA를 완료해주세요.");
+        //     return;
+        // }
 
         setErrorMessage('');
         setSuccessMessage('');
@@ -48,7 +48,7 @@ function SignUp() {
             // 4. 서버로 보낼 데이터에 reCAPTCHA 토큰을 포함시킴
             const response = await axios.post('/api/users/register', {
                  ...formData, 
-                recaptchaToken: recaptchaToken, // 서버로 토큰 전송
+                // recaptchaToken: recaptchaToken, // 서버로 토큰 전송
             });
 
             if (response.status === 201 || response.status === 200) {
@@ -64,7 +64,7 @@ function SignUp() {
 
     return (
         <div className="signup-container"> 
-            <h2>회원가입</h2>
+            <h2>계정 생성</h2>
             <form onSubmit={handleSubmit}>
                 {/* ... 다른 input 필드들은 동일 ... */}
                 <div>
@@ -85,20 +85,20 @@ function SignUp() {
                 <div>
                     <input type="tel" name="tel" value={formData.tel} onChange={handleChange} placeholder="전화번호" required />
                 </div>
-                <div>
+                {/* <div>
                     <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="주소" required />
-                </div>
+                </div> */}
 
                 {/* 5. ReCAPTCHA 컴포넌트 추가 */}
-                <div style={{ margin: '20px 0', display: 'flex', justifyContent: 'center' }}>
+                {/* <div style={{ margin: '20px 0', display: 'flex', justifyContent: 'center' }}>
                     <ReCAPTCHA
                         sitekey="6LdsBAksAAAAAK5a92FVxROAaZozOutlOvISxn6t"
                         onChange={(token) => setRecaptchaToken(token)}
                         onExpired={() => setRecaptchaToken(null)}
                     />
-                </div>
+                </div> */}
 
-                <button type="submit">가입하기</button>
+                <button type="submit">생성하기</button>
             </form>
             {successMessage && <p className="success-message">{successMessage}</p>}
             {errorMessage && <p className="error-message">{errorMessage}</p>}
@@ -106,4 +106,4 @@ function SignUp() {
     );
 }
 
-export default SignUp;
+export default CreateUser;

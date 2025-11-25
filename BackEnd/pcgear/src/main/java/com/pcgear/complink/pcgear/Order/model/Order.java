@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.pcgear.complink.pcgear.Assembly.AssemblyStatus;
 import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Manager.Manager;
+import com.pcgear.complink.pcgear.User.entity.UserEntity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -42,8 +43,8 @@ public class Order {
     private Customer customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "manager_id")
-    private Manager manager;
+    @JoinColumn(name = "id")
+    private UserEntity manager;
 
     private String paymentLink;
 
@@ -64,8 +65,6 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
-
-    private String assemblyWorkerId; // 조립 담당 직원 ID (새로 추가)
 
     private AssemblyStatus assemblyStatus = AssemblyStatus.QUEUE; // 기본값 '작업 대기'
 

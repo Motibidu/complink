@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Manager.Manager;
 import com.pcgear.complink.pcgear.Order.model.Order;
+import com.pcgear.complink.pcgear.User.entity.UserEntity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -54,8 +55,8 @@ public class Sell {
 
         // [변경 3] String managerId -> Manager(Member) 객체
         @ManyToOne(fetch = FetchType.LAZY)
-        @JoinColumn(name = "manager_id")
-        private Manager manager;
+        @JoinColumn(name = "id")
+        private UserEntity manager;
 
         private BigDecimal totalAmount;
 

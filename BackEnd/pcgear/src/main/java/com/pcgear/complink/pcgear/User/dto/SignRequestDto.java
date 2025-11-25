@@ -40,11 +40,8 @@ public class SignRequestDto {
 	@NotBlank(message = "전화번호를 입력해 주세요.")
 	private String tel;
 
-	@NotBlank(message = "주소를 입력해 주세요.")
-	private String address;
-
-	@Schema(description = "reCAPTCHA 토큰", example = "03AGdBq27iA...")
-	private String recaptchaToken;
+	// @Schema(description = "reCAPTCHA 토큰", example = "03AGdBq27iA...")
+	// private String recaptchaToken;
 
 	public UserEntity toEntity(String encodedPassword) {
 		return UserEntity.builder()
@@ -53,7 +50,6 @@ public class SignRequestDto {
 				.password(encodedPassword)
 				.name(name)
 				.tel(tel)
-				.address(address)
 				.role(UserRole.USER)
 				.build();
 	}

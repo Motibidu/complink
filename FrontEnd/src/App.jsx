@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./PJH/IM/pages/Home";
 import Layout from "./PJH/IM/components/Layout";
-import SignUp from "./KJG/Pages/SignUp/SignUp";
+import SignUp from "./KJG/Pages/SignUp/CreateUser";
 import Login from "./KJG/Pages/Login/Login";
 import FindId from "./KJG/Pages/Login/FindId";
 import OrderFormPage from "./PJH/IM/pages/order/OrderFormPage";
@@ -22,6 +22,7 @@ import AssemblyQueue from "./PJH/IM/components/assembly/AssemblyQueue";
 import AssemblyDetail from "./PJH/IM/components/assembly/AssemblyDetail";
 import Dashboard from "./PJH/IM/components/Dashboard/Dashboard";
 import ShippingTrackingPage from "./PJH/IM/components/assembly/ShippingTrackingPage";
+import CreateUser from "./KJG/Pages/SignUp/CreateUser";
 
 function App() {
   return (
@@ -32,7 +33,7 @@ function App() {
           {/* 공개 라우트 */}
 
           <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
+          <Route path="/create-user" element={<CreateUser />} />
           <Route path="/find-id" element={<FindId />} />
           <Route path="/find-password" element={<FindPassword />} />
 

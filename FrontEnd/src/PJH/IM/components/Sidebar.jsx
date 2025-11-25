@@ -25,7 +25,7 @@ const Sidebar = () => {
         // 하위 메뉴 항목 추가
         { name: "품목등록", path: "/registers/item" },
         { name: "사원(담당)등록", path: "/registers/manager" },
-        { name: "거래처등록", path: "/registers/customer" },
+        { name: "고객등록", path: "/registers/customer" },
       ],
     },
     {

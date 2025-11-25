@@ -1,4 +1,6 @@
-package com.pcgear.complink.pcgear.Customer;
+package com.pcgear.complink.pcgear.Order.model;
+
+import com.pcgear.complink.pcgear.Customer.Customer;
 
 import lombok.Getter;
 
