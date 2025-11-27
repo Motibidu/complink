@@ -14,6 +14,7 @@ import com.pcgear.complink.pcgear.Order.model.AssemblyDetailReqDto;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailRespDto;
 import com.pcgear.complink.pcgear.Order.model.OrderRequestDto;
 import com.pcgear.complink.pcgear.Order.model.OrderResponseDto;
+import com.pcgear.complink.pcgear.Order.model.OrderSearchCondition;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto;
 import com.pcgear.complink.pcgear.Order.model.Order;
@@ -28,14 +29,17 @@ import com.pcgear.complink.pcgear.Sell.SellRepository;
 import com.pcgear.complink.pcgear.Sell.SellService;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
 import com.pcgear.complink.pcgear.User.repository.UserRepository;
+import com.pcgear.complink.pcgear.User.service.MailService;
 import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
+import jakarta.mail.internet.MimeMessage;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -44,6 +48,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,8 +71,11 @@ public class OrderService {
     private final SellRepository sellRepository;
     private final PortoneProperties portoneProperties;
     private final OrderService self;
+    private final JavaMailSender javaMailSender;
 
     private final SimpMessagingTemplate messagingTemplate;
+
+    private final MailService mailService;
 
     @Value("${delivery-tracker.webhook-url}")
     private String DELIVERYTRACKER_WEBHOOK_URL;
@@ -82,7 +90,9 @@ public class OrderService {
             ItemService itemService,
             PortoneProperties portoneProperties, PaymentRepository paymentRepository, SellRepository sellRepository,
             SellService sellService,
-            @Lazy OrderService self) {
+            @Lazy OrderService self,
+            MailService mailService,
+            JavaMailSender javaMailSender) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.customerRepository = customerRepository;
@@ -96,6 +106,8 @@ public class OrderService {
         this.sellRepository = sellRepository;
         this.sellService = sellService;
         this.self = self;
+        this.mailService = mailService;
+        this.javaMailSender = javaMailSender;
     }
 
     @CacheEvict(value = { "dashboard-summary" }, allEntries = true)
@@ -188,8 +200,12 @@ public class OrderService {
 
     @Transactional(readOnly = true) // 이 어노테이션이 반드시 있어야 합니다.
     public List<OrderResponseDto> findAllOrders() {
-        return orderRepository.findAll().stream()
-                .map(OrderResponseDto::new) // 엔티티를 DTO로 변환
+        // 1. 페치 조인으로 엔티티 조회 (쿼리 1방)
+        List<Order> orders = orderRepository.findAllWithFetchJoin();
+
+        // 2. 엔티티 -> DTO 변환 (메모리 작업)
+        return orders.stream()
+                .map(OrderResponseDto::new) // 여기서 DTO로 변환
                 .collect(Collectors.toList());
     }
 
@@ -206,7 +222,7 @@ public class OrderService {
 
     @CacheEvict(value = "dashboard-summary", allEntries = true)
     public Order updateOrderStatus(Integer orderId, OrderStatus newStatus) {
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByOrderIdWithFetchJoin(orderId)
                 .orElseThrow(
                         () -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
 
@@ -309,14 +325,29 @@ public class OrderService {
 
     public Order processOrderCancellation(Integer orderId) {
 
-        paymentRepository.findByOrder_OrderId(orderId).ifPresent(payment -> {
-            // 1. 외부 API (포트원) 환불 요청 (트랜잭션 없음)
-            paymentLinkService.cancelPayment(orderId, "단순 변심에 의한 취소");
-        });
+        boolean isRefunded = false;
+        Optional<OrderPayment> paymentOpt = paymentRepository.findByOrder_OrderId(orderId);
 
-        // 2. 내부 DB 상태 변경 (트랜잭션 있음 - 기존 finalizeCancellation)
-        // 이름 변경 제안: finalizeCancellation -> cancelOrderInDB
-        return self.cancelOrderInDB(orderId);
+        if (paymentOpt.isPresent()) {
+            paymentLinkService.cancelPayment(orderId, "단순 변심에 의한 취소");
+            isRefunded = true;
+        }
+
+        try {
+            // 2. [내부 DB] 상태 변경 (트랜잭션 있음)
+            return self.cancelOrderInDB(orderId);
+
+        } catch (Exception e) {
+
+            // 포트원 주문취소는 성공했는데, DB 반영 실패
+            if (isRefunded) {
+                log.error("🔥🔥 CRITICAL ERROR: 환불은 완료되었으나 DB 반영 실패! 수동 조치 필요. OrderId: {}", orderId);
+                MimeMessage mail = mailService.createDbErrorMail("jack981109@gmail.com", orderId, e.getMessage());
+                javaMailSender.send(mail);
+            }
+
+            throw new RuntimeException("주문 취소 처리 중 오류 발생 (환불 여부 확인 필요)", e);
+        }
     }
 
     @Transactional
@@ -342,6 +373,10 @@ public class OrderService {
         });
 
         return order;
+    }
+
+    public Page<OrderResponseDto> searchOrders(OrderSearchCondition condition, Pageable pageable) {
+        return orderRepository.searchOrders(condition, pageable);
     }
 
 }

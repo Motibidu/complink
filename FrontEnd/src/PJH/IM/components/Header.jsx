@@ -6,8 +6,7 @@ import axios from "axios"; // axios 사용을 권장합니다 (fetch보다 편�
 //
 
 const Header = () => {
-  const { isLoggedIn, logout } = useAuth();
-  const [userRole, setUserRole] = useState("");
+  const { isLoggedIn, logout, userRole } = useAuth();
   const [userId, setUserId] = useState("");
 
   // 📌 [수정] useState를 올바르게 호출하도록 수정
@@ -24,33 +23,6 @@ const Header = () => {
       .map((word) => word.toString(16).padStart(8, "0"))
       .join("");
   }
-
-  useEffect(() => {
-    // 📌 [수정] 로그인 상태일 때만 사용자 정보를 가져오도록 수정
-    if (isLoggedIn) {
-      const fetchUserRole = async () => {
-        try {
-          const resp = await axios.get("/api/users/userRole");
-          console.log("fetchUserRole_resp: ", resp.data);
-          setUserRole(String(resp.data));
-        } catch (err) {
-          console.log("사용자 역할 확인 에러:", err);
-        }
-      };
-
-      const fetchUserId = async () => {
-        try {
-          const resp = await axios.get("/api/users/userId");
-          console.log("fetchUserId_resp: ", resp.data);
-          setUserId(String(resp.data));
-        } catch (err) {
-          console.log("사용자 아이디 가져오기:", err);
-        }
-      };
-      fetchUserRole();
-      fetchUserId();
-    }
-  }, [isLoggedIn]); // 📌 [수정] isLoggedIn이 변경될 때마다 실행
 
   const STORE_ID = import.meta.env.VITE_PORTONE_STORE_ID;
   const TOSSPAY_CHANNEL_KEY = import.meta.env.VITE_PORTONE_TOSSPAY_CHANNEL_KEY;
@@ -152,7 +124,6 @@ const Header = () => {
                     </a>
                   </li>
                 </ul>
-                
               </div>
             ) : (
               ""
@@ -182,7 +153,7 @@ const Header = () => {
                       설정
                     </a>
                   </li>
-                  <li>
+                  {/* <li>
                     <a
                       className="dropdown-item"
                       href="#"
@@ -191,7 +162,7 @@ const Header = () => {
                     >
                       정기 결제
                     </a>
-                  </li>
+                  </li> */}
                   <li>
                     <hr className="dropdown-divider" />
                   </li>

@@ -210,13 +210,34 @@ public class ItemService {
 
                 // 4. 재고 복구 로직
                 for (OrderItem orderItem : itemsFromOrder) {
-                        // 락 걸린 최신 엔티티 가져오기
                         Item item = itemMap.get(orderItem.getItem().getItemId());
 
-                        // 재고 원복 (+Quantity)
+                        // 재고 회복 (+Quantity)
                         item.setAvailableQuantity(item.getAvailableQuantity() + orderItem.getQuantity());
                 }
 
                 // 5. [저장] save() 호출 불필요 (더티 체킹으로 트랜잭션 종료 시 자동 UPDATE)
+        }
+
+        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
+        @Transactional
+        public void adjustInventory(Integer itemId, int newRealQuantity, String reason) {
+                // 1. 락 걸고 조회
+                Item item = itemRepository.findByIdWithPessimisticLock(itemId)
+                                .orElseThrow(() -> new EntityNotFoundException("품목을 찾을 수 없습니다. ID: " + itemId));
+
+                // 2. 차이 계산 (새 재고 - 현재 재고)
+                int oldRealQuantity = item.getQuantityOnHand();
+                int diff = newRealQuantity - oldRealQuantity;
+
+                // 3. 실제 재고(QOH) 수정
+                item.setQuantityOnHand(newRealQuantity);
+
+                // 4. 가용 재고(ATP)도 차이만큼 자동 반영 (핵심!)
+                // (실제 재고가 3개 늘면, 팔 수 있는 것도 3개 늘어야 함)
+                item.setAvailableQuantity(item.getAvailableQuantity() + diff);
+
+                log.info("재고 조정 완료: ItemId={}, Old={}, New={}, Reason={}", itemId, oldRealQuantity, newRealQuantity,
+                                reason);
         }
 }

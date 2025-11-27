@@ -58,7 +58,7 @@ public class ManagerService {
 
         public Page<UserEntity> getAllManagers(String search, Pageable pageable) {
                 if (search != null && !search.isEmpty()) {
-                        Page<UserEntity> managerPage = userRepository.findByUsernameContaining(search, pageable);
+                        Page<UserEntity> managerPage = userRepository.findByNameContaining(search, pageable);
                         return managerPage;
                 } else {
                         Page<UserEntity> managerPage = userRepository.findAll(pageable);

@@ -368,24 +368,7 @@ const ManagerPage = () => {
       </div>
 
       {/* footer 구조 변경 (버튼 그룹 + 페이지네이션) */}
-      <footer className="mt-3 d-flex justify-content-between align-items-center">
-        {/* 버튼 그룹 */}
-        <div>
-          <button
-            className="btn btn-primary mx-3"
-            data-bs-toggle="modal"
-            data-bs-target="#managerFormModal"
-          >
-            신규 담당자 등록
-          </button>
-          <button
-            className="btn btn-danger me-3"
-            onClick={handleDeleteSelected}
-          >
-            선택 삭제
-          </button>
-        </div>
-
+      <footer className="mt-3 d-flex justify-content-center align-items-center">
         {/* 페이지네이션 UI (React-Bootstrap) */}
         {pageData && pageData.totalPages > 1 && (
           <Pagination className="mb-0">

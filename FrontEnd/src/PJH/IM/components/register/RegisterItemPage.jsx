@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios"; // 데이터 전송을 위해 axios 사용
+import axios from "axios";
 import qs from "qs";
-import { Pagination } from "react-bootstrap"; // React-Bootstrap의 Pagination 컴포넌트
+import { Pagination } from "react-bootstrap";
+import { useAuth } from "../../contexts/AuthContext";
 
 const RegisterItemPage = () => {
   // 폼 데이터를 한 번에 관리하기 위한 state
   const [items, setItems] = useState([]); // 현재 페이지의 아이템 목록
+
+  const { userRole } = useAuth();
 
   // 페이징 관련 상태
   const [currentPage, setCurrentPage] = useState(0); // 0-indexed (Spring Pageable의 기본값)
@@ -107,12 +110,15 @@ const RegisterItemPage = () => {
         });
 
         alert("선택된 품목들이 삭제되었습니다.");
-        
+
         // 목록 새로고침 (현재 페이지 유지 또는 이전 페이지로 이동)
-        if (pageData.content.length === selectedItems.length && currentPage > 0) {
-            setCurrentPage(currentPage - 1); // useEffect가 알아서 fetchItems 호출
+        if (
+          pageData.content.length === selectedItems.length &&
+          currentPage > 0
+        ) {
+          setCurrentPage(currentPage - 1); // useEffect가 알아서 fetchItems 호출
         } else {
-            fetchItems(currentPage); // 현재 페이지만 새로고침
+          fetchItems(currentPage); // 현재 페이지만 새로고침
         }
         setSelectedItems([]); // 선택 상태 초기화
       } catch (error) {
@@ -168,7 +174,7 @@ const RegisterItemPage = () => {
         });
 
         // 새 항목은 1페이지에 있으므로 0페이지로 이동
-        setCurrentPage(0); 
+        setCurrentPage(0);
         // fetchItems(0); // (setCurrentPage(0)가 useEffect를 트리거하므로 중복 호출 불필요)
 
         alert("품목 등록이 성공적으로 완료되었습니다.");
@@ -186,7 +192,7 @@ const RegisterItemPage = () => {
     } finally {
       setLoading(false);
     }
-  }; 
+  };
 
   const handleEditFormSubmit = async (e) => {
     e.preventDefault();
@@ -204,14 +210,11 @@ const RegisterItemPage = () => {
     setMessage({ type: "", text: "" });
 
     try {
-      const response = await axios.put(
-        "/api/items/" + editFormData.itemId,
-        {
-          ...editFormData,
-          purchasePrice: Number(editFormData.purchasePrice),
-          sellingPrice: Number(editFormData.sellingPrice),
-        }
-      );
+      const response = await axios.put("/api/items/" + editFormData.itemId, {
+        ...editFormData,
+        purchasePrice: Number(editFormData.purchasePrice),
+        sellingPrice: Number(editFormData.sellingPrice),
+      });
 
       if (response.status === 200) {
         setEditFormData({
@@ -221,9 +224,9 @@ const RegisterItemPage = () => {
           purchasePrice: "",
           sellingPrice: "",
         });
-        
+
         // 목록 새로고침 (현재 페이지 유지)
-        fetchItems(currentPage); 
+        fetchItems(currentPage);
 
         const modalElement = document.getElementById("editFormModal");
         const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
@@ -238,8 +241,7 @@ const RegisterItemPage = () => {
         console.error(error);
         if (typeof error.response.data === "object") {
           errorMsg = Object.values(error.response.data).join(", ");
-        }
-        else if (typeof error.response.data === "string") {
+        } else if (typeof error.response.data === "string") {
           errorMsg = error.response.data;
         }
         setMessage({ type: "danger", text: errorMsg });
@@ -264,17 +266,23 @@ const RegisterItemPage = () => {
     // Pagination 컴포넌트는 1부터 시작, API는 0부터 시작하므로 -1
     setCurrentPage(pageNumber - 1);
   };
-  
+
   // 페이지네이션 아이템을 동적으로 생성하는 헬퍼 함수
   const createPaginationItems = () => {
     let pages = [];
     const maxPagesToShow = 5; // 한 번에 보여줄 최대 페이지 버튼 수
-    let startPage = Math.max(0, pageData.number - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(pageData.totalPages - 1, startPage + maxPagesToShow - 1);
+    let startPage = Math.max(
+      0,
+      pageData.number - Math.floor(maxPagesToShow / 2)
+    );
+    let endPage = Math.min(
+      pageData.totalPages - 1,
+      startPage + maxPagesToShow - 1
+    );
 
     // 페이지 수가 maxPagesToShow보다 적을 때, startPage가 0이 되도록 조정
     if (endPage - startPage + 1 < maxPagesToShow) {
-        startPage = Math.max(0, endPage - maxPagesToShow + 1);
+      startPage = Math.max(0, endPage - maxPagesToShow + 1);
     }
 
     // 페이지 번호 (1부터 시작하도록 +1)
@@ -320,13 +328,16 @@ const RegisterItemPage = () => {
           <tbody>
             {/* items.map -> pageData.content.map 또는 items.map (items가 pageData.content로 업데이트되므로) */}
             {tableLoading ? (
-                <tr>
-                    <td colSpan="6" className="text-center">
-                        <div className="spinner-border spinner-border-sm" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
-                </tr>
+              <tr>
+                <td colSpan="6" className="text-center">
+                  <div
+                    className="spinner-border spinner-border-sm"
+                    role="status"
+                  >
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </td>
+              </tr>
             ) : items && items.length > 0 ? (
               items.map((item) => (
                 <tr key={item.itemId}>
@@ -355,49 +366,55 @@ const RegisterItemPage = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center">데이터가 없습니다.</td>
+                <td colSpan="6" className="text-center">
+                  데이터가 없습니다.
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-      
-      {/* footer 구조 변경 (버튼 그룹 + 페이지네이션) */}
-      <footer className="mt-3 d-flex justify-content-between align-items-center">
-        {/* 버튼 그룹 */}
-        <div>
-          <button
-            className="btn btn-primary mx-3"
-            data-bs-toggle="modal"
-            data-bs-target="#newFormModal"
-          >
-            신규 품목 등록
-          </button>
-          <button className="btn btn-danger me-3" onClick={handleDeleteSelected}>
-            선택 삭제
-          </button>
+      <footer className="mt-3 d-flex justify-content-center align-items-center position-relative">
+        {/* 1. 왼쪽: 버튼 그룹 (absolute로 왼쪽 고정, 흐름에서 제거됨) */}
+        <div className="position-absolute start-0">
+          {userRole === "ADMIN" && (
+            <>
+              <button
+                className="btn btn-primary mx-3"
+                data-bs-toggle="modal"
+                data-bs-target="#newFormModal"
+              >
+                신규 품목 등록
+              </button>
+              <button
+                className="btn btn-danger me-3"
+                onClick={handleDeleteSelected}
+              >
+                선택 삭제
+              </button>
+            </>
+          )}
         </div>
 
-        {/* 페이지네이션 UI (React-Bootstrap) */}
+        {/* 2. 중앙: 페이지네이션 (부모가 justify-content-center 이므로 자동 중앙 정렬) */}
         {pageData && pageData.totalPages > 1 && (
           <Pagination className="mb-0">
-            <Pagination.First 
-              onClick={() => setCurrentPage(0)} 
-              disabled={pageData.first} 
+            <Pagination.First
+              onClick={() => setCurrentPage(0)}
+              disabled={pageData.first}
             />
-            <Pagination.Prev 
-              onClick={() => setCurrentPage(currentPage - 1)} 
-              disabled={pageData.first} 
+            <Pagination.Prev
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={pageData.first}
             />
-            {/* 동적으로 생성된 페이지 번호들 */}
             {createPaginationItems()}
-            <Pagination.Next 
-              onClick={() => setCurrentPage(currentPage + 1)} 
-              disabled={pageData.last} 
+            <Pagination.Next
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={pageData.last}
             />
-            <Pagination.Last 
-              onClick={() => setCurrentPage(pageData.totalPages - 1)} 
-              disabled={pageData.last} 
+            <Pagination.Last
+              onClick={() => setCurrentPage(pageData.totalPages - 1)}
+              disabled={pageData.last}
             />
           </Pagination>
         )}
@@ -515,9 +532,17 @@ const RegisterItemPage = () => {
                 >
                   닫기
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={loading}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading}
+                >
                   {loading ? (
-                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span
+                      className="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
                   ) : (
                     "저장하기"
                   )}
@@ -639,9 +664,17 @@ const RegisterItemPage = () => {
                 >
                   닫기
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={loading}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading}
+                >
                   {loading ? (
-                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span
+                      className="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
                   ) : (
                     "저장하기"
                   )}

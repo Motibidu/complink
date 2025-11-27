@@ -1,6 +1,7 @@
 package com.pcgear.complink.pcgear.Item;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -83,6 +85,27 @@ public class ItemController {
         public ResponseEntity<Void> deleteItems(@RequestParam(name = "ids") List<Integer> ids) {
                 itemService.deleteItems(ids);
                 return ResponseEntity.noContent().build();
+        }
+
+        @PutMapping("/{itemId}/stock")
+        @PreAuthorize("hasAuthority('ROLE_ADMIN')") // 관리자만 가능
+        public ResponseEntity<String> adjustStock(
+                        @PathVariable(name = "itemId") Integer itemId,
+                        @RequestBody Map<String, Object> requestBody) {
+
+                // 1. 요청 데이터 파싱
+                // 프론트에서 { quantity: 100, reason: "..." } 형태로 보냄
+                Integer newQuantity = (Integer) requestBody.get("quantity");
+                String reason = (String) requestBody.get("reason");
+
+                if (newQuantity == null || reason == null || reason.trim().isEmpty()) {
+                        throw new IllegalArgumentException("수량과 사유는 필수입니다.");
+                }
+
+                // 2. 서비스 호출 (실제 재고 수정 및 로그 기록)
+                itemService.adjustInventory(itemId, newQuantity, reason);
+
+                return ResponseEntity.ok("재고가 수정되었습니다.");
         }
 
 }

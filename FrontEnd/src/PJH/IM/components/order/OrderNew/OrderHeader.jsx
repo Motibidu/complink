@@ -6,10 +6,9 @@ import { IoReorderFourOutline } from "react-icons/io5";
 
 // OrderHeader 컴포넌트
 const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
-  
   // --- 모달 상태 관리 ---
   const [loading, setLoading] = useState(false);
-  
+
   // [거래처 모달] 상태
   const [customerInputValue, setCustomerInputValue] = useState(""); // 1. 타이핑용
   const [customerSearchTerm, setCustomerSearchTerm] = useState(""); // 2. API 호출용
@@ -54,7 +53,7 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
     } finally {
       setLoading(false);
     }
-  }, []); 
+  }, []);
 
   // [담당자] API 호출
   const fetchManagers = useCallback(async (pageToFetch, searchTerm) => {
@@ -64,17 +63,18 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
         params: {
           page: pageToFetch,
           size: 10,
-          sort: "managerId,desc",
+          sort: "id,desc",
           search: searchTerm, // ⬅️ "확정된" 검색어 사용
         },
       });
+      console.log("response.data: ", response.data);
       setManagerPageData(response.data);
     } catch (err) {
       console.error("담당자 목록 로드 실패: ", err);
     } finally {
       setLoading(false);
     }
-  }, []); 
+  }, []);
 
   // --- useEffect 훅 ---
 
@@ -87,7 +87,6 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
   useEffect(() => {
     fetchManagers(managerCurrentPage, managerSearchTerm);
   }, [managerCurrentPage, managerSearchTerm, fetchManagers]);
-  
 
   // --- 핸들러 함수 ---
 
@@ -113,13 +112,13 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
   const handleCustomerInputChange = (e) => {
     setCustomerInputValue(e.target.value);
   };
-  
+
   // [거래처] "검색" 버튼 클릭 또는 Enter 핸들러
   const handleCustomerSearchSubmit = () => {
     setCustomerSearchTerm(customerInputValue); // API 호출 트리거
     setCustomerCurrentPage(0); // 1페이지로 리셋
   };
-  
+
   // [담당자] 검색창 "타이핑" 핸들러
   const handleManagerInputChange = (e) => {
     setManagerInputValue(e.target.value);
@@ -135,11 +134,17 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
   const createPaginationItems = (pageData, setCurrentPage) => {
     let pages = [];
     const maxPagesToShow = 5;
-    let startPage = Math.max(0, pageData.number - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(pageData.totalPages - 1, startPage + maxPagesToShow - 1);
+    let startPage = Math.max(
+      0,
+      pageData.number - Math.floor(maxPagesToShow / 2)
+    );
+    let endPage = Math.min(
+      pageData.totalPages - 1,
+      startPage + maxPagesToShow - 1
+    );
 
     if (endPage - startPage + 1 < maxPagesToShow) {
-        startPage = Math.max(0, endPage - maxPagesToShow + 1);
+      startPage = Math.max(0, endPage - maxPagesToShow + 1);
     }
 
     for (let number = startPage; number <= endPage; number++) {
@@ -284,11 +289,16 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
                   placeholder="거래처 코드 또는 이름으로 검색..."
                   value={customerInputValue} // ⬅️ 타이핑용 state
                   onChange={handleCustomerInputChange} // ⬅️ 타이핑 핸들러
-                  onKeyDown={(e) => {if(e.key === 'Enter'){ e.preventDefault();handleCustomerSearchSubmit()}}} // ⬅️ Enter 키 핸들러
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCustomerSearchSubmit();
+                    }
+                  }} // ⬅️ Enter 키 핸들러
                 />
-                <button 
-                  className="btn btn-primary" 
-                  type="button" 
+                <button
+                  className="btn btn-primary"
+                  type="button"
                   onClick={handleCustomerSearchSubmit} // ⬅️ 검색 버튼 핸들러
                 >
                   검색
@@ -344,25 +354,34 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
             <div className="modal-footer d-flex justify-content-between">
               {/* 5. 모달 내 페이지네이션 (거래처 전용) */}
               {customerPageData && customerPageData.totalPages > 1 && (
-                  <Pagination className="mb-0">
-                    <Pagination.First 
-                      onClick={() => setCustomerCurrentPage(0)} 
-                      disabled={customerPageData.first} 
-                    />
-                    <Pagination.Prev 
-                      onClick={() => setCustomerCurrentPage(customerCurrentPage - 1)} 
-                      disabled={customerPageData.first} 
-                    />
-                    {createPaginationItems(customerPageData, setCustomerCurrentPage)}
-                    <Pagination.Next 
-                      onClick={() => setCustomerCurrentPage(customerCurrentPage + 1)} 
-                      disabled={customerPageData.last} 
-                    />
-                    <Pagination.Last 
-                      onClick={() => setCustomerCurrentPage(customerPageData.totalPages - 1)} 
-                      disabled={customerPageData.last} 
-                    />
-                  </Pagination>
+                <Pagination className="mb-0">
+                  <Pagination.First
+                    onClick={() => setCustomerCurrentPage(0)}
+                    disabled={customerPageData.first}
+                  />
+                  <Pagination.Prev
+                    onClick={() =>
+                      setCustomerCurrentPage(customerCurrentPage - 1)
+                    }
+                    disabled={customerPageData.first}
+                  />
+                  {createPaginationItems(
+                    customerPageData,
+                    setCustomerCurrentPage
+                  )}
+                  <Pagination.Next
+                    onClick={() =>
+                      setCustomerCurrentPage(customerCurrentPage + 1)
+                    }
+                    disabled={customerPageData.last}
+                  />
+                  <Pagination.Last
+                    onClick={() =>
+                      setCustomerCurrentPage(customerPageData.totalPages - 1)
+                    }
+                    disabled={customerPageData.last}
+                  />
+                </Pagination>
               )}
               <button
                 type="button"
@@ -407,11 +426,16 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
                   placeholder="담당자 코드 또는 이름으로 검색..."
                   value={managerInputValue} // ⬅️ 타이핑용 state
                   onChange={handleManagerInputChange} // ⬅️ 타이핑 핸들러
-                  onKeyDown={(e) => {if(e.key === 'Enter'){e.preventDefault();handleManagerSearchSubmit()}}} // ⬅️ Enter 키 핸들러
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleManagerSearchSubmit();
+                    }
+                  }} // ⬅️ Enter 키 핸들러
                 />
-                 <button 
-                  className="btn btn-primary" 
-                  type="button" 
+                <button
+                  className="btn btn-primary"
+                  type="button"
                   onClick={handleManagerSearchSubmit} // ⬅️ 검색 버튼 핸들러
                 >
                   검색
@@ -433,16 +457,14 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
                   {managerPageData.content.map((manager) => (
                     <button
                       type="button"
-                      key={manager.managerId}
+                      key={manager.id}
                       className="list-group-item list-group-item-action"
                       data-bs-dismiss="modal"
                       onClick={() => handleManagerSelect(manager)}
                     >
                       <div className="d-flex w-100 justify-content-between">
-                        <h6 className="mb-1 fw-bold">{manager.managerName}</h6>
-                        <small className="text-muted">
-                          {manager.managerId}
-                        </small>
+                        <h6 className="mb-1 fw-bold">{manager.name}</h6>
+                        <small className="text-muted">{manager.username}</small>
                       </div>
                       <p className="mb-1 text-muted small">{manager.email}</p>
                     </button>
@@ -463,25 +485,34 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
             <div className="modal-footer d-flex justify-content-between">
               {/* 5. 모달 내 페이지네이션 (담당자 전용) */}
               {managerPageData && managerPageData.totalPages > 1 && (
-                  <Pagination className="mb-0">
-                    <Pagination.First 
-                      onClick={() => setManagerCurrentPage(0)} 
-                      disabled={managerPageData.first} 
-                    />
-                    <Pagination.Prev 
-                      onClick={() => setManagerCurrentPage(managerCurrentPage - 1)} 
-                      disabled={managerPageData.first} 
-                    />
-                    {createPaginationItems(managerPageData, setManagerCurrentPage)}
-                    <Pagination.Next 
-                      onClick={() => setManagerCurrentPage(managerCurrentPage + 1)} 
-                      disabled={managerPageData.last} 
-                    />
-                    <Pagination.Last 
-                      onClick={() => setManagerCurrentPage(managerPageData.totalPages - 1)} 
-                      disabled={managerPageData.last} 
-                    />
-                  </Pagination>
+                <Pagination className="mb-0">
+                  <Pagination.First
+                    onClick={() => setManagerCurrentPage(0)}
+                    disabled={managerPageData.first}
+                  />
+                  <Pagination.Prev
+                    onClick={() =>
+                      setManagerCurrentPage(managerCurrentPage - 1)
+                    }
+                    disabled={managerPageData.first}
+                  />
+                  {createPaginationItems(
+                    managerPageData,
+                    setManagerCurrentPage
+                  )}
+                  <Pagination.Next
+                    onClick={() =>
+                      setManagerCurrentPage(managerCurrentPage + 1)
+                    }
+                    disabled={managerPageData.last}
+                  />
+                  <Pagination.Last
+                    onClick={() =>
+                      setManagerCurrentPage(managerPageData.totalPages - 1)
+                    }
+                    disabled={managerPageData.last}
+                  />
+                </Pagination>
               )}
               <button
                 type="button"

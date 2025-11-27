@@ -7,7 +7,7 @@ import FindId from "./KJG/Pages/Login/FindId";
 import OrderFormPage from "./PJH/IM/pages/order/OrderFormPage";
 import FindPassword from "./KJG/Pages/Login/FindPassword";
 import "./App.css";
-import OrderSearchPage from "./PJH/IM/pages/order/OrderSearchPage";
+import OrderSearchPage from "./PJH/IM/components/order/OrderSearch/OrderSearchPage";
 import { AuthProvider } from "./PJH/IM/contexts/AuthContext";
 import RegisterCustomerPage from "./PJH/IM/components/register/RegisterCustomerPage";
 import RegisterItemPage from "./PJH/IM/components/register/RegisterItemPage";

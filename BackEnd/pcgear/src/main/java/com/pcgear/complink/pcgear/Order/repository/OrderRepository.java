@@ -12,13 +12,14 @@ import com.pcgear.complink.pcgear.Assembly.AssemblyStatus;
 import com.pcgear.complink.pcgear.Delivery.model.ShippingListDto;
 import com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto;
 import com.pcgear.complink.pcgear.Order.model.Order;
+import com.pcgear.complink.pcgear.Order.model.OrderResponseDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface OrderRepository extends JpaRepository<Order, Integer> {
+public interface OrderRepository extends JpaRepository<Order, Integer>, OrderRepositoryCustom {
         boolean existsByCustomerCustomerId(String customerId);
 
         List<Order> findByOrderStatus(OrderStatus orderStatus);
@@ -72,5 +73,19 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
                         "JOIN o.customer c " + // (o.customer는 매핑되어 있다고 가정)
                         "JOIN Delivery d ON d.orderId = o.orderId ")
         Page<ShippingListDto> findShippingList(Pageable pageable);
+
+        @Query("SELECT o FROM Order o " +
+                        "JOIN FETCH o.customer " +
+                        "LEFT JOIN FETCH o.manager " +
+                        "LEFT JOIN FETCH o.orderItems " +
+                        "ORDER BY o.orderId DESC")
+        List<Order> findAllWithFetchJoin();
+
+        @Query("SELECT o FROM Order o " +
+                        "JOIN FETCH o.customer " +
+                        "LEFT JOIN FETCH o.manager " +
+                        "LEFT JOIN FETCH o.orderItems " +
+                        "WHERE o.orderId = :orderId")
+        Optional<Order> findByOrderIdWithFetchJoin(@Param("orderId") Integer orderId);
 
 }

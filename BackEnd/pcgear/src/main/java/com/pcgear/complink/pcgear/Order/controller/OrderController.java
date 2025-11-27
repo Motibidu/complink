@@ -9,8 +9,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +27,7 @@ import com.pcgear.complink.pcgear.Order.model.AssemblyDetailReqDto;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailRespDto;
 import com.pcgear.complink.pcgear.Order.model.OrderRequestDto;
 import com.pcgear.complink.pcgear.Order.model.OrderResponseDto;
+import com.pcgear.complink.pcgear.Order.model.OrderSearchCondition;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto;
 import com.pcgear.complink.pcgear.Order.model.Order;
@@ -44,22 +47,32 @@ import retrofit2.http.Path;
 public class OrderController {
 
     private final OrderService orderService;
-    private final ItemService itemService;
-    private final PaymentLinkService paymentLinkService;
+
+    @GetMapping
+    public ResponseEntity<Page<OrderResponseDto>> searchOrders(
+            @ModelAttribute(name = "params") OrderSearchCondition condition, // 쿼리 파라미터를 DTO로 자동 바인딩
+            @PageableDefault(size = 20, sort = "orderId", direction = Sort.Direction.DESC) Pageable pageable) {
+        log.info("condition: {}", condition);
+
+        return ResponseEntity.ok(orderService.searchOrders(condition, pageable));
+    }
 
     @PostMapping("/{orderId}/cancel")
-    public ResponseEntity<Order> cancelOrder(@PathVariable(name = "orderId") Integer orderId) {
-
-        // Order canceledOrder = orderService.cancelOrderInDB(orderId);
-
-        // // 포트원(외부API)의 결제취소는 DB커넥션 풀 고갈을 유발할 수 있기 때문에 트랜잭션 바깥에 둡니다.
-        // if (canceledOrder.getOrderStatus() == OrderStatus.PAID) {
-        //     paymentLinkService.cancelPayment(orderId, "단순 변심에 의한 취소");
-        // }
+    public ResponseEntity<OrderResponseDto> cancelOrder(@PathVariable(name = "orderId") Integer orderId) {
 
         Order canceledOrder = orderService.processOrderCancellation(orderId);
 
-        return ResponseEntity.ok(canceledOrder);
+        return ResponseEntity.ok(new OrderResponseDto(canceledOrder));
+    }
+
+    @PostMapping("/admin/{orderId}/force-cancel")
+    @PreAuthorize("hasRole('ADMIN')") // 최고 관리자만 가능
+    public ResponseEntity<OrderResponseDto> forceCancelOrder(@PathVariable(name = "orderId") Integer orderId) {
+
+        // 외부 API 호출 없이 DB만 정리하는 서비스 호출
+        Order canceledOrder = orderService.cancelOrderInDB(orderId);
+
+        return ResponseEntity.ok(new OrderResponseDto(canceledOrder));
     }
 
     @PostMapping
@@ -73,15 +86,6 @@ public class OrderController {
     public ResponseEntity<AssemblyDetailRespDto> readAssemblyDetail(@PathVariable(name = "orderId") Integer orderId) {
         AssemblyDetailRespDto assemblyDetailRespDto = orderService.getAssemblyDetailRespDto(orderId);
         return ResponseEntity.ok(assemblyDetailRespDto);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<OrderResponseDto>> readOrders(
-            @RequestParam(name = "orderStatus", required = false) OrderStatus orderStatusParam) {
-        if (orderStatusParam != null && !orderStatusParam.getDescription().trim().isEmpty()) {
-            return ResponseEntity.ok(orderService.findByOrderStatus(orderStatusParam));
-        }
-        return ResponseEntity.ok(orderService.findAllOrders());
     }
 
     @GetMapping("/{orderId}")

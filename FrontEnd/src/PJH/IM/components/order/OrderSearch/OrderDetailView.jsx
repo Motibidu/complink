@@ -4,14 +4,18 @@ import {
   formatCurrency,
 } from "../../../utils/formatters";
 import axios from "axios";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const OrderDetailView = ({
   order,
   handleCancelOrder,
+  handleForceCancelOrder,
   onSubmit,
   onStatusUpdate,
 }) => {
+  const { userRole } = useAuth();
   const badgeColors = getStatusBadgeVariant(order.orderStatusDesc);
+  
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingLink, setIsSendingLink] = useState(false);
@@ -68,29 +72,28 @@ const OrderDetailView = ({
         >
           {order.orderStatusDesc}
         </span>
-        {/* {onDeleteOrder ? (
-          <div className="ms-auto d-flex gap-2">
-            <button
-              className={`badge fs-6 rounded-pill ${badgeColors.text}`}
-              onClick={() => onDeleteOrder(order.orderId)}
-            >
-              삭제
-            </button>
-          </div>
-        ) : (
-          ""
-        )} */}
-        {
-          /* 취소 가능한 상태 목록을 배열로 정의 */
 
+        {
           /* 배열에 현재 주문 상태가 포함되어 있는지 확인 */
           cancellableStatuses.includes(order.orderStatusDesc) && (
+            <div>
             <button
               className={`badge fs-6 rounded-pill ms-auto ${badgeColors.text}`}
               onClick={() => handleCancelOrder(order.orderId)}
             >
               주문취소
             </button>
+            {userRole==="ADMIN" &&
+            <button
+              className={`badge fs-6 rounded-pill ms-auto ${badgeColors.text}`}
+              onClick={() => handleForceCancelOrder(order.orderId)}
+            >
+              결제 연동 제외 취소
+            </button>
+            }
+            </div>
+
+            
           )
         }
       </div>
@@ -100,19 +103,19 @@ const OrderDetailView = ({
         <div className="col-md-6">
           <p className="order-detail-view__info-label">거래처명</p>
           <p className="order-detail-view__info-value">
-            {order.customer.customerName} ({order.customer.phoneNumber})
+            {order.customer? order.customer.customerName: "고객 정보 없음"} ({order.custmer? order.customer.phoneNumber: "고객 정보 없음"})
           </p>
         </div>
         <div className="col-md-6">
           <p className="order-detail-view__info-label">담당자</p>
           <p className="order-detail-view__info-value">
-            {order.manager.managerName} ({order.manager.managerPhoneNumber})
+            {order.manager?order.manager.managerName: "담당자 정보 없음"} ({order.manager? order.manager.managerPhoneNumber: "담당자 정보 없음"})
           </p>
         </div>
         <div className="col-md-6">
           <p className="order-detail-view__info-label">주소</p>
           <p className="order-detail-view__info-value">
-            {order.customer.customerAddress}
+            {order.custmer? order.customer.customerAddress: "고객 정보 없음"}
           </p>
         </div>
         <div className="col-md-6">

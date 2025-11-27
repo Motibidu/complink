@@ -1,6 +1,7 @@
 package com.pcgear.complink.pcgear.Item;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,5 +20,9 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
         @Lock(LockModeType.PESSIMISTIC_WRITE)
         @Query("select i from Item i where i.itemId in :itemIds")
         List<Item> findAllByItemIdInWithLock(@Param("itemIds") List<Integer> itemIds);
+
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("select i from Item i where i.itemId= :itemId")
+        Optional<Item> findByIdWithPessimisticLock(@Param("itemId")Integer itemId);
 
 }

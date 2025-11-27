@@ -52,12 +52,11 @@ const CustomerFormPage = () => {
           sort: "customerId,desc", // 최신순 정렬 (백엔드 엔티티 필드명 기준)
         },
       });
-      
+
       // Spring Boot가 보낸 Page 객체를 상태에 저장
       const customersData = response.data.content || [];
       setCustomers(customersData); // 테이블 렌더링을 위해 customers 상태 업데이트
       setPageData(response.data); // 페이지네이션 UI를 위해 pageData 상태 업데이트
-
     } catch (error) {
       console.error("거래처 목록을 불러오는 데 실패했습니다.", error);
       setMessage({
@@ -65,7 +64,7 @@ const CustomerFormPage = () => {
         text: "데이터를 불러오는 데 실패했습니다.",
       });
     } finally {
-        setTableLoading(false);
+      setTableLoading(false);
     }
   };
 
@@ -116,12 +115,15 @@ const CustomerFormPage = () => {
         });
 
         alert("선택된 거래처가 삭제되었습니다.");
-        
+
         // 목록 새로고침 (현재 페이지 유지 또는 이전 페이지로 이동)
-        if (pageData.content.length === selectedCustomers.length && currentPage > 0) {
-            setCurrentPage(currentPage - 1); // useEffect가 알아서 fetchCustomers 호출
+        if (
+          pageData.content.length === selectedCustomers.length &&
+          currentPage > 0
+        ) {
+          setCurrentPage(currentPage - 1); // useEffect가 알아서 fetchCustomers 호출
         } else {
-            fetchCustomers(currentPage); // 현재 페이지만 새로고침
+          fetchCustomers(currentPage); // 현재 페이지만 새로고침
         }
         setSelectedCustomers([]); // 선택 상태 초기화
       } catch (error) {
@@ -171,9 +173,9 @@ const CustomerFormPage = () => {
           email: "",
           address: "",
         });
-        
+
         // 새 항목은 1페이지에 있으므로 0페이지로 이동
-        setCurrentPage(0); 
+        setCurrentPage(0);
 
         alert("거래처 등록이 성공적으로 완료되었습니다.");
         const modalElement = document.getElementById("newFormModal");
@@ -222,9 +224,9 @@ const CustomerFormPage = () => {
           email: "",
           address: "",
         });
-        
+
         // 목록 새로고침 (현재 페이지 유지)
-        fetchCustomers(currentPage); 
+        fetchCustomers(currentPage);
 
         const modalElement = document.getElementById("editFormModal");
         const modalInstance = window.bootstrap.Modal.getInstance(modalElement);
@@ -258,17 +260,23 @@ const CustomerFormPage = () => {
     // Pagination 컴포넌트는 1부터 시작, API는 0부터 시작하므로 -1
     setCurrentPage(pageNumber - 1);
   };
-  
+
   // 페이지네이션 아이템을 동적으로 생성하는 헬퍼 함수
   const createPaginationItems = () => {
     let pages = [];
     const maxPagesToShow = 5; // 한 번에 보여줄 최대 페이지 버튼 수
-    let startPage = Math.max(0, pageData.number - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(pageData.totalPages - 1, startPage + maxPagesToShow - 1);
+    let startPage = Math.max(
+      0,
+      pageData.number - Math.floor(maxPagesToShow / 2)
+    );
+    let endPage = Math.min(
+      pageData.totalPages - 1,
+      startPage + maxPagesToShow - 1
+    );
 
     // 페이지 수가 maxPagesToShow보다 적을 때, startPage가 0이 되도록 조정
     if (endPage - startPage + 1 < maxPagesToShow) {
-        startPage = Math.max(0, endPage - maxPagesToShow + 1);
+      startPage = Math.max(0, endPage - maxPagesToShow + 1);
     }
 
     // 페이지 번호 (1부터 시작하도록 +1)
@@ -314,13 +322,16 @@ const CustomerFormPage = () => {
           </thead>
           <tbody>
             {tableLoading ? (
-                <tr>
-                    <td colSpan="6" className="text-center">
-                        <div className="spinner-border spinner-border-sm" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
-                </tr>
+              <tr>
+                <td colSpan="6" className="text-center">
+                  <div
+                    className="spinner-border spinner-border-sm"
+                    role="status"
+                  >
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </td>
+              </tr>
             ) : customers && customers.length > 0 ? (
               customers.map((customer) => (
                 <tr key={customer.customerId}>
@@ -349,7 +360,9 @@ const CustomerFormPage = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center">데이터가 없습니다.</td>
+                <td colSpan="6" className="text-center">
+                  데이터가 없습니다.
+                </td>
               </tr>
             )}
           </tbody>
@@ -357,43 +370,48 @@ const CustomerFormPage = () => {
       </div>
 
       {/* footer 구조 변경 (버튼 그룹 + 페이지네이션) */}
-      <footer className="mt-3 d-flex justify-content-between align-items-center">
-        {/* 버튼 그룹 */}
-        <div>
+      <footer className="mt-3 d-flex align-items-center position-relative">
+        {/* 1. 왼쪽: 버튼 그룹 (absolute로 왼쪽 고정) */}
+        <div className="position-absolute start-0">
           <button
             className="btn btn-primary mx-3"
             data-bs-toggle="modal"
             data-bs-target="#newFormModal"
           >
-            신규 거래처 등록
+            신규 고객 등록
           </button>
-          <button className="btn btn-danger me-3" onClick={handleDeleteSelected}>
+          <button
+            className="btn btn-danger me-3"
+            onClick={handleDeleteSelected}
+          >
             선택 삭제
           </button>
         </div>
 
-        {/* 페이지네이션 UI (React-Bootstrap) */}
-        {pageData && pageData.totalPages > 1 && (
-          <Pagination className="mb-0">
-            <Pagination.First 
-              onClick={() => setCurrentPage(0)} 
-              disabled={pageData.first} 
-            />
-            <Pagination.Prev 
-              onClick={() => setCurrentPage(currentPage - 1)} 
-              disabled={pageData.first} 
-            />
-            {createPaginationItems()}
-            <Pagination.Next 
-              onClick={() => setCurrentPage(currentPage + 1)} 
-              disabled={pageData.last} 
-            />
-            <Pagination.Last 
-              onClick={() => setCurrentPage(pageData.totalPages - 1)} 
-              disabled={pageData.last} 
-            />
-          </Pagination>
-        )}
+        {/* 2. 중앙: 페이지네이션 (w-100으로 너비 채우고 justify-content-center) */}
+        <div className="w-100 d-flex justify-content-center">
+          {pageData && pageData.totalPages > 1 && (
+            <Pagination className="mb-0">
+              <Pagination.First
+                onClick={() => setCurrentPage(0)}
+                disabled={pageData.first}
+              />
+              <Pagination.Prev
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={pageData.first}
+              />
+              {createPaginationItems()}
+              <Pagination.Next
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={pageData.last}
+              />
+              <Pagination.Last
+                onClick={() => setCurrentPage(pageData.totalPages - 1)}
+                disabled={pageData.last}
+              />
+            </Pagination>
+          )}
+        </div>
       </footer>
 
       {/* 신규 등록 모달 */}
@@ -499,11 +517,19 @@ const CustomerFormPage = () => {
                 >
                   닫기
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={loading}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading}
+                >
                   {loading ? (
-                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span
+                      className="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
                   ) : (
-                      "저장하기"
+                    "저장하기"
                   )}
                 </button>
               </div>
@@ -537,7 +563,7 @@ const CustomerFormPage = () => {
               <div className="modal-body">
                 {/* customerId는 수정하지 않으므로 숨기거나 표시하지 않을 수 있습니다. 
                     다만, PUT 요청 시 필요하므로 editFormData에는 있어야 합니다. */}
-                
+
                 <div className="col-md-6">
                   <label htmlFor="customerName" className="form-label">
                     거래처명 <span className="text-danger">*</span>
@@ -618,11 +644,19 @@ const CustomerFormPage = () => {
                 >
                   닫기
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={loading}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading}
+                >
                   {loading ? (
-                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span
+                      className="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
                   ) : (
-                      "저장하기"
+                    "저장하기"
                   )}
                 </button>
               </div>

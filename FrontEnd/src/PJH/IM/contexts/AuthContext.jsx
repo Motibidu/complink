@@ -13,52 +13,61 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   // 로그인 상태를 저장할 state (기본값은 false)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState("");
   const [loading, setLoading] = useState(true);
-  axios.defaults.withCredentials= true;
+  axios.defaults.withCredentials = true;
+
+  const checkLoginStatus = async () => {
+    try {
+      // 1. 로그인 여부 확인 (예: 세션 체크 또는 토큰 체크)
+      // (백엔드 API에 따라 경로는 다를 수 있음)
+      // 예: GET /api/auth/status 또는 기존의 userRole API 활용
+      const response = await axios.get("/api/users/userRole");
+      console.log("AuthProviderResp: ", response);
+
+      if (response.status === 200 && response.data) {
+        setIsLoggedIn(true);
+        setUserRole(String(response.data)); // ⭐️ 역할 저장!
+        console.log("AuthContext: 권한 확인됨 ->", response.data);
+      } else {
+        // 로그인이 안 된 경우
+        setIsLoggedIn(false);
+        setUserRole("");
+      }
+    } catch (error) {
+      console.error("로그인 상태 확인 실패:", error);
+      setIsLoggedIn(false);
+      setUserRole("");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchIsLoggedIn = async () => {
-      try {
-        const response = await axios.get("/api/users/isLoggedIn");
-        setIsLoggedIn(response.data.isLoggedIn);
-
-      } catch (err) {
-        console.log("로그인 상태 확인 에러:", err);
-        setIsLoggedIn(false);
-      } finally {
-        setLoading(false); // 요청 완료 후 로딩 상태 변경
-      }
-    };
-    fetchIsLoggedIn();
+    checkLoginStatus();
   }, []);
 
   // 로그인 함수
-  const login = () => {
-    // 실제로는 API 호출 후 성공 시 토큰 저장 및 상태 변경
-    setIsLoggedIn(true);
-  };
 
   // 로그아웃 함수
-  const logout = async() => {
-    try{
+  const logout = async () => {
+    try {
       await axios.post("/api/logout");
       setIsLoggedIn(false);
-      window.location.reload(); 
-    }catch(err)
-    {
-        console.log("로그아웃 에러:", err);
-        alert("로그아웃 중 오류가 발생했습니다.");
+      setUserRole("");
+      window.location.reload();
+    } catch (err) {
+      console.log("로그아웃 에러:", err);
+      alert("로그아웃 중 오류가 발생했습니다.");
     }
-
-    
   };
 
   // 공유할 값들
   const value = {
     isLoggedIn,
-    login,
     logout,
-    loading
+    loading,
+    userRole,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

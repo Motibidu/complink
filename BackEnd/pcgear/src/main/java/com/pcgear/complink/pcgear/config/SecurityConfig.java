@@ -38,24 +38,21 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 // 관리자 관련 페이지 경로
                                                 .requestMatchers("/admin/**")
-                                                .hasAnyAuthority("ADMIN")
+                                                .hasRole("ADMIN")
 
                                                 // 회원가입 요청 페이지 경로
                                                 .requestMatchers(HttpMethod.GET, "/users/signup-req")
-                                                .hasAnyAuthority("ADMIN")
+                                                .hasRole("ADMIN")
 
                                                 // 회원가입 승인 경로
                                                 .requestMatchers(HttpMethod.POST, "/users/signup-approve/**")
-                                                .hasAnyAuthority("ADMIN")
+                                                .hasRole("ADMIN")
 
                                                 // 품목 등록, 수정, 삭제
-                                                .requestMatchers(HttpMethod.POST, "/items/**").hasAnyAuthority("ADMIN")
-                                                .requestMatchers(HttpMethod.PUT, "/items/**").hasAnyAuthority("ADMIN")
+                                                .requestMatchers(HttpMethod.POST, "/items/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.PUT, "/items/**").hasRole("ADMIN")
                                                 .requestMatchers(HttpMethod.DELETE, "/items/**")
-                                                .hasAnyAuthority("ADMIN")
-
-
-                                                
+                                                .hasRole("ADMIN")
 
                                                 // 웹훅
                                                 .requestMatchers("/payment/webhook/verify/paymentLink").permitAll()
