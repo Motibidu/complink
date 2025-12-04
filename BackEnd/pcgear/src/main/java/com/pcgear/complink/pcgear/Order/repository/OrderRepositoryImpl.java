@@ -14,14 +14,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
-// static import로 Q클래스들을 가져오면 코드가 깔끔해집니다.
 import static com.pcgear.complink.pcgear.Order.model.QOrder.order;
 import static com.pcgear.complink.pcgear.Customer.QCustomer.customer;
-// Manager가 UserEntity라면 QUserEntity로, Manager라면 QManager로 변경하세요.
 import static com.pcgear.complink.pcgear.User.entity.QUserEntity.userEntity;
 
 @RequiredArgsConstructor
@@ -32,13 +28,6 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
         @Override
         public Page<OrderResponseDto> searchOrders(OrderSearchCondition condition, Pageable pageable) {
 
-                // 1. 컨텐츠 조회 (Projections을 사용하여 DTO로 바로 조회)
-                // 주의: OrderResponseDto 생성자와 필드 타입/순서가 일치해야 합니다.
-                // 만약 생성자 매칭이 힘들면 @QueryProjection을 쓰거나 fields()를 써야 합니다.
-                // 여기서는 기존에 만드신 "엔티티 조회 -> 메모리 변환" 방식을 추천합니다.
-                // (DTO 생성자가 엔티티를 받도록 되어있기 때문)
-
-                // [방식 A] 엔티티 조회 (추천 - DTO 생성 로직 재활용 가능)
                 List<Order> orders = queryFactory
                                 .selectFrom(order)
                                 .leftJoin(order.customer, customer).fetchJoin() // N+1 방지
@@ -71,19 +60,15 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
                                 .map(OrderResponseDto::new)
                                 .toList();
 
-                return new PageImpl<>(content, pageable, total != null ? total : 0);
-        }
+                return new PageImpl<>(content, pageable, total != null ? total : 0);    
 
-        // --- 동적 쿼리 조건 메서드 (BooleanExpression) ---
+        }
 
         // 1. 날짜 검색 (OrderDate 기준)
         private BooleanExpression dateBetween(LocalDate start, LocalDate end) {
                 if (start == null || end == null) {
                         return null;
                 }
-                // 시작일 00:00:00 ~ 종료일 23:59:59
-                // 만약 orderDate가 Date 타입이면 .between(start, end) 사용
-                // 만약 created_at(DateTime) 기준이라면 아래처럼 변환 필요
                 return order.orderDate.between(start, end);
         }
 

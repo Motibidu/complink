@@ -15,6 +15,6 @@ public class WebhookRequest {
         @JsonProperty("merchant_uid")
         private String merchantUid;
 
-        @JsonProperty("status") // status 필드 추가
+        @JsonProperty("status")
         private String status;
 }

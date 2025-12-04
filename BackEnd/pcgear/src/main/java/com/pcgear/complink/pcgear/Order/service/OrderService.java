@@ -8,8 +8,6 @@ import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
 import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
 import com.pcgear.complink.pcgear.Item.ItemRepository;
 import com.pcgear.complink.pcgear.Item.ItemService;
-import com.pcgear.complink.pcgear.Manager.Manager;
-import com.pcgear.complink.pcgear.Manager.ManagerRepository;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailReqDto;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailRespDto;
 import com.pcgear.complink.pcgear.Order.model.OrderRequestDto;
@@ -24,7 +22,6 @@ import com.pcgear.complink.pcgear.Payment.OrderPayment;
 import com.pcgear.complink.pcgear.Payment.PaymentLinkService;
 import com.pcgear.complink.pcgear.Payment.PaymentRepository;
 import com.pcgear.complink.pcgear.Payment.model.PaymentStatus;
-import com.pcgear.complink.pcgear.Sell.Sell;
 import com.pcgear.complink.pcgear.Sell.SellRepository;
 import com.pcgear.complink.pcgear.Sell.SellService;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
@@ -34,7 +31,6 @@ import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -68,8 +64,6 @@ public class OrderService {
     private final ItemRepository itemRepository;
     private final DeliveryService deliveryService;
     private final ItemService itemService;
-    private final SellRepository sellRepository;
-    private final PortoneProperties portoneProperties;
     private final OrderService self;
     private final JavaMailSender javaMailSender;
 
@@ -88,7 +82,7 @@ public class OrderService {
             @Lazy DeliveryService deliveryService, // 👈 4. 순환 참조 대상에 @Lazy 추가
             SimpMessagingTemplate messagingTemplate,
             ItemService itemService,
-            PortoneProperties portoneProperties, PaymentRepository paymentRepository, SellRepository sellRepository,
+            PaymentRepository paymentRepository,
             SellService sellService,
             @Lazy OrderService self,
             MailService mailService,
@@ -101,9 +95,7 @@ public class OrderService {
         this.deliveryService = deliveryService;
         this.messagingTemplate = messagingTemplate;
         this.itemService = itemService;
-        this.portoneProperties = portoneProperties;
         this.paymentRepository = paymentRepository;
-        this.sellRepository = sellRepository;
         this.sellService = sellService;
         this.self = self;
         this.mailService = mailService;
@@ -198,16 +190,16 @@ public class OrderService {
         return orderRepository.save(order); // 저장 후 즉시 커밋
     }
 
-    @Transactional(readOnly = true) // 이 어노테이션이 반드시 있어야 합니다.
-    public List<OrderResponseDto> findAllOrders() {
-        // 1. 페치 조인으로 엔티티 조회 (쿼리 1방)
-        List<Order> orders = orderRepository.findAllWithFetchJoin();
+    // @Transactional(readOnly = true) // 이 어노테이션이 반드시 있어야 합니다.
+    // public List<OrderResponseDto> findAllOrders() {
+    // // 1. 페치 조인으로 엔티티 조회 (쿼리 1방)
+    // List<Order> orders = orderRepository.findAll();
 
-        // 2. 엔티티 -> DTO 변환 (메모리 작업)
-        return orders.stream()
-                .map(OrderResponseDto::new) // 여기서 DTO로 변환
-                .collect(Collectors.toList());
-    }
+    // // 2. 엔티티 -> DTO 변환 (메모리 작업)
+    // return orders.stream()
+    // .map(OrderResponseDto::new) // 여기서 DTO로 변환
+    // .collect(Collectors.toList());
+    // }
 
     @CacheEvict(value = "dashboard-summary", allEntries = true)
     public void deleteOrder(Integer orderId) {
@@ -357,7 +349,7 @@ public class OrderService {
         // 주문상태 주문취소로 업데이트
         Order order = updateOrderStatus(orderId, OrderStatus.CANCELLED);
 
-        // 가용재고 +1
+        // 가용재고
         itemService.restoreItemAvailableQuantity(orderId);
 
         paymentRepository.findByOrder_OrderId(orderId).ifPresent(payment -> {

@@ -41,7 +41,7 @@ public class ItemController {
         @GetMapping
         public ResponseEntity<ItemPageDto> getAllItems(
                         @RequestParam(name = "search", required = false) String search,
-                        @PageableDefault(size = 10, sort = "itemId", direction = Sort.Direction.DESC) Pageable pageable) {
+                        @PageableDefault(size = 15, sort = "itemId", direction = Sort.Direction.DESC) Pageable pageable) {
 
                 // search가 빈문자열, 공백, null이면 모두 null로 통일 시켜 같은 캐싱공간을 공유하도록 합니다.
                 String effectiveSearchTerm = (search != null && !search.isBlank()) ? search : null;

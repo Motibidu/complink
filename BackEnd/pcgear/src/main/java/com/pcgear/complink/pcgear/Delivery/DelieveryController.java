@@ -6,24 +6,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingResponse;
 import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
 import com.pcgear.complink.pcgear.Delivery.model.WebhookReq;
-import com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto;
-import com.pcgear.complink.pcgear.Order.model.OrderStatus;
-
-import java.util.List;
-import java.util.Optional;
-import com.pcgear.complink.pcgear.Order.service.OrderService;
-
-import jakarta.persistence.EntityNotFoundException;
-
-import com.pcgear.complink.pcgear.Delivery.entity.Delivery;
 import com.pcgear.complink.pcgear.Delivery.model.DeliveryStatus;
 import com.pcgear.complink.pcgear.Delivery.model.ShippingListDto;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Response;
-import reactor.core.publisher.Mono;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,8 +23,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Slf4j
 @RequiredArgsConstructor

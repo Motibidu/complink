@@ -56,6 +56,17 @@ dependencies {
     // 3. java.lang.NoClassDefFoundError 방지용 (APT가 어노테이션을 못 찾을 때 대비)
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
+    testImplementation 'com.h2database:h2'
+    testImplementation 'org.assertj:assertj-core:3.25.3'
+    testImplementation 'org.quickperf:quick-perf-springboot-persistence-jpa:1.1.0'
+
+    implementation 'jakarta.activation:jakarta.activation-api:2.1.2'
+
+    
+
+    
+    
     
 }
 
@@ -83,6 +94,15 @@ def querydslDir = "src/main/generated"
 
 sourceSets {
     main.java.srcDirs += [ querydslDir ]
+
+    test {
+        java {
+            srcDirs = ['src/test/java']
+        }
+        resources {
+            srcDirs = ['src/test/resources']
+        }
+    }
 }
 
 tasks.withType(JavaCompile) {

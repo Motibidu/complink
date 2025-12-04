@@ -117,8 +117,7 @@ public class ItemService {
 
                 // 1. N+1문제를 발생시키는 엔티티인 items의 ID를 모두 가져온다.
                 List<Integer> itemIds = order.getOrderItems().stream()
-                                .map(orderItem -> orderItem.getItem().getItemId()) // 여기서 아이템 ID만 꺼내는 건 쿼리 안 나감 (보통 FK
-                                                                                   // 가지고 있음)
+                                .map(orderItem -> orderItem.getItem().getItemId())
                                 .collect(Collectors.toList());
 
                 if (itemIds.isEmpty())
@@ -193,7 +192,7 @@ public class ItemService {
 
                 List<OrderItem> itemsFromOrder = order.getOrderItems();
 
-                // 1. 아이템 ID 목록 추출 (쿼리 X)
+                // 1. 아이템 ID 목록 추출
                 List<Integer> itemIds = itemsFromOrder.stream()
                                 .map(orderItem -> orderItem.getItem().getItemId())
                                 .collect(Collectors.toList());
@@ -201,10 +200,10 @@ public class ItemService {
                 if (itemIds.isEmpty())
                         return;
 
-                // 2. [핵심] 락 걸고 한 방에 조회 (SELECT 1번)
+                // 2. 락 걸고 조회
                 List<Item> items = itemRepository.findAllByItemIdInWithLock(itemIds);
 
-                // 3. Map으로 변환 (검색 속도 O(1))
+                // 3. Map으로 변환 (시간복잡도 O(1))
                 Map<Integer, Item> itemMap = items.stream()
                                 .collect(Collectors.toMap(Item::getItemId, item -> item));
 
@@ -216,7 +215,7 @@ public class ItemService {
                         item.setAvailableQuantity(item.getAvailableQuantity() + orderItem.getQuantity());
                 }
 
-                // 5. [저장] save() 호출 불필요 (더티 체킹으로 트랜잭션 종료 시 자동 UPDATE)
+                // 5. 더티체킹으로 트랜잭션 종료 시 자동 UPDATE
         }
 
         @CacheEvict(value = { "items", "items_temp" }, allEntries = true)

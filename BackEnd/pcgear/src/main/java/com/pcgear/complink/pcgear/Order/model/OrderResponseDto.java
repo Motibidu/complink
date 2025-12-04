@@ -4,10 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import com.pcgear.complink.pcgear.Manager.ManagerDto;
-import com.pcgear.complink.pcgear.User.entity.UserEntity;
-
 import lombok.Getter;
 
 @Getter
@@ -42,7 +38,7 @@ public class OrderResponseDto {
         this.manager= new UserDto(order.getManager());
         this.customer = new CustomerDto(order.getCustomer());
         this.items = order.getOrderItems().stream()
-                .map(OrderItemDto::new) // .map(orderItem -> new OrderItemDto(orderItem))과 동일
+                .map(OrderItemDto::new)
                 .collect(Collectors.toList());
     }
 }

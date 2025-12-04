@@ -2,7 +2,6 @@ package com.pcgear.complink.pcgear.Payment; // 실제 프로젝트의 패키지 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pcgear.complink.pcgear.Item.ItemService;
 import com.pcgear.complink.pcgear.Order.model.Order;
@@ -16,9 +15,9 @@ import com.pcgear.complink.pcgear.Payment.model.SingleInquiryResponse;
 import com.pcgear.complink.pcgear.Payment.model.SubscriptionRequest;
 import com.pcgear.complink.pcgear.Payment.model.WebhookRequest;
 import com.pcgear.complink.pcgear.Sell.SellService;
-import com.pcgear.complink.pcgear.User.dto.SubscriptionStatus;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
 import com.pcgear.complink.pcgear.User.repository.UserRepository;
+import com.pcgear.complink.pcgear.User.service.MailService;
 import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
 import io.portone.sdk.server.webhook.WebhookVerificationException;
@@ -26,10 +25,8 @@ import io.portone.sdk.server.webhook.WebhookVerifier;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -38,7 +35,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -69,9 +65,10 @@ public class PaymentService {
     private final SellService sellService;
     private final OrderService orderService;
     private final ItemService itemService;
-
+    private final PaymentLinkService paymentLinkService;
     private final RestClient restClient;
     private final SimpMessagingTemplate messagingTemplate;
+    private final MailService mailService;
 
     // public Mono<OrderPayment> executeImmediatePayment(UserEntity user,
     // SubscriptionRequest subscriptionRequest) {
@@ -541,31 +538,6 @@ public class PaymentService {
                 .getResponse().getAccessToken();
     }
 
-    public void cancelPayment() {
-
-    }
-
-    @Transactional
-    public void finalizeOrderPayment(Order order) {
-
-        // 1. 판매 기록 생성 (매출 테이블에 반영)
-        sellService.createSell(order);
-
-        // 2. 주문 상태를 상품준비중으로 업데이트
-        orderService.updateOrderStatus(order.getOrderId(), OrderStatus.PAID);
-
-        // 3. 주문 결제 날짜를 설정
-        orderService.setPaidAt(order);
-
-        // 4. 재고 차감 (재고 수량(QOH)을 업데이트)
-        // 이 과정에서 재고 부족 등으로 예외가 발생하면 전체 트랜잭션이 롤백됩니다.
-        itemService.updateItemAvailableQuantity(order);
-
-        // 5. 결제기록 생성
-        createPayment(order);
-
-    }
-
     private void createPayment(Order order) {
         final String paymentId = "payment-" + UUID.randomUUID().toString();
         OrderPayment payment = OrderPayment.builder()
@@ -583,11 +555,23 @@ public class PaymentService {
     public void processPaymentLinkWebhook(WebhookRequest webhookRequest) {
         log.info("결제 링크 웹훅 처리 시작: {}", webhookRequest);
 
-        try {
-            // 1. 액세스 토큰 발급 (외부 API - 동기)
-            String accessToken = getAccessToken();
+        // 이미 처리된 결제건인지 확인
+        Order order = orderRepository.findByMerchantUid(webhookRequest.getMerchantUid())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "주문을 찾을 수 없습니다. MerchantUid: " + webhookRequest.getMerchantUid()));
 
-            // 2. 결제 단건 조회 (외부 API - 동기)
+        if (order.getOrderStatus() == OrderStatus.PAID) {
+            log.info("이미 처리된 결제건입니다. (중복 웹훅 무시) OrderId: {}", order.getOrderId());
+            return;
+        }
+
+        String accessToken = null;
+
+        try {
+            // 1. 액세스 토큰 발급
+            accessToken = getAccessToken();
+
+            // 2. 결제 단건 조회
             SingleInquiryResponse.ResponseData paymentData = getSingleInquiry(
                     webhookRequest.getImpUid(), accessToken).getResponse();
 
@@ -596,13 +580,17 @@ public class PaymentService {
             // 3. 검증 및 DB 저장 (트랜잭션 시작)
             self.processLinkWebhookTransaction(webhookRequest, paymentData);
 
-        } catch (EntityNotFoundException | PaymentVerificationException e) {
-            // 비즈니스 로직 실패 (재시도 불필요) -> 로그만 찍고 정상 종료(200 OK) 처리
-            log.error("⛔ 웹훅 처리 중단 (비즈니스 예외): {}", e.getMessage());
+        } catch (PaymentVerificationException e) {
+            log.error("⛔ 금액 불일치! 결제 취소 실행: {}", e.getMessage());
+
+            if (accessToken != null) {
+                paymentLinkService.cancelPayment(accessToken, webhookRequest.getImpUid(), "금액 불일치");
+            } else {
+                log.error("액세스 토큰이 없어 결제 취소를 수행할 수 없습니다.");
+            }
         } catch (Exception e) {
-            // 시스템 오류 (재시도 필요) -> 예외를 던져서 500 반환
-            log.error("🔥 웹훅 처리 중 시스템 오류 발생", e);
-            throw new RuntimeException("Webhook processing failed", e);
+            log.error("🔥 시스템 오류", e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -648,8 +636,26 @@ public class PaymentService {
 
             default:
                 log.warn("Unknown payment status: {}", paymentStatus);
-                // 알 수 없는 상태일 때는 별도 처리 없이 로그만 남기거나 UNKNOWN 상태로 변경
         }
+    }
+
+    @Transactional
+    public void finalizeOrderPayment(Order order) {
+        // 1. 판매 기록 생성 (매출 테이블에 반영)
+        sellService.createSell(order);
+
+        // 2. 주문 상태를 상품준비중으로 업데이트
+        orderService.updateOrderStatus(order.getOrderId(), OrderStatus.PAID);
+
+        // 3. 주문 결제 날짜를 설정
+        orderService.setPaidAt(order);
+
+        // 4. 재고 차감
+        itemService.updateItemAvailableQuantity(order);
+
+        // 5. 결제기록 생성
+        createPayment(order);
+
     }
 
     // 알림 전송 헬퍼 메서드 (트랜잭션에 영향 안 주게 예외 처리)

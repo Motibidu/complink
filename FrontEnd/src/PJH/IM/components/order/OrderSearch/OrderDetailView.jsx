@@ -88,7 +88,7 @@ const OrderDetailView = ({
               className={`badge fs-6 rounded-pill ms-auto ${badgeColors.text}`}
               onClick={() => handleForceCancelOrder(order.orderId)}
             >
-              결제 연동 제외 취소
+              관리자 DB 강제 취소
             </button>
             }
             </div>
@@ -103,7 +103,7 @@ const OrderDetailView = ({
         <div className="col-md-6">
           <p className="order-detail-view__info-label">거래처명</p>
           <p className="order-detail-view__info-value">
-            {order.customer? order.customer.customerName: "고객 정보 없음"} ({order.custmer? order.customer.phoneNumber: "고객 정보 없음"})
+            {order.customer.customerName} ({order.customer.phoneNumber})
           </p>
         </div>
         <div className="col-md-6">
@@ -115,7 +115,7 @@ const OrderDetailView = ({
         <div className="col-md-6">
           <p className="order-detail-view__info-label">주소</p>
           <p className="order-detail-view__info-value">
-            {order.custmer? order.customer.customerAddress: "고객 정보 없음"}
+            {order.customer.customerAddress}
           </p>
         </div>
         <div className="col-md-6">

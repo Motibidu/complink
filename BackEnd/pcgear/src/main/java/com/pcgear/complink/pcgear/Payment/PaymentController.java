@@ -36,10 +36,8 @@ import java.util.Map;
 @RequestMapping("/payment") // 이 컨트롤러의 모든 API는 /api/payment로 시작합니다.
 public class PaymentController {
 
-
     private final PaymentService paymentService;
     private final UserRepository userRepository;
-
 
     // @PostMapping("/subscribe")
     // public ResponseEntity<String> subscribe(@RequestBody SubscriptionRequest
@@ -151,13 +149,11 @@ public class PaymentController {
         log.info(">>> [Webhook Link] Received - ImpUid: {}", webhookRequest.getImpUid());
 
         try {
-            // Service 호출 (API 조회 -> 검증 -> DB 트랜잭션)
             paymentService.processPaymentLinkWebhook(webhookRequest);
             return ResponseEntity.ok("Webhook processed successfully.");
 
         } catch (Exception e) {
             log.error("웹훅 처리 실패: {}", e.getMessage());
-            // 400/500 에러를 반환하면 포트원 서버가 일정 간격으로 재시도함
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

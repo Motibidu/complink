@@ -6,7 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.pcgear.complink.pcgear.Item.ItemPageDto;
 import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
 
 import jakarta.persistence.EntityExistsException;

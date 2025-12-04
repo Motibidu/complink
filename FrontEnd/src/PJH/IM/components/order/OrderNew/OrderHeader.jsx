@@ -101,10 +101,10 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
 
   const handleManagerSelect = (manager) => {
     handleHeaderChange({
-      target: { name: "managerId", value: manager.managerId },
+      target: { name: "managerId", value: manager.username },
     });
     handleHeaderChange({
-      target: { name: "managerName", value: manager.managerName },
+      target: { name: "managerName", value: manager.name },
     });
   };
 
@@ -418,7 +418,6 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
             </div>
 
             <div className="modal-body">
-              {/* [수정] 1. 검색창 + 검색 버튼 (Input Group) */}
               <div className="input-group mb-3">
                 <input
                   type="text"
@@ -462,6 +461,7 @@ const OrderHeader = ({ orderHeader, handleHeaderChange }) => {
                       data-bs-dismiss="modal"
                       onClick={() => handleManagerSelect(manager)}
                     >
+
                       <div className="d-flex w-100 justify-content-between">
                         <h6 className="mb-1 fw-bold">{manager.name}</h6>
                         <small className="text-muted">{manager.username}</small>

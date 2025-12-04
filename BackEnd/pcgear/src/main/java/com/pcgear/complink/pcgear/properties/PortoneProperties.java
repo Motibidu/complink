@@ -19,6 +19,7 @@ public class PortoneProperties {
         private final String accessTokenUrl;
         private final String impKey;
         private final String impSecret;
+        private final String impUserCode;
 
         // @ConstructorBinding 제거. @Value로 속성 키를 명시
         public PortoneProperties(
@@ -28,7 +29,8 @@ public class PortoneProperties {
                         @Value("${portone.api-url}") String apiUrl,
                         @Value("${portone.access-token-url}") String accessTokenUrl,
                         @Value("${portone.imp-key}") String impKey,
-                        @Value("${portone.imp-secret}") String impSecret) {
+                        @Value("${portone.imp-secret}") String impSecret,
+                        @Value("${portone.imp-usercode}") String impUserCode) {
 
                 this.apiSecret = apiSecret;
                 this.webhookSecret = webhookSecret;
@@ -37,5 +39,7 @@ public class PortoneProperties {
                 this.accessTokenUrl = accessTokenUrl;
                 this.impKey = impKey;
                 this.impSecret = impSecret;
+                this.impUserCode = impUserCode;
+
         }
 }
