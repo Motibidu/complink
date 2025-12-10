@@ -201,11 +201,6 @@ public class OrderService {
     // .collect(Collectors.toList());
     // }
 
-    @CacheEvict(value = "dashboard-summary", allEntries = true)
-    public void deleteOrder(Integer orderId) {
-        orderRepository.deleteById(orderId);
-    }
-
     public List<OrderResponseDto> findByOrderStatus(OrderStatus orderStatus) {
         return orderRepository.findByOrderStatus(orderStatus).stream()
                 .map(OrderResponseDto::new)
@@ -263,7 +258,6 @@ public class OrderService {
 
     }
 
-    @CacheEvict(value = "dashboard-summary", allEntries = true)
     @Transactional
     public AssemblyDetailRespDto processAssemblyStatus(Integer orderId, AssemblyDetailReqDto assemblyDetailReqDto) {
         updateAssemblyStatus(orderId, assemblyDetailReqDto.getNextAssemblyStatus());

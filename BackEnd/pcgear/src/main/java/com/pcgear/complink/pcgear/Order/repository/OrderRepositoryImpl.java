@@ -46,7 +46,7 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
                 Long total = queryFactory
                                 .select(order.count())
                                 .from(order)
-                                .leftJoin(order.customer, customer) // 검색 조건에 customer가 들어가므로 조인 필요
+                                .leftJoin(order.customer, customer)
                                 .leftJoin(order.manager, userEntity)
                                 .where(
                                                 dateBetween(condition.getStartDate(), condition.getEndDate()),

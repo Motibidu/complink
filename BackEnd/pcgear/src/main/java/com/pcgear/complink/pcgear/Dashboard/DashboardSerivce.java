@@ -31,23 +31,23 @@ public class DashboardSerivce {
                 LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
                 LocalDateTime endOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
 
-                Integer totalSales = sellRepository.countBySellDateBetween(startOfDay, endOfDay);
-                Integer newOrders = orderRepository.getNewOrdersToday(startOfDay, endOfDay);
+                Integer totalSales = sellRepository.getTodayTotalSales(startOfDay, endOfDay);
+                Integer newOrdersCount = orderRepository.getTodayNewOrdersCount(startOfDay, endOfDay);
 
-                Integer pendingPayments = orderRepository.countByOrderStatus(OrderStatus.PAYMENT_PENDING);
-                log.info("pendingPayments: {}", pendingPayments);
+                Integer paymentPendingOrdersCount = orderRepository.countByOrderStatus(OrderStatus.PAYMENT_PENDING);
+                log.info("pendingPayments: {}", paymentPendingOrdersCount);
 
                 List<OrderStatus> activeStatuses = List.of(OrderStatus.PAID, OrderStatus.PREPARING_PRODUCT,
                                 OrderStatus.SHIPPING_PENDING,
                                 OrderStatus.SHIPPING);
-                Integer activeWorkload = orderRepository.countByOrderStatusIn(activeStatuses);
+                Integer activeWorkloadCount = orderRepository.countByOrderStatusIn(activeStatuses);
 
                 // 4. 하나의 객체로 만들어 반환
                 return TodaySummary.builder()
                                 .totalSellsToday(totalSales)
-                                .newOrdersToday(newOrders)
-                                .pendingPaymentCount(pendingPayments)
-                                .activeWorkloadCount(activeWorkload)
+                                .newOrdersToday(newOrdersCount)
+                                .pendingPaymentCount(paymentPendingOrdersCount)
+                                .activeWorkloadCount(activeWorkloadCount)
                                 .build();
         }
 }

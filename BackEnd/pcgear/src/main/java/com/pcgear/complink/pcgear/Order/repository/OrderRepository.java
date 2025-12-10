@@ -36,8 +36,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer>, OrderRep
         Optional<Order> findByIdWithItemsAndCustomer(@Param("orderId") Integer orderId);
 
         @Query("SELECT COUNT(o) FROM Order o " +
-                        "WHERE o.createdAt BETWEEN :startOfDay AND :endOfDay")
-        Integer getNewOrdersToday(
+                        "WHERE o.createdAt BETWEEN :startOfDay AND :endOfDay AND o.orderStatus= ORDER_RECEIVED")
+        Integer getTodayNewOrdersCount(
                         @Param("startOfDay") LocalDateTime startOfDay,
                         @Param("endOfDay") LocalDateTime endOfDay);
 

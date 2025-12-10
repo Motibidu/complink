@@ -62,6 +62,7 @@ dependencies {
     testImplementation 'org.quickperf:quick-perf-springboot-persistence-jpa:1.1.0'
 
     implementation 'jakarta.activation:jakarta.activation-api:2.1.2'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     
 

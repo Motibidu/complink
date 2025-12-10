@@ -28,7 +28,8 @@ public class ItemService {
         private final ItemRepository itemRepository;
         private final OrderRepository orderRepository;
 
-        @Cacheable(value = "items", condition = "#p0 == null", key = "#p1.toString()")
+        // @Cacheable(value = "items", condition = "#p0 == null", key =
+        // "#p1.toString()")
         public ItemPageDto getAllItems(String search, Pageable pageable) {
 
                 if (search != null && !search.isBlank()) {

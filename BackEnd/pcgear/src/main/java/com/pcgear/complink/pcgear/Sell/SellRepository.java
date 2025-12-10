@@ -13,7 +13,7 @@ import org.springframework.data.repository.query.Param;
 public interface SellRepository extends JpaRepository<Sell, Integer> {
         @Query("SELECT COALESCE(SUM(s.grandAmount), 0) FROM Sell s " +
                         "WHERE s.createdAt BETWEEN :startOfDay AND :endOfDay")
-        Integer countBySellDateBetween(
+        Integer getTodayTotalSales(
                         @Param("startOfDay") LocalDateTime startOfDay,
                         @Param("endOfDay") LocalDateTime endOfDay);
 

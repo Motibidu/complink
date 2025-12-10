@@ -36,6 +36,8 @@ public class SecurityConfig {
                                 })
                                                 .failureHandler(customAuthFailureHandler))
                                 .authorizeHttpRequests(auth -> auth
+
+                                                .requestMatchers("/actuator/**").permitAll()
                                                 // 관리자 관련 페이지 경로
                                                 .requestMatchers("/admin/**")
                                                 .hasRole("ADMIN")
