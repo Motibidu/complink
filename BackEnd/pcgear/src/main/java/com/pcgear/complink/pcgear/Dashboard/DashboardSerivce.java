@@ -35,7 +35,7 @@ public class DashboardSerivce {
                 Integer newOrdersCount = orderRepository.getTodayNewOrdersCount(startOfDay, endOfDay);
 
                 Integer paymentPendingOrdersCount = orderRepository.countByOrderStatus(OrderStatus.PAYMENT_PENDING);
-                log.info("pendingPayments: {}", paymentPendingOrdersCount);
+                // log.info("pendingPayments: {}", paymentPendingOrdersCount);
 
                 List<OrderStatus> activeStatuses = List.of(OrderStatus.PAID, OrderStatus.PREPARING_PRODUCT,
                                 OrderStatus.SHIPPING_PENDING,

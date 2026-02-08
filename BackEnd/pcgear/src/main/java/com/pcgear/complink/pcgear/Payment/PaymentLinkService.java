@@ -158,29 +158,7 @@ public class PaymentLinkService {
                 }
         }
 
-        // 포트원 v1 인증토큰 발급
-        // private Mono<String> getAccessToken() {
 
-        // PortoneV1AccessTokenReq request = new
-        // PortoneV1AccessTokenReq(portoneProperties.getImpKey(),
-        // portoneProperties.getImpSecret());
-
-        // return webClient.post()
-        // .uri(PORTONE_V1_GET_ACCESS_TOKEN_URI) // 토큰 발급 URL
-        // .bodyValue(request)
-        // .retrieve()
-        // .bodyToMono(PortoneV1AccessTokenResp.class)
-        // .doOnNext(responseDto -> {
-        // log.info("Full API Response DTO: {}", responseDto);
-
-        // // 내부 response 객체나 토큰만 따로 볼 수도 있습니다.
-        // if (responseDto.getResponse() != null) {
-        // log.info("Response Data part: {}",
-        // responseDto.getResponse().getAccess_token());
-        // }
-        // })
-        // .map(response -> response.getResponse().getAccess_token()); // 토큰 문자열만 추출
-        // }
         private String getAccessToken() {
                 PortoneV1AccessTokenReq request = new PortoneV1AccessTokenReq(
                                 portoneProperties.getImpKey(),
@@ -205,19 +183,6 @@ public class PaymentLinkService {
                         throw new RuntimeException("토큰 발급 실패", e);
                 }
         }
-
-        // 포트원 v1 결제링크 취소
-        // public Mono<String> cancelPaymentLink(String paymentLink) {
-        // String linkId = paymentLink.substring(paymentLink.lastIndexOf("/") + 1);
-        // return webClient.put()
-        // .uri("https://api.iamport.co/api/supplements/v1/link/payment/" + linkId)
-        // .retrieve()
-        // .bodyToMono(String.class) // 1. 일단 String으로 받음 ("{}")
-        // .map(response -> {
-        // return "결제 링크가 성공적으로 만료(취소)되었습니다.";
-        // })
-        // .doOnError(e -> log.error("링크 만료 실패: {}", e.getMessage()));
-        // }
 
         public String cancelPaymentLink(String paymentLink) {
                 String linkId = paymentLink.substring(paymentLink.lastIndexOf("/") + 1);

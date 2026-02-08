@@ -144,7 +144,7 @@ public class PaymentService {
     // });
     // }
 
-    public OrderPayment executeImmediatePayment(UserEntity user, SubscriptionRequest subscriptionRequest) {
+    public Payment executeImmediatePayment(UserEntity user, SubscriptionRequest subscriptionRequest) {
         log.info("단건(즉시) 결제 요청 시작 ==========================================");
 
         final String paymentId = "payment-" + UUID.randomUUID().toString();
@@ -183,10 +183,10 @@ public class PaymentService {
         }
     }
 
-    private OrderPayment savePaymentFromResponse(Map<String, Object> responseMap, String paymentId, UserEntity user,
+    private Payment savePaymentFromResponse(Map<String, Object> responseMap, String paymentId, UserEntity user,
             SubscriptionRequest request) {
         Map<String, Object> paymentDetail = (Map<String, Object>) responseMap.get("payment");
-        OrderPayment payment = OrderPayment.builder()
+        Payment payment = Payment.builder()
                 .paymentId(paymentId)
                 .userId(user.getUsername())
                 .amount(request.getAmount())
@@ -442,7 +442,7 @@ public class PaymentService {
 
     @Transactional
     public void processWebhookTransaction(String paymentId, Map<String, Object> paymentDetail) {
-        Optional<OrderPayment> existingPaymentOpt = paymentRepository.findByPaymentId(paymentId);
+        Optional<Payment> existingPaymentOpt = paymentRepository.findByPaymentId(paymentId);
 
         if (existingPaymentOpt.isPresent()) {
             log.info(">>> [TYPE: 단건/주문 결제] 처리");
@@ -453,7 +453,7 @@ public class PaymentService {
         }
     }
 
-    private void processOneTimePayment(OrderPayment dbPayment, Map<String, Object> paymentDetail) {
+    private void processOneTimePayment(Payment dbPayment, Map<String, Object> paymentDetail) {
         Integer apiAmount = (Integer) ((Map<String, Object>) paymentDetail.get("amount")).get("total");
 
         if (!apiAmount.equals(dbPayment.getAmount())) {
@@ -540,7 +540,7 @@ public class PaymentService {
 
     private void createPayment(Order order) {
         final String paymentId = "payment-" + UUID.randomUUID().toString();
-        OrderPayment payment = OrderPayment.builder()
+        Payment payment = Payment.builder()
                 .paymentId(paymentId)
                 .order(order)
                 .userId("AAA")
@@ -625,7 +625,7 @@ public class PaymentService {
                 break;
 
             case "cancelled": // 결제 취소
-                orderService.updateOrderStatus(order.getOrderId(), OrderStatus.CANCELLED);
+                orderService.cancelOrderInDB(order.getOrderId()); // 단순 상태 변경이 아닌, 재고/매출 취소 로직 전체 수행
                 log.info("Payment cancelled for order {}", webhookRequest.getMerchantUid());
                 break;
 

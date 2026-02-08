@@ -9,12 +9,11 @@ import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
 import com.querydsl.core.types.dsl.PathInits;
 
-
 /**
  * QOrderPayment is a Querydsl query type for OrderPayment
  */
 @Generated("com.querydsl.codegen.DefaultEntitySerializer")
-public class QOrderPayment extends EntityPathBase<OrderPayment> {
+public class QOrderPayment extends EntityPathBase<Payment> {
 
     private static final long serialVersionUID = 1984346374L;
 
@@ -24,7 +23,8 @@ public class QOrderPayment extends EntityPathBase<OrderPayment> {
 
     public final NumberPath<Integer> amount = createNumber("amount", Integer.class);
 
-    public final DateTimePath<java.time.LocalDateTime> createdAt = createDateTime("createdAt", java.time.LocalDateTime.class);
+    public final DateTimePath<java.time.LocalDateTime> createdAt = createDateTime("createdAt",
+            java.time.LocalDateTime.class);
 
     public final com.pcgear.complink.pcgear.Order.model.QOrder order;
 
@@ -34,15 +34,16 @@ public class QOrderPayment extends EntityPathBase<OrderPayment> {
 
     public final StringPath paymentMethod = createString("paymentMethod");
 
-    public final EnumPath<com.pcgear.complink.pcgear.Payment.model.PaymentStatus> paymentStatus = createEnum("paymentStatus", com.pcgear.complink.pcgear.Payment.model.PaymentStatus.class);
+    public final EnumPath<com.pcgear.complink.pcgear.Payment.model.PaymentStatus> paymentStatus = createEnum(
+            "paymentStatus", com.pcgear.complink.pcgear.Payment.model.PaymentStatus.class);
 
     public final StringPath userId = createString("userId");
 
     public QOrderPayment(String variable) {
-        this(OrderPayment.class, forVariable(variable), INITS);
+        this(Payment.class, forVariable(variable), INITS);
     }
 
-    public QOrderPayment(Path<? extends OrderPayment> path) {
+    public QOrderPayment(Path<? extends Payment> path) {
         this(path.getType(), path.getMetadata(), PathInits.getFor(path.getMetadata(), INITS));
     }
 
@@ -51,13 +52,14 @@ public class QOrderPayment extends EntityPathBase<OrderPayment> {
     }
 
     public QOrderPayment(PathMetadata metadata, PathInits inits) {
-        this(OrderPayment.class, metadata, inits);
+        this(Payment.class, metadata, inits);
     }
 
-    public QOrderPayment(Class<? extends OrderPayment> type, PathMetadata metadata, PathInits inits) {
+    public QOrderPayment(Class<? extends Payment> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this.order = inits.isInitialized("order") ? new com.pcgear.complink.pcgear.Order.model.QOrder(forProperty("order"), inits.get("order")) : null;
+        this.order = inits.isInitialized("order")
+                ? new com.pcgear.complink.pcgear.Order.model.QOrder(forProperty("order"), inits.get("order"))
+                : null;
     }
 
 }
-

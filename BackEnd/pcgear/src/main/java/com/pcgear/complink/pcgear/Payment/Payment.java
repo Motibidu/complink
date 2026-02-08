@@ -32,7 +32,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class OrderPayment {
+public class Payment {
 
         @Id
         String paymentId;

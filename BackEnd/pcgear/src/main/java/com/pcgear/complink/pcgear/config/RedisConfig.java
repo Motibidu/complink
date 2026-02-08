@@ -84,7 +84,7 @@ public class RedisConfig {
                         configurations.put("items", cacheConfiguration
                                         .entryTtl(Duration.ofHours(1)));
                         configurations.put("dashboard-summary", cacheConfiguration
-                                        .entryTtl(Duration.ofHours(12)));
+                                        .entryTtl(Duration.ofMinutes(1)));
 
                         builder.withInitialCacheConfigurations(configurations);
                 };

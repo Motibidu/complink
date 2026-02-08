@@ -18,7 +18,7 @@ import com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto;
 import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderItem;
 import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
-import com.pcgear.complink.pcgear.Payment.OrderPayment;
+import com.pcgear.complink.pcgear.Payment.Payment;
 import com.pcgear.complink.pcgear.Payment.PaymentLinkService;
 import com.pcgear.complink.pcgear.Payment.PaymentRepository;
 import com.pcgear.complink.pcgear.Payment.model.PaymentStatus;
@@ -27,6 +27,8 @@ import com.pcgear.complink.pcgear.Sell.SellService;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
 import com.pcgear.complink.pcgear.User.repository.UserRepository;
 import com.pcgear.complink.pcgear.User.service.MailService;
+import com.pcgear.complink.pcgear.exception.InconsistentDataException;
+import com.pcgear.complink.pcgear.exception.PaymentProcessingException;
 import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
 import jakarta.mail.internet.MimeMessage;
@@ -50,29 +52,30 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-// @RequiredArgsConstructor
 @Slf4j
 public class OrderService {
 
     private final PaymentRepository paymentRepository;
-
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
+    private final ItemRepository itemRepository;
+
     private final PaymentLinkService paymentLinkService;
     private final SellService sellService;
-    private final ItemRepository itemRepository;
     private final DeliveryService deliveryService;
     private final ItemService itemService;
     private final OrderService self;
-    private final JavaMailSender javaMailSender;
-
-    private final SimpMessagingTemplate messagingTemplate;
-
     private final MailService mailService;
+
+    private final JavaMailSender javaMailSender;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Value("${delivery-tracker.webhook-url}")
     private String DELIVERYTRACKER_WEBHOOK_URL;
+
+    @Value("${admin.email}")
+    private String adminEmail;
 
     public OrderService(OrderRepository orderRepository,
             UserRepository userRepository,
@@ -312,33 +315,50 @@ public class OrderService {
     public Order processOrderCancellation(Integer orderId) {
 
         boolean isRefunded = false;
-        Optional<OrderPayment> paymentOpt = paymentRepository.findByOrder_OrderId(orderId);
+        // 0. 주문 존재 여부 확인
+        orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
 
+        // 1. 결제 기록 확인 및 환불 처리
+        Optional<Payment> paymentOpt = paymentRepository.findByOrder_OrderId(orderId);
         if (paymentOpt.isPresent()) {
-            paymentLinkService.cancelPayment(orderId, "단순 변심에 의한 취소");
-            isRefunded = true;
+            try {
+                paymentLinkService.cancelPayment(orderId, "단순 변심에 의한 취소");
+                isRefunded = true;
+            } catch (Exception e) {
+                throw new PaymentProcessingException("결제 취소 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
+            }
         }
 
         try {
-            // 2. [내부 DB] 상태 변경 (트랜잭션 있음)
+            // 2. 상태 변경
             return self.cancelOrderInDB(orderId);
-
         } catch (Exception e) {
-
-            // 포트원 주문취소는 성공했는데, DB 반영 실패
+            // 3. DB 업데이트 실패 시 예외 처리
             if (isRefunded) {
-                log.error("🔥🔥 CRITICAL ERROR: 환불은 완료되었으나 DB 반영 실패! 수동 조치 필요. OrderId: {}", orderId);
-                MimeMessage mail = mailService.createDbErrorMail("jack981109@gmail.com", orderId, e.getMessage());
+                log.error(" 환불은 완료되었으나 DB 반영 실패! 수동 조치 필요. OrderId: {}", orderId);
+                MimeMessage mail = mailService.createDbErrorMail(adminEmail, orderId, e.getMessage());
                 javaMailSender.send(mail);
-            }
 
-            throw new RuntimeException("주문 취소 처리 중 오류 발생 (환불 여부 확인 필요)", e);
+                throw new InconsistentDataException(
+                        "CRITICAL: 환불은 완료되었으나 DB 상태 변경에 실패했습니다. 관리자에게 즉시 문의하세요. Order ID: " + orderId);
+            }
+            // 일반적인 DB 업데이트 실패
+            throw new RuntimeException("주문 취소 중 데이터베이스 오류가 발생했습니다.", e);
         }
     }
 
     @Transactional
     public Order cancelOrderInDB(Integer orderId) {
         log.info("주문취소 시작, 주문Id: {}", orderId);
+
+        // [멱등성 보장] 이미 취소된 주문인지 확인
+        Order existingOrder = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
+        if (existingOrder.getOrderStatus() == OrderStatus.CANCELLED) {
+            log.info("이미 취소 처리된 주문입니다. 중복 로직을 건너뜁니다. OrderId: {}", orderId);
+            return existingOrder;
+        }
 
         // 주문상태 주문취소로 업데이트
         Order order = updateOrderStatus(orderId, OrderStatus.CANCELLED);

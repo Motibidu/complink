@@ -1,5 +1,6 @@
 package com.pcgear.complink.pcgear.Order.repository;
 
+import com.pcgear.complink.pcgear.Order.model.AssemblyDetailRespDto;
 import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderResponseDto;
 import com.pcgear.complink.pcgear.Order.model.OrderSearchCondition;
@@ -7,7 +8,11 @@ import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -15,11 +20,13 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static com.pcgear.complink.pcgear.Order.model.QOrder.order;
 import static com.pcgear.complink.pcgear.Customer.QCustomer.customer;
 import static com.pcgear.complink.pcgear.User.entity.QUserEntity.userEntity;
 
+@Slf4j
 @RequiredArgsConstructor
 public class OrderRepositoryImpl implements OrderRepositoryCustom {
 
@@ -41,6 +48,7 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
                                 .limit(pageable.getPageSize())
                                 .orderBy(order.orderId.desc())
                                 .fetch();
+                log.info("orders: {}", orders);
 
                 // 2. 카운트 쿼리 (최적화: 조인 줄이기 가능하면 줄임)
                 Long total = queryFactory
@@ -60,8 +68,28 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
                                 .map(OrderResponseDto::new)
                                 .toList();
 
-                return new PageImpl<>(content, pageable, total != null ? total : 0);    
+                return new PageImpl<>(content, pageable, total != null ? total : 0);
 
+        }
+
+        @Override
+        public AssemblyDetailRespDto getAssemblyDetailRespDto(Integer orderId) {
+                Order result = queryFactory
+                                .selectFrom(order)
+                                .join(order.customer, customer).fetchJoin()
+                                .leftJoin(order.orderItems).fetchJoin()
+                                .where(order.orderId.eq(orderId))
+                                .distinct()
+                                .fetchOne();
+
+                return Optional.ofNullable(result)
+                                .map(o -> new AssemblyDetailRespDto(
+                                                o.getOrderId(),
+                                                o.getOrderStatus(),
+                                                o.getAssemblyStatus(),
+                                                o.getCustomer(),
+                                                o.getOrderItems()))
+                                .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
         }
 
         // 1. 날짜 검색 (OrderDate 기준)

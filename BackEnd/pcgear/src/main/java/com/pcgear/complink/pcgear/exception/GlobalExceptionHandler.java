@@ -15,7 +15,9 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -49,9 +51,26 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
+    // 결제 처리 중 오류 핸들러
+    @ExceptionHandler(PaymentProcessingException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentProcessingException(PaymentProcessingException ex) {
+        log.error("Payment processing error: {}", ex.getMessage(), ex);
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // 데이터 불일치 오류 핸들러
+    @ExceptionHandler(InconsistentDataException.class)
+    public ResponseEntity<ErrorResponse> handleInconsistentDataException(InconsistentDataException ex) {
+        log.error("Inconsistent data error: {}", ex.getMessage(), ex);
+        ErrorResponse errorResponse = new ErrorResponse("데이터 처리 중 심각한 오류가 발생했습니다. 관리자에게 문의해주세요.");
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     // 위에서 처리하지 못한 모든 예외는 여기서 처리
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllExceptions(Exception ex) {
+        log.error("Unhandled exception occurred: ", ex);
         ErrorResponse errorResponse = new ErrorResponse("서버 내부에서 예상치 못한 오류가 발생했습니다.");
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
