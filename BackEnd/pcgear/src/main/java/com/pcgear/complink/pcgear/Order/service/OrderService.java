@@ -61,6 +61,7 @@ public class OrderService {
     private final CustomerRepository customerRepository;
     private final ItemRepository itemRepository;
 
+    @Lazy
     private final PaymentLinkService paymentLinkService;
     private final SellService sellService;
     private final DeliveryService deliveryService;
@@ -80,7 +81,7 @@ public class OrderService {
     public OrderService(OrderRepository orderRepository,
             UserRepository userRepository,
             CustomerRepository customerRepository,
-            PaymentLinkService paymentLinkService,
+            @Lazy PaymentLinkService paymentLinkService,
             ItemRepository itemRepository,
             @Lazy DeliveryService deliveryService, // 👈 4. 순환 참조 대상에 @Lazy 추가
             SimpMessagingTemplate messagingTemplate,
