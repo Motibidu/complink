@@ -37,6 +37,7 @@ import java.util.Map;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final PaymentLinkService paymentLinkService;
     private final UserRepository userRepository;
 
     @PostMapping("/subscribe")
@@ -87,7 +88,7 @@ public class PaymentController {
         log.info(">>> [Webhook Link] Received - ImpUid: {}", webhookRequest.getImpUid());
 
         try {
-            paymentService.processPaymentLinkWebhook(webhookRequest);
+            paymentLinkService.verifyWebhook(webhookRequest);
             return ResponseEntity.ok("Webhook processed successfully.");
 
         } catch (Exception e) {
