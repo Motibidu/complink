@@ -39,20 +39,6 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final UserRepository userRepository;
 
-    // @PostMapping("/subscribe")
-    // public ResponseEntity<String> subscribe(@RequestBody SubscriptionRequest
-    // request,
-    // @AuthenticationPrincipal UserDetails userDetails) {
-    // String username = userDetails.getUsername();
-    // UserEntity user = userRepository.findByUsername(username)
-    // .orElseThrow(() -> new EntityNotFoundException("해당 사용자를 찾을 수 없습니다: " +
-    // username));
-
-    // paymentService.executeImmediatePayment(user, request).block();
-
-    // return ResponseEntity.ok("구독 처리가 성공적으로 시작되었습니다.");
-    // }
-
     @PostMapping("/subscribe")
     public ResponseEntity<String> subscribe(@RequestBody SubscriptionRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -65,37 +51,6 @@ public class PaymentController {
 
         return ResponseEntity.ok("구독 처리가 성공적으로 시작되었습니다.");
     }
-
-    // @PostMapping("/webhook-verify")
-    // public ResponseEntity<String> portOneWebhook(
-    // @RequestBody String payload, // 1. 원본 Body를 String으로 받습니다.
-    // @RequestHeader("webhook-id") String webhookId, // 2. 헤더 값을 받아옵니다.
-    // @RequestHeader("webhook-signature") String webhookSignature,
-    // @RequestHeader("webhook-timestamp") String webhookTimestamp) {
-    // log.info("payload: {}", payload);
-    // log.info("webhook-id: {}", webhookId);
-    // log.info("webhook-signature: {}", webhookSignature);
-    // log.info("webhook-timestamp: {}", webhookTimestamp);
-
-    // try {
-    // paymentService.webhookVerify(payload, webhookId, webhookSignature,
-    // webhookTimestamp);
-    // return ResponseEntity.ok("Webhook processed successfully.");
-    // } catch (WebhookVerificationException e) {
-    // log.error("웹훅 검증 실패로 인해 요청 거부: {}", e.getMessage());
-    // return ResponseEntity.badRequest().body("Webhook verification failed: Invalid
-    // signature or payload.");
-    // } catch (PaymentVerificationException e) {
-    // log.error("웹훅 검증 실패로 인해 요청 거부: {}", e.getMessage());
-    // return ResponseEntity.badRequest().body("Webhook verification failed: " +
-    // e.getMessage());
-    // } catch (Exception e) {
-    // log.error("웹훅 처리 중 내부 오류 발생: {}", e.getMessage());
-    // return ResponseEntity.internalServerError().body("Error processing webhook
-    // internally.");
-
-    // }
-    // }
 
     // 포트원 v2 웹훅
     @PostMapping("/webhook-verify")
@@ -125,23 +80,6 @@ public class PaymentController {
             return ResponseEntity.internalServerError().body("Error processing webhook.");
         }
     }
-
-    // @PostMapping("/webhook/verify/paymentLink")
-    // public ResponseEntity<String> webhookVerifyUrl(
-    // @RequestBody WebhookRequest webhookRequest,
-    // @AuthenticationPrincipal UserDetails userDetails) {
-
-    // try {
-    // // 서비스 호출 (내부에서 API 호출 -> DB 저장 순서로 처리됨)
-    // paymentService.processPaymentLinkWebhook(webhookRequest);
-    // return ResponseEntity.ok("Webhook processed successfully.");
-
-    // } catch (Exception e) {
-    // log.error("웹훅 처리 실패: {}", e.getMessage());
-    // // 포트원 서버에게는 400을 리턴하여 재발송을 유도하거나 에러를 알림
-    // return ResponseEntity.badRequest().body(e.getMessage());
-    // }
-    // }
 
     @PostMapping("/webhook/verify/paymentLink")
     public ResponseEntity<String> webhookVerifyUrl(@RequestBody WebhookRequest webhookRequest) {

@@ -518,7 +518,6 @@ public class PaymentService {
                     .body(SingleInquiryResponse.class);
 
         } catch (HttpClientErrorException.NotFound e) {
-            // 404 에러 발생 시 로그 찍고 null 반환하거나 커스텀 예외 던지기
             log.error("포트원에서 결제 정보를 찾을 수 없습니다. impUid={}", impUid);
             throw new RuntimeException("결제 정보 없음 (포트원)", e);
         }

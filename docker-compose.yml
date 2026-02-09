@@ -22,62 +22,11 @@ services:
     build:
       context: ./BackEnd/pcgear
     ports:
-      - "8081:8080" 
-      # - "35729:35729"
-    # volumes:
-      # 호스트의 컴파일된 클래스 파일 -> 컨테이너의 /app/classes로 마운트
-      # - ./BackEnd/pcgear/build/classes/java/main:/app/classes
-      # 호스트의 리소스 파일 -> 컨테이너의 /app/resources로 마운트
-      # - ./BackEnd/pcgear/src/main/resources:/app/resources
+      - "8080:8080" 
+    env_file:
+      - .env
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/pcgear?allowPublicKeyRetrieval=true&useSSL=false
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod} 
-      # - SPRING_DEVTOOLS_RESTART_ENABLED=true
-      # 2. EMAIL SECRETS
-      - MAIL_USERNAME=${MAIL_USERNAME}
-      - MAIL_PASSWORD=${MAIL_PASSWORD}
-
-      # 3. DB SECRETS
-      - PROD_DB_HOST=${PROD_DB_HOST}
-      - PROD_DB_USERNAME=${PROD_DB_USERNAME}
-      - PROD_DB_PASSWORD=${PROD_DB_PASSWORD}
-
-      # 4. ADMIN SECRETS
-      #- ADMIN_USERNAME=${ADMIN_USERNAME}
-      #- ADMIN_PASSWORD=${ADMIN_PASSWORD}
-
-      # 5. API SECRETS
-      - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY}
-      - RECATPCHA_MAILSENDER_PASSWORD=${RECATPCHA_MAILSENDER_PASSWORD}
-      - RECAPTCHA_VERIFY_URL=${RECAPTCHA_VERIFY_URL}
-
-      - PORTONE_API_URL=${PORTONE_API_URL}
-      - PORTONE_ACCESS_TOKEN_URL=${PORTONE_ACCESS_TOKEN_URL}
-      - PORTONE_API_SECRET=${PORTONE_API_SECRET}
-      - PORTONE_WEBHOOK_SECRET=${PORTONE_WEBHOOK_SECRET}
-      - PORTONE_IMP_KEY=${PORTONE_IMP_KEY}
-      - PORTONE_IMP_SECRET=${PORTONE_IMP_SECRET}
-      - PORTONE_IMP_USERCODE=${PORTONE_IMP_USERCODE}
-
-
-      - COLLSMS_API_KEY=${COLLSMS_API_KEY}
-      - COOLSMS_API_SECRET_KEY=${COOLSMS_API_SECRET_KEY}
-      
-      - PROD_DOMAIN=${PROD_DOMAIN}
-      - DELIVERY_TRACKER_CLIENT_ID=${DELIVERY_TRACKER_CLIENT_ID}
-      - DELIVERY_TRACKER_CLIENT_SECRET=${DELIVERY_TRACKER_CLIENT_SECRET}
-      - DELIVERY_TRACKER_AUTH_URL=${DELIVERY_TRACKER_AUTH_URL}
-      - DELIVERY_TRACKER_GRAPHQL_API_URL=${DELIVERY_TRACKER_GRAPHQL_API_URL}
-
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
       - TZ=Asia/Seoul
-    # command: >
-    #   java -cp /app/classes:/app/resources:/app/app.jar 
-    #   org.springframework.boot.loader.JarLauncher
-
     depends_on:
       db:
         condition: service_healthy

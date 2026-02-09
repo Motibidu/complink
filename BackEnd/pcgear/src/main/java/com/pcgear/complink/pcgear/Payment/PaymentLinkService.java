@@ -57,7 +57,8 @@ public class PaymentLinkService {
                                 .name(productName)
                                 .currency("KRW")
                                 .buyer_tel(buyerTel)
-                                .notice_url(portoneProperties.getWebhookUrl() + "/payment/webhook/verify/paymentLink")
+                                .notice_url(portoneProperties.getWebhookUrl()
+                                                + "/api/payment/webhook/verify/paymentLink")
                                 .pay_methods(Collections.singletonList(cardPayMethod))
                                 .build();
 
@@ -157,7 +158,6 @@ public class PaymentLinkService {
                         throw new RuntimeException("결제 취소 실패", e);
                 }
         }
-
 
         private String getAccessToken() {
                 PortoneV1AccessTokenReq request = new PortoneV1AccessTokenReq(
