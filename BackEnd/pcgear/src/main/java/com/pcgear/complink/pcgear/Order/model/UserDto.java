@@ -10,9 +10,14 @@ public class UserDto {
         private final String managerPhoneNumber;
 
         public UserDto(UserEntity manager) {
-                this.managerName = manager.getName();
-                this.managerPhoneNumber = manager.getTel();
-        }
 
-        
+                if (manager == null) {
+                        this.managerName = "미지정";
+                        this.managerPhoneNumber = "미지정";
+
+                } else {
+                        this.managerName = manager.getName();
+                        this.managerPhoneNumber = manager.getTel();
+                }
+        }
 }

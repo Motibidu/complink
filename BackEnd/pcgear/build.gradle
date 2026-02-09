@@ -59,20 +59,20 @@ dependencies {
 
     testImplementation 'com.h2database:h2'
     testImplementation 'org.assertj:assertj-core:3.25.3'
-    testImplementation 'org.quickperf:quick-perf-springboot-persistence-jpa:1.1.0'
+    testImplementation 'org.quickperf:quick-perf-junit5:1.1.0'
+    testImplementation 'org.quickperf:quick-perf-springboot2-sql-starter:1.1.0'
 
     implementation 'jakarta.activation:jakarta.activation-api:2.1.2'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-
-    
-
-    
-    
-    
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty 'spring.profiles.active', 'dev'
+}
+
+bootRun {
+    systemProperty 'spring.profiles.active', 'dev'
 }
 
 jar {
@@ -83,9 +83,7 @@ jar {
         options.compilerArgs.add("-parameters")
     }
 
-bootRun {
-    systemProperties['spring.profiles.active'] = 'dev'
-}
+
 
 // QueryDSL Q-Class 경로 설정
 def querydslDir = "src/main/generated"

@@ -13,9 +13,17 @@ public class CustomerDto {
 
         // Customer 엔티티를 받아서 DTO를 생성하는 생성자
         public CustomerDto(Customer customer) {
-                this.customerId = customer.getCustomerId();
-                this.customerName = customer.getCustomerName();
-                this.customerAddress = customer.getAddress();
-                this.phoneNumber = customer.getPhoneNumber();
+
+                if (customer == null) {
+                        this.customerId = "미지정";
+                        this.customerName = "미지정";
+                        this.customerAddress = "미지정";
+                        this.phoneNumber = "미지정";
+                } else {
+                        this.customerId = customer.getCustomerId();
+                        this.customerName = customer.getCustomerName();
+                        this.customerAddress = customer.getAddress();
+                        this.phoneNumber = customer.getPhoneNumber();
+                }
         }
 }

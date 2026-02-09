@@ -9,22 +9,22 @@ import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
 import com.querydsl.core.types.dsl.PathInits;
 
+
 /**
- * QOrderPayment is a Querydsl query type for OrderPayment
+ * QPayment is a Querydsl query type for Payment
  */
 @Generated("com.querydsl.codegen.DefaultEntitySerializer")
-public class QOrderPayment extends EntityPathBase<Payment> {
+public class QPayment extends EntityPathBase<Payment> {
 
-    private static final long serialVersionUID = 1984346374L;
+    private static final long serialVersionUID = 1730962200L;
 
     private static final PathInits INITS = PathInits.DIRECT2;
 
-    public static final QOrderPayment orderPayment = new QOrderPayment("orderPayment");
+    public static final QPayment payment = new QPayment("payment");
 
     public final NumberPath<Integer> amount = createNumber("amount", Integer.class);
 
-    public final DateTimePath<java.time.LocalDateTime> createdAt = createDateTime("createdAt",
-            java.time.LocalDateTime.class);
+    public final DateTimePath<java.time.LocalDateTime> createdAt = createDateTime("createdAt", java.time.LocalDateTime.class);
 
     public final com.pcgear.complink.pcgear.Order.model.QOrder order;
 
@@ -34,32 +34,30 @@ public class QOrderPayment extends EntityPathBase<Payment> {
 
     public final StringPath paymentMethod = createString("paymentMethod");
 
-    public final EnumPath<com.pcgear.complink.pcgear.Payment.model.PaymentStatus> paymentStatus = createEnum(
-            "paymentStatus", com.pcgear.complink.pcgear.Payment.model.PaymentStatus.class);
+    public final EnumPath<com.pcgear.complink.pcgear.Payment.model.PaymentStatus> paymentStatus = createEnum("paymentStatus", com.pcgear.complink.pcgear.Payment.model.PaymentStatus.class);
 
     public final StringPath userId = createString("userId");
 
-    public QOrderPayment(String variable) {
+    public QPayment(String variable) {
         this(Payment.class, forVariable(variable), INITS);
     }
 
-    public QOrderPayment(Path<? extends Payment> path) {
+    public QPayment(Path<? extends Payment> path) {
         this(path.getType(), path.getMetadata(), PathInits.getFor(path.getMetadata(), INITS));
     }
 
-    public QOrderPayment(PathMetadata metadata) {
+    public QPayment(PathMetadata metadata) {
         this(metadata, PathInits.getFor(metadata, INITS));
     }
 
-    public QOrderPayment(PathMetadata metadata, PathInits inits) {
+    public QPayment(PathMetadata metadata, PathInits inits) {
         this(Payment.class, metadata, inits);
     }
 
-    public QOrderPayment(Class<? extends Payment> type, PathMetadata metadata, PathInits inits) {
+    public QPayment(Class<? extends Payment> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this.order = inits.isInitialized("order")
-                ? new com.pcgear.complink.pcgear.Order.model.QOrder(forProperty("order"), inits.get("order"))
-                : null;
+        this.order = inits.isInitialized("order") ? new com.pcgear.complink.pcgear.Order.model.QOrder(forProperty("order"), inits.get("order")) : null;
     }
 
 }
+
