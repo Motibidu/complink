@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -265,7 +266,13 @@ public class DeliveryService {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(requestBody)
                                 .retrieve()
+                                .onStatus(HttpStatusCode::isError, (req, res) -> {
+                                        log.error("API 응답 에러 코드: {}", res.getStatusCode());
+                                        log.error("API 응답 메세지: {}", res.getStatusText());
+                                        log.error("API 응답 바디: {}", new String(res.getBody().readAllBytes()));
+                                })
                                 .body(RegisterWebhookResp.class);
+                log.info("response: {}", response);
 
                 if (response != null && response.getData() != null
                                 && Boolean.TRUE.equals(response.getData().getRegisterTrackWebhook())) {
