@@ -30,8 +30,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 @RequestMapping("/delivery")
 public class DelieveryController {
 
-    @Value("${delivery-tracker.webhook-url}")
-    private String DELIVERYTRACKER_WEBHOOK_URL;
     private final DeliveryService deliveryService;
 
     // @PostMapping("/trackingNumber")
