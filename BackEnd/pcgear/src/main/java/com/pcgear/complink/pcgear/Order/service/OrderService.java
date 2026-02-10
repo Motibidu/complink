@@ -29,6 +29,7 @@ import com.pcgear.complink.pcgear.User.repository.UserRepository;
 import com.pcgear.complink.pcgear.User.service.MailService;
 import com.pcgear.complink.pcgear.exception.InconsistentDataException;
 import com.pcgear.complink.pcgear.exception.PaymentProcessingException;
+import com.pcgear.complink.pcgear.properties.DeliveryTrackerProperties;
 import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
 import jakarta.mail.internet.MimeMessage;
@@ -72,8 +73,7 @@ public class OrderService {
     private final JavaMailSender javaMailSender;
     private final SimpMessagingTemplate messagingTemplate;
 
-    @Value("${delivery-tracker.webhook-url}")
-    private String DELIVERYTRACKER_WEBHOOK_URL;
+    private final DeliveryTrackerProperties properties;
 
     @Value("${admin.email}")
     private String adminEmail;
@@ -90,7 +90,8 @@ public class OrderService {
             SellService sellService,
             @Lazy OrderService self,
             MailService mailService,
-            JavaMailSender javaMailSender) {
+            JavaMailSender javaMailSender,
+            DeliveryTrackerProperties properties) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.customerRepository = customerRepository;
@@ -104,6 +105,7 @@ public class OrderService {
         this.self = self;
         this.mailService = mailService;
         this.javaMailSender = javaMailSender;
+        this.properties = properties;
     }
 
     @CacheEvict(value = { "dashboard-summary" }, allEntries = true)
@@ -285,8 +287,7 @@ public class OrderService {
                     .build();
 
             ValidationResult result = deliveryService
-                    .registerWebhookIfValid(accessToken, trackingNumberReq,
-                            DELIVERYTRACKER_WEBHOOK_URL + "/delivery/webhook");
+                    .registerWebhookIfValid(accessToken, trackingNumberReq);
 
             if (!result.isValid()) {
                 // 웹훅 등록 실패 시 예외 처리 또는 로그

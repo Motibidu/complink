@@ -169,8 +169,7 @@ public class DeliveryService {
         // });
         // }
 
-        public ValidationResult registerWebhookIfValid(String accessToken, TrackingNumberReq trackingNumberReq,
-                        String myCallbackUrl) {
+        public ValidationResult registerWebhookIfValid(String accessToken, TrackingNumberReq trackingNumberReq) {
                 log.info("배송 추적 등록 시작: {}", trackingNumberReq);
 
                 try {
@@ -190,7 +189,7 @@ public class DeliveryService {
                         ValidationResult webhookResult = registerWebhook(accessToken,
                                         trackingNumberReq.getCarrierId(),
                                         trackingNumberReq.getTrackingNumber(),
-                                        myCallbackUrl);
+                                        properties.getWebhookUrl() + "/delivery/webhook");
 
                         if (webhookResult.isValid()) {
                                 // D. [트랜잭션] 모든 API 성공 시 DB 저장 수행
