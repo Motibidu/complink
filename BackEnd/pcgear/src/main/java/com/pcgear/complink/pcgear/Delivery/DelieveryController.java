@@ -69,8 +69,7 @@ public class DelieveryController {
         // Service 내부에서 [API 호출 -> 검증 -> DB 트랜잭션] 순차 실행
         ValidationResult result = deliveryService.registerWebhookIfValid(
                 accessToken,
-                trackingNumberReq,
-                DELIVERYTRACKER_WEBHOOK_URL + "/delivery/webhook");
+                trackingNumberReq);
 
         if (result.isValid()) {
             return ResponseEntity.ok(result.getMessage());

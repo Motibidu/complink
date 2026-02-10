@@ -28,7 +28,7 @@ public class DeliveryTrackerProperties {
                         @Value("${delivery-tracker.client-secret}") String clientSecret,
                         @Value("${delivery-tracker.auth-url}") String authUrl,
                         @Value("${delivery-tracker.graphql-api-url}") String graphqlApiUrl,
-                        @Value("${delivery-tracker.webhook-url}") String webhookUrl) {
+                        @Value("${webhook-url}") String webhookUrl) {
 
                 // 필드 초기화는 그대로 유지
                 this.clientId = clientId;

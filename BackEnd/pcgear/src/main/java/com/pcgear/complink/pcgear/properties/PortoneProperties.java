@@ -25,7 +25,7 @@ public class PortoneProperties {
         public PortoneProperties(
                         @Value("${portone.api-secret}") String apiSecret,
                         @Value("${portone.webhook-secret}") String webhookSecret,
-                        @Value("${portone.webhook-url}") String webhookUrl,
+                        @Value("${webhook-url}") String webhookUrl,
                         @Value("${portone.api-url}") String apiUrl,
                         @Value("${portone.access-token-url}") String accessTokenUrl,
                         @Value("${portone.imp-key}") String impKey,
