@@ -153,7 +153,7 @@ public class OrderService {
         Customer customer = customerRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("거래처 정보를 찾을 수 없습니다."));
 
-        UserEntity manager = manager = userRepository.findByUsername(requestDto.getManagerId())
+        UserEntity manager = userRepository.findByUsername(requestDto.getManagerId())
                 .orElseThrow(() -> new EntityNotFoundException("담당자 정보를 찾을 수 없습니다."));
 
         // 엔티티 생성
@@ -196,17 +196,6 @@ public class OrderService {
         return orderRepository.save(order); // 저장 후 즉시 커밋
     }
 
-    // @Transactional(readOnly = true) // 이 어노테이션이 반드시 있어야 합니다.
-    // public List<OrderResponseDto> findAllOrders() {
-    // // 1. 페치 조인으로 엔티티 조회 (쿼리 1방)
-    // List<Order> orders = orderRepository.findAll();
-
-    // // 2. 엔티티 -> DTO 변환 (메모리 작업)
-    // return orders.stream()
-    // .map(OrderResponseDto::new) // 여기서 DTO로 변환
-    // .collect(Collectors.toList());
-    // }
-
     public List<OrderResponseDto> findByOrderStatus(OrderStatus orderStatus) {
         return orderRepository.findByOrderStatus(orderStatus).stream()
                 .map(OrderResponseDto::new)
@@ -237,7 +226,7 @@ public class OrderService {
         Order order = orderRepository.findByIdWithItemsAndCustomer(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
 
-        System.out.println("order.getOrderItems(): " + order.getOrderItems()); // 이제 데이터가 출력될 것입니다.
+        log.debug("order.getOrderItems(): {}", order.getOrderItems());
 
         AssemblyDetailRespDto respDto = AssemblyDetailRespDto.builder()
                 .orderId(order.getOrderId())

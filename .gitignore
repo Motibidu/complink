@@ -5,3 +5,4 @@ mysql_data/*
 /.vscode/*
 /logs/*
 /sql/*
+.claude/*

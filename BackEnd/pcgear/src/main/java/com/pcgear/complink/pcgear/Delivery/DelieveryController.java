@@ -76,7 +76,7 @@ public class DelieveryController {
             log.info("currentStatus: {}", currentStatus);
 
             if (currentStatus != null) {
-                deliveryService.updateDeiliveryStatus(
+                deliveryService.updateDeliveryStatus(
                         webhookReq.getTrackingNumber(),
                         DeliveryStatus.fromDescription(currentStatus));
             } else {

@@ -2,8 +2,6 @@ package com.pcgear.complink.pcgear.Delivery;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -16,10 +14,10 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Customer.CustomerRepository;
@@ -31,7 +29,6 @@ import com.pcgear.complink.pcgear.Delivery.model.RegisterWebhookResp;
 import com.pcgear.complink.pcgear.Delivery.model.ShippingListDto;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingResponse;
 import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
-import com.pcgear.complink.pcgear.Delivery.model.WebhookReq;
 import com.pcgear.complink.pcgear.Item.ItemService;
 import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
@@ -40,14 +37,12 @@ import com.pcgear.complink.pcgear.Order.service.OrderService;
 import com.pcgear.complink.pcgear.properties.DeliveryTrackerProperties;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 
 import com.pcgear.complink.pcgear.Delivery.model.RegisterWebhookInput;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Mono;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -68,65 +63,25 @@ public class DeliveryService {
         private final RestClient restClient;
         private final DeliveryTrackerProperties properties;
         private static final String TRACK_DELIVERY_QUERY = """
-                                                    query Track(
-                        $carrierId: ID!,
-                        $trackingNumber: String!
-                        ) {
-                        track(
-                          carrierId: $carrierId,
-                          trackingNumber: $trackingNumber
-                        ) {
-                          lastEvent {
-                            time
-                            status {
-                              code
-                              name
+                        query Track($carrierId: ID!, $trackingNumber: String!) {
+                          track(carrierId: $carrierId, trackingNumber: $trackingNumber) {
+                            lastEvent {
+                              time
+                              status { code name }
+                              description
                             }
-                            description
-                          }
-                          events(last: 10) {
-                            edges {
-                              node {
-                                time
-                                status {
-                                  code
-                                  name
+                            events(last: 10) {
+                              edges {
+                                node {
+                                  time
+                                  status { code name }
+                                  description
                                 }
-                                description
                               }
                             }
                           }
                         }
-                        }
-                                                """;
-
-        // public String getAccessToken() {
-        // MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        // formData.add("grant_type", "client_credentials");
-        // log.info("properties.getClientId(): {}", properties.getClientId());
-        // formData.add("client_id", properties.getClientId());
-        // log.info("properties.getClientSecret(): {}", properties.getClientSecret());
-        // formData.add("client_secret", properties.getClientSecret());
-        // log.info("properties.getAuthUrl(): {}", properties.getAuthUrl());
-
-        // AccessTokenResp accessTokenResp = null;
-        // try {
-        // accessTokenResp = webClient.post()
-        // .uri(properties.getAuthUrl())
-        // .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-        // .bodyValue(formData)
-        // .retrieve()
-        // .bodyToMono(AccessTokenResp.class).block();
-        // } catch (Exception e) {
-
-        // log.error("Failed to get access token: {}", e.getMessage());
-        // throw new RuntimeException("Failed to get access token", e);
-        // }
-
-        // String accessToken = accessTokenResp.getAccess_token();
-
-        // return accessToken;
-        // }
+                        """;
 
         public String getAccessToken() {
                 MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
@@ -147,28 +102,6 @@ public class DeliveryService {
                         throw new RuntimeException("Failed to get access token", e);
                 }
         }
-
-        // public Mono<ValidationResult> registerWebhookIfValid(String accessToken,
-        // TrackingNumberReq trackingNumberReq,
-        // String myCallbackUrl) {
-
-        // return isValidDelivery(trackingNumberReq, accessToken)
-        // .flatMap(validationResult -> {
-        // log.info("isValidDelivery: {}", validationResult);
-        // if (validationResult.isValid()) {
-        // // order의 status를 "배송 대기"로 변경
-        // orderService.updateOrderStatus(trackingNumberReq.getOrderId(),
-        // OrderStatus.SHIPPING_PENDING);
-
-        // return registerWebhook(accessToken,
-        // trackingNumberReq.getCarrierId(),
-        // trackingNumberReq.getTrackingNumber(),
-        // myCallbackUrl);
-        // } else {
-        // return Mono.just(validationResult);
-        // }
-        // });
-        // }
 
         public ValidationResult registerWebhookIfValid(String accessToken, TrackingNumberReq trackingNumberReq) {
                 log.info("배송 추적 등록 시작: {}", trackingNumberReq);
@@ -253,11 +186,7 @@ public class DeliveryService {
 
                 GraphQLRequest requestBody = GraphQLRequest.builder()
                                 .query("mutation RegisterTrackWebhook($input: RegisterTrackWebhookInput!) { registerTrackWebhook(input: $input) }")
-                                .variables(new HashMap<>() {
-                                        {
-                                                put("input", input);
-                                        }
-                                })
+                                .variables(Map.of("input", input))
                                 .build();
 
                 RegisterWebhookResp response = restClient.post()
@@ -277,9 +206,14 @@ public class DeliveryService {
                 if (response != null && response.getData() != null
                                 && Boolean.TRUE.equals(response.getData().getRegisterTrackWebhook())) {
                         return new ValidationResult(true, "추적 등록 완료");
-                } else {
-                        return new ValidationResult(false, "추적 등록 실패");
                 }
+
+                String errorMsg = "추적 등록 실패";
+                if (response != null && response.getErrors() != null && !response.getErrors().isEmpty()) {
+                        errorMsg = "추적 등록 실패: " + response.getErrors().get(0).getMessage();
+                }
+                log.error("웹훅 등록 실패 - response: {}", response);
+                return new ValidationResult(false, errorMsg);
         }
 
         @Transactional
@@ -298,137 +232,19 @@ public class DeliveryService {
                 log.info("배송 등록 트랜잭션 완료");
         }
 
-        // public Mono<ValidationResult> registerWebhook(String accessToken, String
-        // carrierId, String trackingNumber,
-        // String myCallbackUrl) {
-        // // 1. 실제 파라미터 객체
-        // RegisterWebhookInput registerWebhookInput = RegisterWebhookInput.builder()
-        // .carrierId(carrierId)
-        // .trackingNumber(trackingNumber)
-        // .callbackUrl(myCallbackUrl)
-        // .expirationTime(getExpirationTime(48)) // ISO 8601 형식
-        // .build();
-        // log.info("registerWebhookInput: {}", registerWebhookInput);
-
-        // // 2. GraphQL 요청 본문 객체 생성
-        // GraphQLRequest requestBody = GraphQLRequest.builder()
-        // .query("""
-        // mutation RegisterTrackWebhook($input: RegisterTrackWebhookInput!) {
-        // registerTrackWebhook(input: $input)
-        // }
-        // """)
-        // // variables 필드에 Map 형태로 input 객체 삽입
-        // .variables(new java.util.HashMap<String, RegisterWebhookInput>() {
-        // {
-        // put("input", registerWebhookInput);
-        // }
-        // })
-        // .build();
-
-        // // 3. WebClient 호출
-        // return webClient.post()
-        // .uri(properties.getGraphqlApiUrl()) // GraphQL API URL
-        // .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken) // Bearer 토큰 인증
-        // .contentType(MediaType.APPLICATION_JSON)
-        // .bodyValue(requestBody) // requestBody 객체가 JSON으로 변환되어 전송됨
-        // .retrieve()
-        // .bodyToMono(RegisterWebhookResp.class)
-        // .map(response -> {
-        // log.info("response: {}", response);
-        // // 응답 본문에서 data.registerTrackWebhook이 true인지 확인
-        // if (response.getData() != null && response.getData()
-        // .getRegisterTrackWebhook() == Boolean.TRUE) {
-        // return new ValidationResult(true, "추적 등록을 완료했습니다.");
-        // } else {
-        // // API는 성공했지만, 등록 결과가 true가 아닌 경우 (false 또는 null)
-        // return new ValidationResult(false, "추적 등록에 실패하였습니다.");
-        // }
-        // });
-        // }
-
-        // 배송조회
-        // public Mono<TrackingResponse> trackDelivery(String carrierId, String
-        // trackingNumber, String accessToken) {
-        // Map<String, String> variables = Map.of(
-        // "carrierId", carrierId,
-        // "trackingNumber", trackingNumber);
-
-        // GraphQLRequest requestBody = GraphQLRequest.builder()
-        // .query(TRACK_DELIVERY_QUERY)
-        // .variables(variables)
-        // .build();
-
-        // return webClient.post()
-        // .uri(properties.getGraphqlApiUrl())
-        // .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-        // .contentType(MediaType.APPLICATION_JSON)
-        // .bodyValue(requestBody)
-        // .retrieve()
-        // .bodyToMono(TrackingResponse.class)
-        // .map(response -> {
-        // log.info("response: {}", response);
-        // return response;
-        // });
-        // }
-
-        // 전달 받은 운송장번호로 배송조회에 성공하면 유효한 운송장번호
-        // @Transactional
-        // public Mono<ValidationResult> isValidDelivery(TrackingNumberReq
-        // trackingNumberReq,
-        // String accessToken) {
-        // return this.trackDelivery(trackingNumberReq.getCarrierId(),
-        // trackingNumberReq.getTrackingNumber(),
-        // accessToken)
-        // .map(response -> {
-        // log.info("response: " + response);
-        // // 1. GraphQL 오류 응답이 있거나, data.track이 null이면 유효하지 않음 (NOT_FOUND 포함)
-        // if ((response.getErrors() != null && !response.getErrors().isEmpty()) ||
-        // (response.getData() == null
-        // || response.getData().getTrack() == null)) {
-        // String errorMessage = response.getErrors().get(0).getMessage();
-        // if (errorMessage.isEmpty()) {
-        // // 유효하지 않은 운송장 번호일 때 (메시지: "")
-        // return new ValidationResult(false, "운송장 번호를 찾지 못했습니다.");
-        // } else if ("Carrier not found".equals(errorMessage)) {
-        // // 유효하지 않은 택배사 코드일 때 (메시지: "Carrier not found")
-        // return new ValidationResult(false, "택배사 코드를 찾지 못했습니다.");
-        // } else {
-        // // 그 외 알 수 없는 GraphQL 오류
-        // return new ValidationResult(false,
-        // "알 수 없는 배송 조회 오류가 발생했습니다: " + errorMessage);
-        // }
-        // } else {
-        // log.info("No trackDelivery Response");
-        // }
-        // createDelivery(trackingNumberReq);
-
-        // // 실제 재고 차감
-        // Order order = orderRepository.findById(trackingNumberReq.getOrderId())
-        // .orElseThrow(() -> new EntityNotFoundException(
-        // "해당 ID의 주문을 찾을 수 없습니다." + trackingNumberReq
-        // .getOrderId()));
-        // itemService.updateItemQuantityOnHand(order);
-
-        // return new ValidationResult(true, "배송 조회에 성공했습니다.");
-        // });
-        // }
-
+        
         public String extractDeliveryStatus(TrackingResponse trackingResponse) {
-                String currentStatus = null;
-                if (trackingResponse != null && trackingResponse.getData() != null &&
-                                trackingResponse.getData().getTrack() != null &&
-                                trackingResponse.getData().getTrack().getLastEvent() != null &&
-                                trackingResponse.getData().getTrack().getLastEvent().getStatus() != null) {
-
-                        // 최종 상태 코드를 추출하여 변수에 할당
-                        currentStatus = trackingResponse.getData().getTrack().getLastEvent().getStatus()
-                                        .getName();
-                }
-                return currentStatus;
+                return Optional.ofNullable(trackingResponse)
+                                .map(TrackingResponse::getData)
+                                .map(TrackingResponse.TrackingData::getTrack)
+                                .map(TrackingResponse.Track::getLastEvent)
+                                .map(TrackingResponse.LastEvent::getStatus)
+                                .map(TrackingResponse.EventStatus::getName)
+                                .orElse(null);
         }
 
         @Transactional
-        public Delivery updateDeiliveryStatus(String trackingNumber, DeliveryStatus deliveryStatus) {
+        public Delivery updateDeliveryStatus(String trackingNumber, DeliveryStatus deliveryStatus) {
                 Delivery delivery = deliveryRepository.findByTrackingNumber(trackingNumber);
 
                 delivery.setDeliveryStatus(deliveryStatus);
@@ -452,7 +268,6 @@ public class DeliveryService {
         }
 
         private Delivery createDelivery(TrackingNumberReq trackingNumberReq) {
-
                 Customer customer = customerRepository
                                 .findById(trackingNumberReq.getCustomerId())
                                 .orElseThrow(() -> new EntityNotFoundException(

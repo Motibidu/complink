@@ -8,105 +8,103 @@ import java.util.UUID;
 
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 
 import com.pcgear.complink.pcgear.Payment.model.SubscriptionRequest;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
 import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class SubscriptionService {
 
-        private final WebClient webClient;
+        private final RestClient restClient; // WebClient 대신 RestClient 사용
         private final SubscriptionRepository subscriptionRepository;
         private final PortoneProperties portoneProperties;
 
-        public Mono<Subscription> scheduleNextPayment(UserEntity user, SubscriptionRequest request, int seconds) {
-                log.info("결제예약==========================================================");
+        public Subscription scheduleNextPayment(UserEntity user, SubscriptionRequest request, int seconds) {
+                log.info("결제 예약 시작 ==========================================================");
 
                 final String paymentId = "payment-" + UUID.randomUUID().toString();
-                // API 경로: /payments/{payment_id}/schedule
-                final String uri = portoneProperties.getApiUrl() + String.format("/payments/%s/schedule", paymentId);
+                final String uri = String.format("/payments/%s/schedule", paymentId);
 
                 // 다음 결제일 설정
                 LocalDateTime nextPaymentTime = LocalDateTime.now().plusSeconds(seconds);
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-                String formattedNextPaymentTime = nextPaymentTime.atZone(ZoneId.of("Asia/Seoul")).format(formatter);
-                log.info("formattedNextPaymentTime: {}", formattedNextPaymentTime);
+                String formattedNextPaymentTime = nextPaymentTime.atZone(ZoneId.of("Asia/Seoul"))
+                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
 
                 String trackingId = UUID.randomUUID().toString();
                 String orderName = "정기결제 #" + trackingId;
 
-                Subscription newSubscription = new Subscription();
-                newSubscription.setUserId(user.getUsername());
-                newSubscription.setBillingKey(request.getBillingKey());
-                newSubscription.setStatus("PENDING_SCHEDULE"); // 상태는 예약 대기로 시작
-                newSubscription.setAmount(request.getAmount());
-                newSubscription.setStartTime(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
-                newSubscription.setNextBillingTime(nextPaymentTime);
-                newSubscription.setTrackingId(trackingId);
-                newSubscription.setOrderName(orderName);
-
-                subscriptionRepository.save(newSubscription);
-
-                Map<String, Object> paymentData = Map.of(
-                                "billingKey", request.getBillingKey(),
-                                "orderName", orderName,
-                                "customer", createCustomerMap(user),
-                                "amount", Map.of("total", request.getAmount()),
-                                "currency", "KRW");
-
+                // 1. 요청 바디 구성
                 Map<String, Object> requestBody = Map.of(
-                                "payment", paymentData,
+                                "payment", Map.of(
+                                                "billingKey", request.getBillingKey(),
+                                                "orderName", orderName,
+                                                "customer", Map.of("id", user.getUsername()),
+                                                "amount", Map.of("total", request.getAmount()),
+                                                "currency", "KRW"),
                                 "timeToPay", formattedNextPaymentTime);
 
-                // 1. WebClient 호출 (비동기)
-                return webClient.post()
-                                .uri(uri)
-                                .header("Authorization", "PortOne "
-                                                + portoneProperties.getApiSecret())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(requestBody)
-                                .retrieve()
-                                // 2. HTTP 4xx/5xx 오류 처리 (RestTemplate의 try-catch 역할)
-                                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
-                                                response -> response.bodyToMono(String.class).flatMap(body -> {
-                                                        log.error("정기결제 예약 실패 (사용자 ID: {}): 상태코드 - {}, 응답 - {}",
-                                                                        user.getUsername(), response.statusCode(),
-                                                                        body);
-                                                        return Mono.error(new RuntimeException("정기결제 예약 실패: " + body));
-                                                }))
-                                // 3. 성공 응답 처리 (String 본문을 소비하고 Mono<Subscription>으로 변환)
-                                // .bodyToMono(String.class) // 응답 본문을 사용할 경우
-                                .bodyToMono(Void.class) // 응답 본문이 필요 없다면 Void.class로 비우는 것이 효율적
-                                .then(Mono.defer(() -> {
-                                        // 4. API 호출 성공 시 DB에 Subscription 저장
-                                        log.info("사용자 ID {}의 다음 정기결제가 성공적으로 예약되었습니다. (결제ID: {})",
-                                                        user.getUsername(), paymentId); // ⭐️ 이제 이 로그가 출력됩니다.
+                try {
+                        // 2. RestClient 호출 (동기 방식)
+                        restClient.post()
+                                        .uri(portoneProperties.getApiUrl() + uri)
+                                        .header("Authorization", "PortOne " + portoneProperties.getApiSecret())
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .body(requestBody)
+                                        .retrieve()
+                                        .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                                                        (req, res) -> {
+                                                                String errorBody = new String(
+                                                                                res.getBody().readAllBytes());
+                                                                log.error("정기결제 예약 실패: {}", errorBody);
+                                                                throw new RuntimeException(
+                                                                                "PortOne API 에러: " + errorBody);
+                                                        })
+                                        .toBodilessEntity(); // 응답 본문 무시
 
-                                        Subscription subscription = new Subscription();
-                                        subscription.setUserId(user.getUsername());
-                                        subscription.setAmount(request.getAmount());
-                                        subscription.setBillingKey(request.getBillingKey());
-                                        subscription.setStatus("ACTIVE");
-                                        subscription.setStartTime(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
-                                        subscription.setNextBillingTime(nextPaymentTime);
+                        log.info("사용자 ID {}의 결제 예약 성공 (결제ID: {})", user.getUsername(), paymentId);
 
-                                        // 5. DB 저장은 블로킹 작업이므로 Mono.fromCallable로 감싸서 반환
-                                        return Mono.fromCallable(() -> subscriptionRepository.save(subscription))
-                                                        .subscribeOn(Schedulers.boundedElastic());
-                                }));
+                        // 3. DB 저장 (동기 실행)
+                        Subscription subscription = new Subscription();
+                        subscription.setUserId(user.getUsername());
+                        subscription.setAmount(request.getAmount());
+                        subscription.setBillingKey(request.getBillingKey());
+                        subscription.setStatus("ACTIVE");
+                        subscription.setStartTime(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
+                        subscription.setNextBillingTime(nextPaymentTime);
+                        subscription.setTrackingId(trackingId);
+                        subscription.setOrderName(orderName);
+
+                        return subscriptionRepository.save(subscription);
+
+                } catch (Exception e) {
+                        log.error("결제 예약 처리 중 오류 발생: {}", e.getMessage());
+                        throw e;
+                }
         }
 
-        // createCustomerMap 헬퍼 메서드 (가정)
-        private Map<String, String> createCustomerMap(UserEntity user) {
-                return Map.of("id", user.getUsername());
+        // 웹훅 처리 로직
+        public void processSubscriptionPayment(Map<String, Object> paymentDetail) {
+                String orderName = (String) paymentDetail.get("orderName");
+                String trackingId = extractTrackingIdFromOrderName(orderName);
+
+                Subscription subscription = subscriptionRepository.findByTrackingId(trackingId)
+                                .orElseThrow(() -> new EntityNotFoundException("구독 정보 없음: " + trackingId));
+
+                log.info("구독 결제 승인 완료 처리: {}", trackingId);
+                // 추가 로직...
+        }
+
+        private String extractTrackingIdFromOrderName(String orderName) {
+                if (orderName == null || !orderName.contains("#"))
+                        return null;
+                return orderName.substring(orderName.lastIndexOf('#') + 1).trim();
         }
 }
