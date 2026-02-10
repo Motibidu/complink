@@ -185,6 +185,8 @@ public class DeliveryService {
                                 return validationResult; // 실패 시 바로 리턴
                         }
 
+                        log.info("properties.getWebhookUrl(): {}", properties.getWebhookUrl());
+
                         // C. 웹훅 등록 API 호출 (동기)
                         ValidationResult webhookResult = registerWebhook(accessToken,
                                         trackingNumberReq.getCarrierId(),
@@ -364,42 +366,44 @@ public class DeliveryService {
 
         // 전달 받은 운송장번호로 배송조회에 성공하면 유효한 운송장번호
         // @Transactional
-        // public Mono<ValidationResult> isValidDelivery(TrackingNumberReq trackingNumberReq,
-        //                 String accessToken) {
-        //         return this.trackDelivery(trackingNumberReq.getCarrierId(), trackingNumberReq.getTrackingNumber(),
-        //                         accessToken)
-        //                         .map(response -> {
-        //                                 log.info("response: " + response);
-        //                                 // 1. GraphQL 오류 응답이 있거나, data.track이 null이면 유효하지 않음 (NOT_FOUND 포함)
-        //                                 if ((response.getErrors() != null && !response.getErrors().isEmpty()) ||
-        //                                                 (response.getData() == null
-        //                                                                 || response.getData().getTrack() == null)) {
-        //                                         String errorMessage = response.getErrors().get(0).getMessage();
-        //                                         if (errorMessage.isEmpty()) {
-        //                                                 // 유효하지 않은 운송장 번호일 때 (메시지: "")
-        //                                                 return new ValidationResult(false, "운송장 번호를 찾지 못했습니다.");
-        //                                         } else if ("Carrier not found".equals(errorMessage)) {
-        //                                                 // 유효하지 않은 택배사 코드일 때 (메시지: "Carrier not found")
-        //                                                 return new ValidationResult(false, "택배사 코드를 찾지 못했습니다.");
-        //                                         } else {
-        //                                                 // 그 외 알 수 없는 GraphQL 오류
-        //                                                 return new ValidationResult(false,
-        //                                                                 "알 수 없는 배송 조회 오류가 발생했습니다: " + errorMessage);
-        //                                         }
-        //                                 } else {
-        //                                         log.info("No trackDelivery Response");
-        //                                 }
-        //                                 createDelivery(trackingNumberReq);
+        // public Mono<ValidationResult> isValidDelivery(TrackingNumberReq
+        // trackingNumberReq,
+        // String accessToken) {
+        // return this.trackDelivery(trackingNumberReq.getCarrierId(),
+        // trackingNumberReq.getTrackingNumber(),
+        // accessToken)
+        // .map(response -> {
+        // log.info("response: " + response);
+        // // 1. GraphQL 오류 응답이 있거나, data.track이 null이면 유효하지 않음 (NOT_FOUND 포함)
+        // if ((response.getErrors() != null && !response.getErrors().isEmpty()) ||
+        // (response.getData() == null
+        // || response.getData().getTrack() == null)) {
+        // String errorMessage = response.getErrors().get(0).getMessage();
+        // if (errorMessage.isEmpty()) {
+        // // 유효하지 않은 운송장 번호일 때 (메시지: "")
+        // return new ValidationResult(false, "운송장 번호를 찾지 못했습니다.");
+        // } else if ("Carrier not found".equals(errorMessage)) {
+        // // 유효하지 않은 택배사 코드일 때 (메시지: "Carrier not found")
+        // return new ValidationResult(false, "택배사 코드를 찾지 못했습니다.");
+        // } else {
+        // // 그 외 알 수 없는 GraphQL 오류
+        // return new ValidationResult(false,
+        // "알 수 없는 배송 조회 오류가 발생했습니다: " + errorMessage);
+        // }
+        // } else {
+        // log.info("No trackDelivery Response");
+        // }
+        // createDelivery(trackingNumberReq);
 
-        //                                 // 실제 재고 차감
-        //                                 Order order = orderRepository.findById(trackingNumberReq.getOrderId())
-        //                                                 .orElseThrow(() -> new EntityNotFoundException(
-        //                                                                 "해당 ID의 주문을 찾을 수 없습니다." + trackingNumberReq
-        //                                                                                 .getOrderId()));
-        //                                 itemService.updateItemQuantityOnHand(order);
+        // // 실제 재고 차감
+        // Order order = orderRepository.findById(trackingNumberReq.getOrderId())
+        // .orElseThrow(() -> new EntityNotFoundException(
+        // "해당 ID의 주문을 찾을 수 없습니다." + trackingNumberReq
+        // .getOrderId()));
+        // itemService.updateItemQuantityOnHand(order);
 
-        //                                 return new ValidationResult(true, "배송 조회에 성공했습니다.");
-        //                         });
+        // return new ValidationResult(true, "배송 조회에 성공했습니다.");
+        // });
         // }
 
         public String extractDeliveryStatus(TrackingResponse trackingResponse) {

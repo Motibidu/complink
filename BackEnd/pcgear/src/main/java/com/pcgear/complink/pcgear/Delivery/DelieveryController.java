@@ -32,29 +32,6 @@ public class DelieveryController {
 
     private final DeliveryService deliveryService;
 
-    // @PostMapping("/trackingNumber")
-    // public Mono<ResponseEntity<String>> registerWebhook(@RequestBody
-    // TrackingNumberReq trackingNumberReq) {
-    // log.info("waybillReq: {}", trackingNumberReq);
-
-    // // 토큰 생성
-    // String accessToken = deliveryService.getAccessToken();
-    // log.info("accessToken: {}", accessToken);
-
-    // return deliveryService
-    // .registerWebhookIfValid(accessToken, trackingNumberReq,
-    // DELIVERYTRACKER_WEBHOOK_URL + "/delivery/webhook")
-    // .map(result -> {
-    // if (result.isValid()) {
-    // return ResponseEntity.ok(result.getMessage());
-    // } else {
-    // // 클라이언트의 요청이 잘못되었을 가능성이 높으므로 400 Bad Request가 더 적합합니다.
-    // return
-    // ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.getMessage());
-    // }
-    // });
-    // }
-
     @PostMapping("/trackingNumber")
     public ResponseEntity<String> registerWebhook(@RequestBody TrackingNumberReq trackingNumberReq) {
         log.info("waybillReq: {}", trackingNumberReq);
