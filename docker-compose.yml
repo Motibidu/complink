@@ -41,7 +41,7 @@ services:
         VITE_PORTONE_STORE_ID: ${VITE_PORTONE_STORE_ID}
         VITE_PORTONE_TOSSPAY_CHANNEL_KEY: ${VITE_PORTONE_TOSSPAY_CHANNEL_KEY}
     ports:
-      - "80:80"
+      - "3000:3000"
     depends_on:
       - backend
   redis:
