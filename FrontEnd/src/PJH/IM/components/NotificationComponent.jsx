@@ -11,7 +11,9 @@ const NotificationComponent = () => {
 
   useEffect(() => {
     // SSE 연결
-    const eventSource = new EventSource("/api/notifications/subscribe");
+    const eventSource = new EventSource("/api/notifications/subscribe", { 
+      withCredentials: true 
+    });
 
     eventSource.addEventListener("notification", (event) => {
       console.log("Received notification: " + event.data);
