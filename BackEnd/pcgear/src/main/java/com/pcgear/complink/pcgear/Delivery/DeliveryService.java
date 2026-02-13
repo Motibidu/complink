@@ -12,7 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.pcgear.complink.pcgear.config.SseEmitterManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -59,7 +59,7 @@ public class DeliveryService {
         private final OrderRepository orderRepository;
         private final DeliveryRepository deliveryRepository;
 
-        private final SimpMessagingTemplate messagingTemplate;
+        private final SseEmitterManager sseEmitterManager;
         private final RestClient restClient;
         private final DeliveryTrackerProperties properties;
         private static final String TRACK_DELIVERY_QUERY = """
@@ -250,7 +250,7 @@ public class DeliveryService {
                 delivery.setDeliveryStatus(deliveryStatus);
                 String message = "주문번호: " + delivery.getOrderId() + "의 배송상태가 "
                                 + deliveryStatus + "로 변경되었습니다. 배송조회에서 확인해주세요!";
-                messagingTemplate.convertAndSend("/topic/notifications", message);
+                sseEmitterManager.broadcast(message);
 
                 // 배송 상태가 배송완료일 시 order의 status를 배송중-> 배송완료로 변경
                 if ("배송완료".equals(deliveryStatus)) {

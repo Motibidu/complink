@@ -1,0 +1,21 @@
+package com.pcgear.complink.pcgear.config;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/notifications")
+public class NotificationController {
+
+    private final SseEmitterManager sseEmitterManager;
+
+    @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribe() {
+        return sseEmitterManager.subscribe();
+    }
+}

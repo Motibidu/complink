@@ -48,7 +48,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.pcgear.complink.pcgear.config.SseEmitterManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,7 +71,7 @@ public class OrderService {
     private final MailService mailService;
 
     private final JavaMailSender javaMailSender;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final SseEmitterManager sseEmitterManager;
 
     private final DeliveryTrackerProperties properties;
 
@@ -84,7 +84,7 @@ public class OrderService {
             @Lazy PaymentLinkService paymentLinkService,
             ItemRepository itemRepository,
             @Lazy DeliveryService deliveryService, // 👈 4. 순환 참조 대상에 @Lazy 추가
-            SimpMessagingTemplate messagingTemplate,
+            SseEmitterManager sseEmitterManager,
             ItemService itemService,
             PaymentRepository paymentRepository,
             SellService sellService,
@@ -98,7 +98,7 @@ public class OrderService {
         this.paymentLinkService = paymentLinkService;
         this.itemRepository = itemRepository;
         this.deliveryService = deliveryService;
-        this.messagingTemplate = messagingTemplate;
+        this.sseEmitterManager = sseEmitterManager;
         this.itemService = itemService;
         this.paymentRepository = paymentRepository;
         this.sellService = sellService;
@@ -130,9 +130,9 @@ public class OrderService {
 
         String message = "주문서가 성공적으로 생성되었습니다.";
         try {
-            messagingTemplate.convertAndSend("/topic/notifications", message);
+            sseEmitterManager.broadcast(message);
         } catch (Exception e) {
-            log.info("웹소켓 알림 실패");
+            log.info("SSE 알림 실패");
         }
 
         // 4. Repository를 통해 DB에 저장
@@ -188,9 +188,9 @@ public class OrderService {
         // 가용재고 차감
         itemService.updateItemAvailableQuantity(order);
         try {
-            messagingTemplate.convertAndSend("/topic/notifications", "주문서가 성공적으로 생성되었습니다.");
+            sseEmitterManager.broadcast("주문서가 성공적으로 생성되었습니다.");
         } catch (Exception e) {
-            log.info("웹소켓 알림 실패");
+            log.info("SSE 알림 실패");
         }
 
         return orderRepository.save(order); // 저장 후 즉시 커밋

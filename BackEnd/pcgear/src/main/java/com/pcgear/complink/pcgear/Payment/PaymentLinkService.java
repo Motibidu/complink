@@ -1,5 +1,6 @@
 package com.pcgear.complink.pcgear.Payment;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pcgear.complink.pcgear.Item.ItemService;
 import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
@@ -27,7 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.pcgear.complink.pcgear.config.SseEmitterManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -50,15 +51,14 @@ public class PaymentLinkService {
         private final RestClient restClient;
         private final PortoneProperties portoneProperties;
         private final OrderRepository orderRepository;
-        private final SimpMessagingTemplate messagingTemplate;
+        private final SseEmitterManager sseEmitterManager;
 
         private final SellService sellService;
         private final OrderService orderService;
         private final ItemService itemService;
 
         private final PaymentRepository paymentRepository;
-
-        // private final String webhookUrl;
+        private final ObjectMapper objectMapper;
 
         private static final String CREATE_PAYMENT_LINK_URI = "https://api.iamport.co/api/supplements/v1/link/payment";
         private static final String PORTONE_V1_CANCEL_PAYMENT_URI = "https://api.iamport.kr/payments/cancel";
@@ -91,8 +91,7 @@ public class PaymentLinkService {
                 // 2. 최종 요청 본문 생성
                 String paymentInfoJsonString;
                 try {
-                        paymentInfoJsonString = new com.fasterxml.jackson.databind.ObjectMapper()
-                                        .writeValueAsString(paymentInfo);
+                        paymentInfoJsonString = objectMapper.writeValueAsString(paymentInfo);
                 } catch (Exception e) {
                         throw new RuntimeException("PaymentInfo 직렬화 실패", e);
                 }
@@ -126,41 +125,16 @@ public class PaymentLinkService {
         }
 
         public PortoneV1CancelResp cancelPayment(Integer orderId, String reason) {
-                // 1. 토큰 발급 (동기 호출)
                 String accessToken = getAccessToken();
 
-                // 2. 주문 조회 (DB)
                 String impUid = orderRepository.findById(orderId)
                                 .map(Order::getImpUid)
                                 .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
 
-                PortoneV1CancelReq request = new PortoneV1CancelReq(impUid, reason);
-
-                try {
-                        // 3. API 호출
-                        PortoneV1CancelResp response = restClient.post()
-                                        .uri(PORTONE_V1_CANCEL_PAYMENT_URI)
-                                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .body(request)
-                                        .retrieve()
-                                        .body(PortoneV1CancelResp.class);
-
-                        if (response != null && response.getCode() != 0) {
-                                log.error("포트원 결제 취소 실패: {}", response.getMessage());
-                                throw new RuntimeException("결제 취소 실패: " + response.getMessage());
-                        }
-
-                        return response;
-
-                } catch (Exception e) {
-                        log.error("결제 취소 API 호출 중 오류", e);
-                        throw new RuntimeException("결제 취소 실패", e);
-                }
+                return cancelPortonePayment(accessToken, impUid, reason);
         }
 
-        public PortoneV1CancelResp cancelPayment(String accessToken, String impUid, String reason) {
-
+        private PortoneV1CancelResp cancelPortonePayment(String accessToken, String impUid, String reason) {
                 PortoneV1CancelReq request = new PortoneV1CancelReq(impUid, reason);
 
                 try {
@@ -255,13 +229,13 @@ public class PaymentLinkService {
                         log.info("포트원 조회 결과: status={}, amount={}", paymentData.getStatus(), paymentData.getAmount());
 
                         // 3. 검증 및 DB 저장 (트랜잭션 시작)
-                        self.processLinkWebhookTransaction(webhookRequest, paymentData);
+                        self.verifyPaidAmountAndProcessPayment(webhookRequest, paymentData);
 
                 } catch (PaymentVerificationException e) {
                         log.error("⛔ 금액 불일치! 결제 취소 실행: {}", e.getMessage());
 
                         if (accessToken != null) {
-                                cancelPayment(accessToken, webhookRequest.getImpUid(), "금액 불일치");
+                                cancelPortonePayment(accessToken, webhookRequest.getImpUid(), "금액 불일치");
                         } else {
                                 log.error("액세스 토큰이 없어 결제 취소를 수행할 수 없습니다.");
                         }
@@ -287,7 +261,7 @@ public class PaymentLinkService {
         }
 
         @Transactional
-        public void processLinkWebhookTransaction(WebhookRequest webhookRequest,
+        public void verifyPaidAmountAndProcessPayment(WebhookRequest webhookRequest,
                         SingleInquiryResponse.ResponseData paymentData) {
 
                 // 1. 주문 조회
@@ -296,11 +270,11 @@ public class PaymentLinkService {
                                                 "주문을 찾을 수 없습니다. MerchantUid: " + webhookRequest.getMerchantUid()));
 
                 // 2. 금액 검증
-                BigDecimal amountToBePaid = order.getGrandAmount();
-                BigDecimal paidAmount = paymentData.getAmount();
+                BigDecimal dbPaidAmount = order.getGrandAmount();
+                BigDecimal actualPaidAmount = paymentData.getAmount();
 
-                if (paidAmount.compareTo(amountToBePaid) != 0) {
-                        log.error("위변조 감지! 주문금액: {}, 결제금액: {}", amountToBePaid, paidAmount);
+                if (actualPaidAmount.compareTo(dbPaidAmount) != 0) {
+                        log.error("위변조 감지! 주문금액: {}, 결제금액: {}", dbPaidAmount, actualPaidAmount);
                         throw new PaymentVerificationException("결제 금액 불일치 (위조된 결제 시도)");
                 }
 
@@ -354,7 +328,7 @@ public class PaymentLinkService {
         private void sendNotification(Order order, String msgBody) {
                 try {
                         String message = "주문번호: " + order.getOrderId() + "번의 " + msgBody + " 판매조회에서 확인해주세요.";
-                        messagingTemplate.convertAndSend("/topic/notifications", message);
+                        sseEmitterManager.broadcast(message);
                 } catch (Exception e) {
                         log.error("알림 전송 실패 (결제 로직은 성공함)", e);
                 }

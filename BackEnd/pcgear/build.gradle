@@ -39,7 +39,7 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     //implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    // WebSocket → SSE 전환 완료, websocket 의존성 제거됨
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6'
     implementation 'io.portone:server-sdk:0.1.0'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
