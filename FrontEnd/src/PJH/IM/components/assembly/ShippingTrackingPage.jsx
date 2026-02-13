@@ -332,7 +332,7 @@ const ShippingTrackingPage = () => {
                           <>
                             <div>{order.trackingNumber}</div>
                             <small className="text-muted">
-                              ({order.carrierId})
+                              ({order.carrierDisplayName})
                             </small>
                           </>
                         ) : (
