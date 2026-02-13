@@ -115,6 +115,7 @@ public class SecurityConfig {
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration corsConfig = new CorsConfiguration();
+                corsConfig.addAllowedOrigin("https://pcgear.store");
                 corsConfig.addAllowedOrigin("http://localhost:5173");
                 corsConfig.setAllowCredentials(true);
                 corsConfig.addAllowedHeader("*");
