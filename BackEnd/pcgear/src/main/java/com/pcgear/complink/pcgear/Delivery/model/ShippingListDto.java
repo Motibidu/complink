@@ -13,7 +13,8 @@ public class ShippingListDto {
         private String customerName; // From Order -> Customer
         private LocalDateTime createdAt; // From Order
         private String trackingNumber; // From Delivery
-        private String carrierId; // From Delivery
+        private String carrierId; // From Delivery (코드값: kr.cjlogistics)
+        private String carrierDisplayName; // 택배사 표시명 (예: CJ 대한통운)
         private DeliveryStatus deliveryStatus;
 
         /**
@@ -26,6 +27,7 @@ public class ShippingListDto {
                 this.createdAt = createdAt;
                 this.trackingNumber = trackingNumber;
                 this.carrierId = carrierId;
+                this.carrierDisplayName = CarrierCode.getDisplayName(carrierId); // 코드 -> 표시명 변환
                 this.deliveryStatus = deliveryStatus;
         }
 }
