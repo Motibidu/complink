@@ -1,5 +1,7 @@
 # PC 부품 주문/재고/배송통합 관리 ERP 시스템
-
+주소: pcgear.store
+테스트 ID: staff
+테스트 PW: 123
 ## 개요
 ![bandicam 2026-02-07 00-00-45-177](https://github.com/user-attachments/assets/2eb80cf2-527f-4f63-b6c0-a6736d64d05f)
 
