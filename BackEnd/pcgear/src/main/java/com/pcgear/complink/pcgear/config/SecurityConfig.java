@@ -30,10 +30,12 @@ public class SecurityConfig {
                 http
                                 .csrf(csrf -> csrf.disable())
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                                .formLogin(form -> form.successHandler((request, response, authentication) -> {
-                                        response.setStatus(HttpServletResponse.SC_OK);
+                                .formLogin(form -> form
+                                                .loginProcessingUrl("/login")
+                                                .successHandler((request, response, authentication) -> {
+                                                        response.setStatus(HttpServletResponse.SC_OK);
 
-                                })
+                                                })
                                                 .failureHandler(customAuthFailureHandler))
                                 .authorizeHttpRequests(auth -> auth
 
