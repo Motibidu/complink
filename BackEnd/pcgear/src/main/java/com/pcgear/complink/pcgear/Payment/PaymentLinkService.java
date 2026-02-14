@@ -16,6 +16,7 @@ import com.pcgear.complink.pcgear.Payment.model.PortoneV1CancelReq;
 import com.pcgear.complink.pcgear.Payment.model.PortoneV1CancelResp;
 import com.pcgear.complink.pcgear.Payment.model.SingleInquiryResponse;
 import com.pcgear.complink.pcgear.Payment.model.WebhookRequest;
+import com.pcgear.complink.pcgear.Payment.event.PaymentCompletedEvent;
 import com.pcgear.complink.pcgear.Sell.SellService;
 import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
@@ -25,10 +26,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import com.pcgear.complink.pcgear.config.SseEmitterManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -51,7 +52,7 @@ public class PaymentLinkService {
         private final RestClient restClient;
         private final PortoneProperties portoneProperties;
         private final OrderRepository orderRepository;
-        private final SseEmitterManager sseEmitterManager;
+        private final ApplicationEventPublisher eventPublisher;
 
         private final SellService sellService;
         private final OrderService orderService;
@@ -286,7 +287,7 @@ public class PaymentLinkService {
                 switch (paymentStatus) {
                         case "paid": // 결제 완료
                                 finalizeOrderPayment(order); // 재고 차감, 매출 생성 등
-                                sendNotification(order, "결제가 완료되었습니다.");
+                                eventPublisher.publishEvent(new PaymentCompletedEvent(order.getOrderId(), "결제가 완료되었습니다."));
                                 log.info("Payment completed for order {}", webhookRequest.getMerchantUid());
                                 break;
 
@@ -324,15 +325,6 @@ public class PaymentLinkService {
 
         }
 
-        // 알림 전송 헬퍼 메서드 (트랜잭션에 영향 안 주게 예외 처리)
-        private void sendNotification(Order order, String msgBody) {
-                try {
-                        String message = "주문번호: " + order.getOrderId() + "번의 " + msgBody + " 판매조회에서 확인해주세요.";
-                        sseEmitterManager.broadcast(message);
-                } catch (Exception e) {
-                        log.error("알림 전송 실패 (결제 로직은 성공함)", e);
-                }
-        }
 
         private void createPayment(Order order) {
                 final String paymentId = "payment-" + UUID.randomUUID().toString();

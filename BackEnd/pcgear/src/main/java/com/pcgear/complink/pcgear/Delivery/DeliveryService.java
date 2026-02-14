@@ -6,13 +6,13 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import com.pcgear.complink.pcgear.config.SseEmitterManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -22,6 +22,7 @@ import org.springframework.web.client.RestClient;
 import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Customer.CustomerRepository;
 import com.pcgear.complink.pcgear.Delivery.entity.Delivery;
+import com.pcgear.complink.pcgear.Delivery.event.DeliveryStatusUpdatedEvent;
 import com.pcgear.complink.pcgear.Delivery.model.AccessTokenResp;
 import com.pcgear.complink.pcgear.Delivery.model.DeliveryStatus;
 import com.pcgear.complink.pcgear.Delivery.model.GraphQLRequest;
@@ -59,7 +60,7 @@ public class DeliveryService {
         private final OrderRepository orderRepository;
         private final DeliveryRepository deliveryRepository;
 
-        private final SseEmitterManager sseEmitterManager;
+        private final ApplicationEventPublisher eventPublisher;
         private final RestClient restClient;
         private final DeliveryTrackerProperties properties;
         private static final String TRACK_DELIVERY_QUERY = """
@@ -248,9 +249,6 @@ public class DeliveryService {
                 Delivery delivery = deliveryRepository.findByTrackingNumber(trackingNumber);
 
                 delivery.setDeliveryStatus(deliveryStatus);
-                String message = "주문번호: " + delivery.getOrderId() + "의 배송상태가 "
-                                + deliveryStatus + "로 변경되었습니다. 배송조회에서 확인해주세요!";
-                sseEmitterManager.broadcast(message);
 
                 // 배송 상태가 배송완료일 시 order의 status를 배송중-> 배송완료로 변경
                 if ("배송완료".equals(deliveryStatus)) {
@@ -260,7 +258,15 @@ public class DeliveryService {
                         orderService.updateOrderStatus(delivery.getOrderId(), OrderStatus.SHIPPING);
                 }
 
-                return deliveryRepository.save(delivery);
+                Delivery savedDelivery = deliveryRepository.save(delivery);
+
+                // 트랜잭션 커밋 후 알림 전송
+                eventPublisher.publishEvent(new DeliveryStatusUpdatedEvent(
+                        savedDelivery.getOrderId(),
+                        deliveryStatus.toString()
+                ));
+
+                return savedDelivery;
         }
 
         public Page<ShippingListDto> getAllDeliveries(Pageable pageable) {

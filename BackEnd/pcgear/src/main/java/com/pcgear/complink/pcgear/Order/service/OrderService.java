@@ -8,6 +8,7 @@ import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
 import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
 import com.pcgear.complink.pcgear.Item.ItemRepository;
 import com.pcgear.complink.pcgear.Item.ItemService;
+import com.pcgear.complink.pcgear.Order.event.OrderCreatedEvent;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailReqDto;
 import com.pcgear.complink.pcgear.Order.model.AssemblyDetailRespDto;
 import com.pcgear.complink.pcgear.Order.model.OrderRequestDto;
@@ -44,11 +45,11 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mail.javamail.JavaMailSender;
-import com.pcgear.complink.pcgear.config.SseEmitterManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,7 +72,7 @@ public class OrderService {
     private final MailService mailService;
 
     private final JavaMailSender javaMailSender;
-    private final SseEmitterManager sseEmitterManager;
+    private final ApplicationEventPublisher eventPublisher;
 
     private final DeliveryTrackerProperties properties;
 
@@ -84,7 +85,7 @@ public class OrderService {
             @Lazy PaymentLinkService paymentLinkService,
             ItemRepository itemRepository,
             @Lazy DeliveryService deliveryService, // 👈 4. 순환 참조 대상에 @Lazy 추가
-            SseEmitterManager sseEmitterManager,
+            ApplicationEventPublisher eventPublisher,
             ItemService itemService,
             PaymentRepository paymentRepository,
             SellService sellService,
@@ -98,7 +99,7 @@ public class OrderService {
         this.paymentLinkService = paymentLinkService;
         this.itemRepository = itemRepository;
         this.deliveryService = deliveryService;
-        this.sseEmitterManager = sseEmitterManager;
+        this.eventPublisher = eventPublisher;
         this.itemService = itemService;
         this.paymentRepository = paymentRepository;
         this.sellService = sellService;
@@ -126,13 +127,6 @@ public class OrderService {
                     customer.getPhoneNumber()); // 👈 여기서 3초가 걸려도 DB에는 아무 영향이 없습니다.
         } catch (RuntimeException e) {
             throw new RuntimeException("주문 생성 중 결제 링크 생성 실패: " + e.getMessage(), e);
-        }
-
-        String message = "주문서가 성공적으로 생성되었습니다.";
-        try {
-            sseEmitterManager.broadcast(message);
-        } catch (Exception e) {
-            log.info("SSE 알림 실패");
         }
 
         // 4. Repository를 통해 DB에 저장
@@ -187,13 +181,13 @@ public class OrderService {
 
         // 가용재고 차감
         itemService.updateItemAvailableQuantity(order);
-        try {
-            sseEmitterManager.broadcast("주문서가 성공적으로 생성되었습니다.");
-        } catch (Exception e) {
-            log.info("SSE 알림 실패");
-        }
 
-        return orderRepository.save(order); // 저장 후 즉시 커밋
+        Order savedOrder = orderRepository.save(order); // 저장 후 즉시 커밋
+
+        // 트랜잭션 커밋 후 알림 전송
+        eventPublisher.publishEvent(new OrderCreatedEvent(savedOrder.getOrderId(), "주문서가 성공적으로 생성되었습니다."));
+
+        return savedOrder;
     }
 
     public List<OrderResponseDto> findByOrderStatus(OrderStatus orderStatus) {
