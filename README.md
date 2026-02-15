@@ -1,5 +1,5 @@
 # PC 부품 주문/재고/배송통합 관리 ERP 시스템
-**주소**: pcgear.store<br/>
+**주소**: https://pcgear.store<br/>
 **테스트 ID**: staff<br/>
 **테스트 PW**: 123<br/>
 ## 개요
@@ -8,8 +8,8 @@
 ## 주문 금액 비교 검증을 통한 금액 위변조 차단
 ![bandicam 2026-02-06 23-59-24-331](https://github.com/user-attachments/assets/d34b9535-bb1a-42cd-b47c-59dd98078522)
 
-## 결제 취소 트랜잭션 분리 설계 및 수동 복구 로직 구현
-![bandicam 2026-02-06 23-59-26-974](https://github.com/user-attachments/assets/58bd64aa-c762-48b4-bde1-4ccff8153a26)
+## 결제취소 API 데이터 정합성 보장 및 트랜잭션 경계 분리
+<img width="1305" height="736" alt="스크린샷 2026-02-15 135142" src="https://github.com/user-attachments/assets/933e9b32-c5bc-401a-aa6e-0a92cf898616" />
 
 ## 비관적 락을 활용한 재고 정합성 확보와 성능 최적화
 ![bandicam 2026-02-06 23-59-28-608](https://github.com/user-attachments/assets/446b739b-1e4a-4939-ad81-3437b278fe8d)
