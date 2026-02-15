@@ -8,9 +8,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
 
 public interface ItemRepository extends JpaRepository<Item, Integer> {
         void deleteAllByItemIdIn(List<Integer> ids);
@@ -19,10 +21,13 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
 
         @Lock(LockModeType.PESSIMISTIC_WRITE)
         @Query("select i from Item i where i.itemId in :itemIds")
+        @QueryHints({ @QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000") })
+
         List<Item> findAllByItemIdInWithLock(@Param("itemIds") List<Integer> itemIds);
 
         @Lock(LockModeType.PESSIMISTIC_WRITE)
         @Query("select i from Item i where i.itemId= :itemId")
-        Optional<Item> findByIdWithPessimisticLock(@Param("itemId")Integer itemId);
+        @QueryHints({ @QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000") })
+        Optional<Item> findByIdWithPessimisticLock(@Param("itemId") Integer itemId);
 
 }
