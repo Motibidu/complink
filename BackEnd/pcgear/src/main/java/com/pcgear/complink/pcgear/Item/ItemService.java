@@ -187,6 +187,33 @@ public class ItemService {
 
         @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         @Transactional
+        public void restoreItemQuantityOnHand(Order order) {
+                List<OrderItem> itemsFromOrder = order.getOrderItems();
+
+                // 1. 아이템 ID 목록 추출
+                List<Integer> itemIds = itemsFromOrder.stream()
+                                .map(orderItem -> orderItem.getItem().getItemId())
+                                .collect(Collectors.toList());
+
+                if (itemIds.isEmpty())
+                        return;
+
+                // 2. 락 걸고 한 방에 조회
+                List<Item> items = itemRepository.findAllByItemIdInWithLock(itemIds);
+
+                // 3. Map으로 변환 (검색 속도 O(1))
+                Map<Integer, Item> itemMap = items.stream()
+                                .collect(Collectors.toMap(Item::getItemId, item -> item));
+
+                // 4. 재고 복구 로직
+                for (OrderItem orderItem : itemsFromOrder) {
+                        Item item = itemMap.get(orderItem.getItem().getItemId());
+                        item.setQuantityOnHand(item.getQuantityOnHand() + orderItem.getQuantity());
+                }
+        }
+
+        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
+        @Transactional
         public void restoreItemAvailableQuantity(Integer orderId) {
                 Order order = orderRepository.findById(orderId)
                                 .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));

@@ -107,27 +107,34 @@ public class DeliveryService {
         }
 
         /**
-         * 배송 추적 등록 (운송장 검증 + 웹훅 등록 + DB 저장)
+         * 배송 추적 등록 (운송장 검증 + DB 저장 + 웹훅 등록)
          *
          * @throws InvalidTrackingNumberException 운송장 번호 검증 실패
-         * @throws WebhookRegistrationException 웹훅 등록 실패
-         * @throws DeliveryTrackingException 시스템 오류
+         * @throws WebhookRegistrationException   웹훅 등록 실패
+         * @throws DeliveryTrackingException      시스템 오류
          */
         public void registerDeliveryTracking(String accessToken, TrackingNumberReq request) {
                 log.info("배송 추적 등록 시작: {}", request);
 
                 try {
-                        // 1. 운송장 검증
+                        // 1. 운송장 검증 (DB 건드리지 않음)
                         validateTrackingNumber(accessToken, request.getCarrierId(), request.getTrackingNumber());
 
-                        // 2. 웹훅 등록
-                        registerWebhook(accessToken, request.getCarrierId(), request.getTrackingNumber(),
-                                        properties.getWebhookUrl() + "/delivery/webhook");
+                        // 2. DB 저장 (트랜잭션)
+                        Delivery savedDelivery = self.processRegistrationTransaction(request);
 
-                        // 3. DB 저장
-                        self.processRegistrationTransaction(request);
+                        try {
+                                // 3. 웹훅 등록 (외부 API)
+                                registerWebhook(accessToken, request.getCarrierId(), request.getTrackingNumber(),
+                                                properties.getWebhookUrl() + "/delivery/webhook");
 
-                        log.info("배송 추적 등록 완료: OrderId={}", request.getOrderId());
+                                log.info("배송 추적 등록 완료: OrderId={}", request.getOrderId());
+                        } catch (WebhookRegistrationException e) {
+                                // 웹훅 등록 실패 시 보상 로직: DB 롤백
+                                log.error("웹훅 등록 실패, DB 롤백 시작: DeliveryId={}", savedDelivery.getDeliveryId());
+                                compensateDeliveryRegistration(savedDelivery, request.getOrderId());
+                                throw e;
+                        }
 
                 } catch (InvalidTrackingNumberException | WebhookRegistrationException e) {
                         // 비즈니스 예외는 그대로 전파
@@ -138,7 +145,7 @@ public class DeliveryService {
                 }
         }
 
-        
+        // 배송 조회
         public TrackingResponse trackDelivery(String carrierId, String trackingNumber, String accessToken) {
                 Map<String, String> variables = Map.of(
                                 "carrierId", carrierId,
@@ -237,22 +244,47 @@ public class DeliveryService {
         }
 
         @Transactional
-        public void processRegistrationTransaction(TrackingNumberReq req) {
+        public Delivery processRegistrationTransaction(TrackingNumberReq req) {
                 // 배송 정보 생성
-                createDelivery(req);
+                Delivery delivery = createDelivery(req);
 
                 // 주문 상태 변경 (배송 대기)
                 orderService.updateOrderStatus(req.getOrderId(), OrderStatus.SHIPPING_PENDING);
 
-                // 재고 차감
+                // 실재고 차감
                 Order order = orderRepository.findById(req.getOrderId())
                                 .orElseThrow(() -> new EntityNotFoundException("주문 없음: " + req.getOrderId()));
                 itemService.updateItemQuantityOnHand(order);
 
                 log.info("배송 등록 트랜잭션 완료");
+                return delivery;
         }
 
-        
+        /**
+         * 웹훅 등록 실패 시 보상 로직 (DB 롤백)
+         */
+        @Transactional
+        public void compensateDeliveryRegistration(Delivery delivery, Integer orderId) {
+                try {
+                        // 1. 배송 정보 삭제
+                        deliveryRepository.delete(delivery);
+
+                        // 2. 주문 상태 복구 (배송 대기 -> 조립 완료)
+                        orderService.updateOrderStatus(orderId, OrderStatus.SHIPPING_PENDING);
+
+                        // 3. 실재고 복구
+                        Order order = orderRepository.findById(orderId)
+                                        .orElseThrow(() -> new EntityNotFoundException("주문 없음: " + orderId));
+                        itemService.restoreItemQuantityOnHand(order);
+
+                        log.info("DB 롤백 완료: DeliveryId={}, OrderId={}", delivery.getDeliveryId(), orderId);
+                } catch (Exception e) {
+                        log.error("DB 롤백 실패 - 수동 복구 필요: DeliveryId={}, OrderId={}", delivery.getDeliveryId(),
+                                        orderId, e);
+                        // 보상 로직 실패 시 예외는 던지지 않음 (원래 WebhookRegistrationException을 전파해야 하므로)
+                }
+        }
+
         public String extractDeliveryStatus(TrackingResponse trackingResponse) {
                 return Optional.ofNullable(trackingResponse)
                                 .map(TrackingResponse::getData)
@@ -281,9 +313,8 @@ public class DeliveryService {
 
                 // 트랜잭션 커밋 후 알림 전송
                 eventPublisher.publishEvent(new DeliveryStatusUpdatedEvent(
-                        savedDelivery.getOrderId(),
-                        deliveryStatus.toString()
-                ));
+                                savedDelivery.getOrderId(),
+                                deliveryStatus.toString()));
 
                 return savedDelivery;
         }
