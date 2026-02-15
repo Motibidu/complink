@@ -104,7 +104,7 @@ public class OrderService {
                     merchantUid,
                     requestDto.getGrandAmount().intValue(),
                     customer.getCustomerName() + "님의 주문",
-                    customer.getPhoneNumber()); // 👈 여기서 3초가 걸려도 DB에는 아무 영향이 없습니다.
+                    customer.getPhoneNumber());
         } catch (RuntimeException e) {
             throw new RuntimeException("주문 생성 중 결제 링크 생성 실패: " + e.getMessage(), e);
         }

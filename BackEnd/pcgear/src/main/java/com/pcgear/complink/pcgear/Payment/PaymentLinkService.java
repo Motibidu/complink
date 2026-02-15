@@ -287,7 +287,8 @@ public class PaymentLinkService {
                 switch (paymentStatus) {
                         case "paid": // 결제 완료
                                 finalizeOrderPayment(order); // 재고 차감, 매출 생성 등
-                                eventPublisher.publishEvent(new PaymentCompletedEvent(order.getOrderId(), "결제가 완료되었습니다."));
+                                eventPublisher.publishEvent(
+                                                new PaymentCompletedEvent(order.getOrderId(), "결제가 완료되었습니다."));
                                 log.info("Payment completed for order {}", webhookRequest.getMerchantUid());
                                 break;
 
@@ -317,14 +318,13 @@ public class PaymentLinkService {
                 // 3. 주문 결제 날짜를 설정
                 orderService.setPaidAt(order);
 
-                // 4. 재고 차감
+                // 4. 가용 재고 차감
                 itemService.updateItemAvailableQuantity(order);
 
                 // 5. 결제기록 생성
                 createPayment(order);
 
         }
-
 
         private void createPayment(Order order) {
                 final String paymentId = "payment-" + UUID.randomUUID().toString();

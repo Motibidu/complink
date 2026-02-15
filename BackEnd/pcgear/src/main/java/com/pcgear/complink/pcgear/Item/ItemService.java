@@ -6,12 +6,14 @@ import java.util.stream.Collectors;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.pcgear.complink.pcgear.Item.event.LockStockAlertEvent;
 import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderItem;
 import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
@@ -27,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ItemService {
         private final ItemRepository itemRepository;
         private final OrderRepository orderRepository;
+        private final ApplicationEventPublisher eventPublisher;
 
         // @Cacheable(value = "items", condition = "#p0 == null", key =
         // "#p1.toString()")
@@ -139,6 +142,13 @@ public class ItemService {
                         int currentAvailableQuantity = item.getAvailableQuantity();
 
                         if (currentAvailableQuantity < orderedQuantity) {
+                                eventPublisher.publishEvent(
+                                                new LockStockAlertEvent(
+                                                                item.getItemId(),
+                                                                item.getItemName(),
+                                                                currentAvailableQuantity,
+                                                                orderedQuantity));
+
                                 throw new IllegalStateException(
                                                 "가용 재고 부족: 품목 '" + item.getItemName() + "' (현재: "
                                                                 + currentAvailableQuantity + ", 주문: " + orderedQuantity
