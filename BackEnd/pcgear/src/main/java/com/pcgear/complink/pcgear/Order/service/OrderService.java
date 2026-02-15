@@ -30,7 +30,6 @@ import com.pcgear.complink.pcgear.User.repository.UserRepository;
 import com.pcgear.complink.pcgear.exception.PaymentProcessingException;
 
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -48,7 +47,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
-@RequiredArgsConstructor
 @Service
 public class OrderService {
 
@@ -58,16 +56,38 @@ public class OrderService {
     private final CustomerRepository customerRepository;
     private final ItemRepository itemRepository;
 
-    @Lazy
     private final PaymentLinkService paymentLinkService;
     private final SellService sellService;
-    @Lazy
     private final DeliveryService deliveryService;
     private final ItemService itemService;
-    @Lazy
     private final OrderService self;
 
     private final ApplicationEventPublisher eventPublisher;
+
+    public OrderService(
+            PaymentRepository paymentRepository,
+            OrderRepository orderRepository,
+            UserRepository userRepository,
+            CustomerRepository customerRepository,
+            ItemRepository itemRepository,
+            @Lazy PaymentLinkService paymentLinkService,
+            SellService sellService,
+            @Lazy DeliveryService deliveryService,
+            ItemService itemService,
+            @Lazy OrderService self,
+            ApplicationEventPublisher eventPublisher) {
+        this.paymentRepository = paymentRepository;
+        this.orderRepository = orderRepository;
+        this.userRepository = userRepository;
+        this.customerRepository = customerRepository;
+        this.itemRepository = itemRepository;
+        this.paymentLinkService = paymentLinkService;
+        this.sellService = sellService;
+        this.deliveryService = deliveryService;
+        this.itemService = itemService;
+        this.self = self;
+        this.eventPublisher = eventPublisher;
+    }
 
     @CacheEvict(value = { "dashboard-summary" }, allEntries = true)
     public Order createOrder(OrderRequestDto requestDto) {
