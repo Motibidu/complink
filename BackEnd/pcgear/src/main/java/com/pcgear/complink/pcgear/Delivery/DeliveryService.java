@@ -23,13 +23,15 @@ import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Customer.CustomerRepository;
 import com.pcgear.complink.pcgear.Delivery.entity.Delivery;
 import com.pcgear.complink.pcgear.Delivery.event.DeliveryStatusUpdatedEvent;
+import com.pcgear.complink.pcgear.Delivery.exception.DeliveryTrackingException;
+import com.pcgear.complink.pcgear.Delivery.exception.InvalidTrackingNumberException;
+import com.pcgear.complink.pcgear.Delivery.exception.WebhookRegistrationException;
 import com.pcgear.complink.pcgear.Delivery.model.AccessTokenResp;
 import com.pcgear.complink.pcgear.Delivery.model.DeliveryStatus;
 import com.pcgear.complink.pcgear.Delivery.model.GraphQLRequest;
 import com.pcgear.complink.pcgear.Delivery.model.RegisterWebhookResp;
 import com.pcgear.complink.pcgear.Delivery.model.ShippingListDto;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingResponse;
-import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
 import com.pcgear.complink.pcgear.Item.ItemService;
 import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
@@ -104,44 +106,39 @@ public class DeliveryService {
                 }
         }
 
-        public ValidationResult registerWebhookIfValid(String accessToken, TrackingNumberReq trackingNumberReq) {
-                log.info("배송 추적 등록 시작: {}", trackingNumberReq);
+        /**
+         * 배송 추적 등록 (운송장 검증 + 웹훅 등록 + DB 저장)
+         *
+         * @throws InvalidTrackingNumberException 운송장 번호 검증 실패
+         * @throws WebhookRegistrationException 웹훅 등록 실패
+         * @throws DeliveryTrackingException 시스템 오류
+         */
+        public void registerDeliveryTracking(String accessToken, TrackingNumberReq request) {
+                log.info("배송 추적 등록 시작: {}", request);
 
                 try {
-                        // A. 배송 조회 API 호출 (동기)
-                        TrackingResponse trackingRes = trackDelivery(trackingNumberReq.getCarrierId(),
-                                        trackingNumberReq.getTrackingNumber(), accessToken);
+                        // 1. 운송장 검증
+                        validateTrackingNumber(accessToken, request.getCarrierId(), request.getTrackingNumber());
 
-                        log.info("배송 조회 결과: {}", trackingRes);
-
-                        // B. 조회 결과 검증
-                        ValidationResult validationResult = validateTrackingResponse(trackingRes);
-                        if (!validationResult.isValid()) {
-                                return validationResult; // 실패 시 바로 리턴
-                        }
-
-                        log.info("properties.getWebhookUrl(): {}", properties.getWebhookUrl());
-
-                        // C. 웹훅 등록 API 호출 (동기)
-                        ValidationResult webhookResult = registerWebhook(accessToken,
-                                        trackingNumberReq.getCarrierId(),
-                                        trackingNumberReq.getTrackingNumber(),
+                        // 2. 웹훅 등록
+                        registerWebhook(accessToken, request.getCarrierId(), request.getTrackingNumber(),
                                         properties.getWebhookUrl() + "/delivery/webhook");
 
-                        if (webhookResult.isValid()) {
-                                // D. [트랜잭션] 모든 API 성공 시 DB 저장 수행
-                                self.processRegistrationTransaction(trackingNumberReq);
-                                return new ValidationResult(true, "추적 등록 및 DB 반영 완료");
-                        } else {
-                                return webhookResult;
-                        }
+                        // 3. DB 저장
+                        self.processRegistrationTransaction(request);
 
+                        log.info("배송 추적 등록 완료: OrderId={}", request.getOrderId());
+
+                } catch (InvalidTrackingNumberException | WebhookRegistrationException e) {
+                        // 비즈니스 예외는 그대로 전파
+                        throw e;
                 } catch (Exception e) {
-                        log.error("배송 추적 등록 프로세스 실패", e);
-                        return new ValidationResult(false, "시스템 오류: " + e.getMessage());
+                        log.error("배송 추적 등록 시스템 오류", e);
+                        throw new DeliveryTrackingException("배송 추적 등록 중 시스템 오류가 발생했습니다", e);
                 }
         }
 
+        
         public TrackingResponse trackDelivery(String carrierId, String trackingNumber, String accessToken) {
                 Map<String, String> variables = Map.of(
                                 "carrierId", carrierId,
@@ -161,27 +158,46 @@ public class DeliveryService {
                                 .body(TrackingResponse.class);
         }
 
-        private ValidationResult validateTrackingResponse(TrackingResponse response) {
+        /**
+         * 운송장 번호 검증
+         *
+         * @throws InvalidTrackingNumberException 검증 실패 시
+         */
+        private void validateTrackingNumber(String accessToken, String carrierId, String trackingNumber) {
+                TrackingResponse response = trackDelivery(carrierId, trackingNumber, accessToken);
+                log.info("배송 조회 결과: {}", response);
+
                 if (response == null || response.getData() == null || response.getData().getTrack() == null) {
-                        String msg = "운송장 번호를 찾지 못했습니다.";
-                        if (response != null && response.getErrors() != null && !response.getErrors().isEmpty()) {
-                                String errorMsg = response.getErrors().get(0).getMessage();
-                                if ("Carrier not found".equals(errorMsg))
-                                        msg = "택배사 코드를 찾지 못했습니다.";
-                                else if (!errorMsg.isEmpty())
-                                        msg = "조회 오류: " + errorMsg;
-                        }
-                        return new ValidationResult(false, msg);
+                        String errorMessage = extractErrorMessage(response);
+                        throw new InvalidTrackingNumberException(errorMessage);
                 }
-                return new ValidationResult(true, "성공");
         }
 
-        public ValidationResult registerWebhook(String accessToken, String carrierId, String trackingNumber,
-                        String myCallbackUrl) {
+        private String extractErrorMessage(TrackingResponse response) {
+                if (response != null && response.getErrors() != null && !response.getErrors().isEmpty()) {
+                        String errorMsg = response.getErrors().get(0).getMessage();
+                        if ("Carrier not found".equals(errorMsg)) {
+                                return "택배사 코드를 찾지 못했습니다.";
+                        } else if (!errorMsg.isEmpty()) {
+                                return "조회 오류: " + errorMsg;
+                        }
+                }
+                return "운송장 번호를 찾지 못했습니다.";
+        }
+
+        /**
+         * 배송 추적 웹훅 등록
+         *
+         * @throws WebhookRegistrationException 웹훅 등록 실패 시
+         */
+        private void registerWebhook(String accessToken, String carrierId, String trackingNumber,
+                        String callbackUrl) {
+                log.info("웹훅 등록 시작: carrierId={}, trackingNumber={}", carrierId, trackingNumber);
+
                 RegisterWebhookInput input = RegisterWebhookInput.builder()
                                 .carrierId(carrierId)
                                 .trackingNumber(trackingNumber)
-                                .callbackUrl(myCallbackUrl)
+                                .callbackUrl(callbackUrl)
                                 .expirationTime(getExpirationTime(48))
                                 .build();
 
@@ -202,19 +218,22 @@ public class DeliveryService {
                                         log.error("API 응답 바디: {}", new String(res.getBody().readAllBytes()));
                                 })
                                 .body(RegisterWebhookResp.class);
-                log.info("response: {}", response);
+
+                log.info("웹훅 등록 응답: {}", response);
 
                 if (response != null && response.getData() != null
                                 && Boolean.TRUE.equals(response.getData().getRegisterTrackWebhook())) {
-                        return new ValidationResult(true, "추적 등록 완료");
+                        log.info("웹훅 등록 성공");
+                        return;
                 }
 
-                String errorMsg = "추적 등록 실패";
+                // 실패 시 예외 던지기
+                String errorMessage = "웹훅 등록 실패";
                 if (response != null && response.getErrors() != null && !response.getErrors().isEmpty()) {
-                        errorMsg = "추적 등록 실패: " + response.getErrors().get(0).getMessage();
+                        errorMessage = response.getErrors().get(0).getMessage();
                 }
-                log.error("웹훅 등록 실패 - response: {}", response);
-                return new ValidationResult(false, errorMsg);
+                log.error("웹훅 등록 실패: {}", errorMessage);
+                throw new WebhookRegistrationException(errorMessage);
         }
 
         @Transactional

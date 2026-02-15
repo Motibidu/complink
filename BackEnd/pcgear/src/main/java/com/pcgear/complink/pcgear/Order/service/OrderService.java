@@ -4,8 +4,8 @@ import com.pcgear.complink.pcgear.Assembly.AssemblyStatus;
 import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Customer.CustomerRepository;
 import com.pcgear.complink.pcgear.Delivery.DeliveryService;
+import com.pcgear.complink.pcgear.Delivery.exception.DeliveryTrackingException;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
-import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
 import com.pcgear.complink.pcgear.Item.ItemRepository;
 import com.pcgear.complink.pcgear.Item.ItemService;
 import com.pcgear.complink.pcgear.Order.event.OrderCreatedEvent;
@@ -236,7 +236,6 @@ public class OrderService {
         if (assemblyDetailReqDto.getNextAssemblyStatus() == AssemblyStatus.COMPLETED) {
             try {
                 String accessToken = deliveryService.getAccessToken();
-                log.info("accessToken: {}", accessToken);
 
                 TrackingNumberReq trackingNumberReq = TrackingNumberReq.builder()
                         .orderId(orderId)
@@ -245,23 +244,14 @@ public class OrderService {
                         .carrierId(assemblyDetailReqDto.getCarrierId())
                         .build();
 
-                ValidationResult result = deliveryService.registerWebhookIfValid(accessToken, trackingNumberReq);
+                deliveryService.registerDeliveryTracking(accessToken, trackingNumberReq);
+                log.info("배송 추적 등록 완료. OrderId: {}", orderId);
 
-                if (!result.isValid()) {
-                    // 웹훅 등록 실패 시 DB 복구
-                    log.error("배송 추적 웹훅 등록 실패, DB 복구 시작: {}", result.getMessage());
-                    self.compensateAssemblyCompletion(orderId);
-                    throw new RuntimeException("운송장 유효성 검사 또는 웹훅 등록 실패: " + result.getMessage());
-                }
-            } catch (RuntimeException e) {
-                // 이미 로그와 복구 처리된 경우 재throw
-                if (e.getMessage().contains("운송장 유효성 검사")) {
-                    throw e;
-                }
-                // 그 외 예외는 복구 후 throw
-                log.error("배송 추적 등록 실패, DB 복구. OrderId: {}", orderId, e);
+            } catch (DeliveryTrackingException e) {
+                // 배송 추적 등록 실패 시 DB 복구
+                log.error("배송 추적 등록 실패, DB 복구 시작. OrderId: {}, Error: {}", orderId, e.getMessage());
                 self.compensateAssemblyCompletion(orderId);
-                throw new RuntimeException("배송 추적 등록 실패", e);
+                throw new RuntimeException("배송 추적 등록 실패: " + e.getMessage(), e);
             }
         }
 

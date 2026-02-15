@@ -42,16 +42,12 @@ public class DelieveryController {
 
         // 2. 검증 및 웹훅 등록 (동기)
         // Service 내부에서 [API 호출 -> 검증 -> DB 트랜잭션] 순차 실행
-        ValidationResult result = deliveryService.registerWebhookIfValid(
+        deliveryService.registerDeliveryTracking(
                 accessToken,
                 trackingNumberReq);
 
-        if (result.isValid()) {
-            return ResponseEntity.ok(result.getMessage());
-        } else {
-            // 클라이언트의 요청이 잘못되었을 가능성이 높으므로 400 Bad Request
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.getMessage());
-        }
+        return ResponseEntity.ok("배송 추적 등록을 완료했습니다.");
+
     }
 
     @PostMapping("/webhook")
