@@ -192,7 +192,7 @@ public class OrderService {
     }
 
     public Page<AssemblyQueueRespDto> getAllAssemblyQueue(List<OrderStatus> statusesToFind, Pageable pageable) {
-        return orderRepository.findAllByOrderStatusIn(statusesToFind, pageable);
+        return orderRepository.findAssemblyQueue(statusesToFind, pageable);
     }
 
     @Transactional(readOnly = true)

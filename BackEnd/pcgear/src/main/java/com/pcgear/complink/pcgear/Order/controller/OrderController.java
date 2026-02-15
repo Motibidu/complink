@@ -50,8 +50,7 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<Page<OrderResponseDto>> searchOrders(
-            @ModelAttribute(name = "params") OrderSearchCondition condition, // 쿼리 파라미터를
-            // DTO로 자동 바인딩
+            @ModelAttribute(name = "params") OrderSearchCondition condition,
             @PageableDefault(size = 20, sort = "orderId", direction = Sort.Direction.DESC) Pageable pageable) {
         log.info("condition: {}", condition);
 
