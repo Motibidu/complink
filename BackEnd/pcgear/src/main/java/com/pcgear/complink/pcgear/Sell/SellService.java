@@ -89,4 +89,24 @@ public class SellService {
                                 });
         }
 
+        /**
+         * 보상 트랜잭션: 네거티브 매출 제거 (주문 취소 복구 시 사용)
+         */
+        public void removeNegateSell(Integer orderId) {
+                log.info("네거티브 매출 제거 시작. OrderId: {}", orderId);
+
+                // orderId에 해당하는 네거티브 매출 찾아서 삭제
+                List<Sell> sells = sellRepository.findAllByOrder_OrderId(orderId);
+
+                sells.stream()
+                        .filter(sell -> sell.getGrandAmount().signum() < 0) // 음수인 매출만
+                        .forEach(negativeSell -> {
+                                log.info("네거티브 매출 삭제. SellId: {}, GrandAmount: {}",
+                                        negativeSell.getSellId(), negativeSell.getGrandAmount());
+                                sellRepository.delete(negativeSell);
+                        });
+
+                log.info("네거티브 매출 제거 완료. OrderId: {}", orderId);
+        }
+
 }

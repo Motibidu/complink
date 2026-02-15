@@ -27,14 +27,10 @@ import com.pcgear.complink.pcgear.Sell.SellRepository;
 import com.pcgear.complink.pcgear.Sell.SellService;
 import com.pcgear.complink.pcgear.User.entity.UserEntity;
 import com.pcgear.complink.pcgear.User.repository.UserRepository;
-import com.pcgear.complink.pcgear.User.service.MailService;
-import com.pcgear.complink.pcgear.exception.InconsistentDataException;
 import com.pcgear.complink.pcgear.exception.PaymentProcessingException;
-import com.pcgear.complink.pcgear.properties.DeliveryTrackerProperties;
-import com.pcgear.complink.pcgear.properties.PortoneProperties;
 
-import jakarta.mail.internet.MimeMessage;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -43,18 +39,17 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
 @Slf4j
+@RequiredArgsConstructor
+@Service
 public class OrderService {
 
     private final PaymentRepository paymentRepository;
@@ -66,48 +61,13 @@ public class OrderService {
     @Lazy
     private final PaymentLinkService paymentLinkService;
     private final SellService sellService;
+    @Lazy
     private final DeliveryService deliveryService;
     private final ItemService itemService;
+    @Lazy
     private final OrderService self;
-    private final MailService mailService;
 
-    private final JavaMailSender javaMailSender;
     private final ApplicationEventPublisher eventPublisher;
-
-    private final DeliveryTrackerProperties properties;
-
-    @Value("${admin.email}")
-    private String adminEmail;
-
-    public OrderService(OrderRepository orderRepository,
-            UserRepository userRepository,
-            CustomerRepository customerRepository,
-            @Lazy PaymentLinkService paymentLinkService,
-            ItemRepository itemRepository,
-            @Lazy DeliveryService deliveryService, // 👈 4. 순환 참조 대상에 @Lazy 추가
-            ApplicationEventPublisher eventPublisher,
-            ItemService itemService,
-            PaymentRepository paymentRepository,
-            SellService sellService,
-            @Lazy OrderService self,
-            MailService mailService,
-            JavaMailSender javaMailSender,
-            DeliveryTrackerProperties properties) {
-        this.orderRepository = orderRepository;
-        this.userRepository = userRepository;
-        this.customerRepository = customerRepository;
-        this.paymentLinkService = paymentLinkService;
-        this.itemRepository = itemRepository;
-        this.deliveryService = deliveryService;
-        this.eventPublisher = eventPublisher;
-        this.itemService = itemService;
-        this.paymentRepository = paymentRepository;
-        this.sellService = sellService;
-        this.self = self;
-        this.mailService = mailService;
-        this.javaMailSender = javaMailSender;
-        this.properties = properties;
-    }
 
     @CacheEvict(value = { "dashboard-summary" }, allEntries = true)
     public Order createOrder(OrderRequestDto requestDto) {
@@ -297,40 +257,29 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public Order processOrderCancellation(Integer orderId) {
-
-        boolean isRefunded = false;
+    public Order processOrderCancellation(Integer orderId, String reason) {
         // 0. 주문 존재 여부 확인
         orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
 
-        // 1. 결제 기록 확인 및 환불 처리
+        // 1. DB에서 먼저 취소 처리 (트랜잭션으로 보호)
+        Order order = self.cancelOrderInDB(orderId);
+
+        // 2. 결제 기록 확인 및 환불 처리
         Optional<Payment> paymentOpt = paymentRepository.findByOrder_OrderId(orderId);
         if (paymentOpt.isPresent()) {
             try {
-                paymentLinkService.cancelPayment(orderId, "단순 변심에 의한 취소");
-                isRefunded = true;
+                paymentLinkService.cancelPayment(orderId, reason);
+                log.info("환불 처리 완료. OrderId: {}", orderId);
             } catch (Exception e) {
+                // 3. 환불 실패 시 → 보상 트랜잭션 (DB 복구)
+                log.error("환불 실패, DB 복구 시작. OrderId: {}, Error: {}", orderId, e.getMessage());
+                self.compensateOrderCancellation(orderId);
                 throw new PaymentProcessingException("결제 취소 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
             }
         }
 
-        try {
-            // 2. 상태 변경
-            return self.cancelOrderInDB(orderId);
-        } catch (Exception e) {
-            // 3. DB 업데이트 실패 시 예외 처리
-            if (isRefunded) {
-                log.error(" 환불은 완료되었으나 DB 반영 실패! 수동 조치 필요. OrderId: {}", orderId);
-                MimeMessage mail = mailService.createDbErrorMail(adminEmail, orderId, e.getMessage());
-                javaMailSender.send(mail);
-
-                throw new InconsistentDataException(
-                        "CRITICAL: 환불은 완료되었으나 DB 상태 변경에 실패했습니다. 관리자에게 즉시 문의하세요. Order ID: " + orderId);
-            }
-            // 일반적인 DB 업데이트 실패
-            throw new RuntimeException("주문 취소 중 데이터베이스 오류가 발생했습니다.", e);
-        }
+        return order;
     }
 
     @Transactional
@@ -345,12 +294,11 @@ public class OrderService {
             return existingOrder;
         }
 
-        // 주문상태 주문취소로 업데이트
+        // 항상 실행
         Order order = updateOrderStatus(orderId, OrderStatus.CANCELLED);
-
-        // 가용재고
         itemService.restoreItemAvailableQuantity(orderId);
 
+        // 결제기록 있을때만 실행
         paymentRepository.findByOrder_OrderId(orderId).ifPresent(payment -> {
             log.info("Payment 존재");
 
@@ -364,6 +312,37 @@ public class OrderService {
         });
 
         return order;
+    }
+
+    /**
+     * 보상 트랜잭션: 환불 실패 시 DB를 원래 상태로 복구
+     */
+    @Transactional
+    public void compensateOrderCancellation(Integer orderId) {
+        log.info("보상 트랜잭션 시작 - 주문 취소를 되돌립니다. OrderId: {}", orderId);
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
+
+        // 주문 상태를 결제완료로 복구
+        order.setOrderStatus(OrderStatus.PAID);
+
+        // 가용재고 다시 차감
+        itemService.updateItemAvailableQuantity(order);
+
+        paymentRepository.findByOrder_OrderId(orderId).ifPresent(payment -> {
+            // 결제 상태 복구
+            payment.setPaymentStatus(PaymentStatus.PAID);
+
+            // 판매기록 복구 (네거티브 매출 제거)
+            sellService.removeNegateSell(orderId);
+
+            // 실재고 다시 차감
+            itemService.updateItemQuantityOnHand(order);
+        });
+
+        orderRepository.save(order);
+        log.info("보상 트랜잭션 완료. OrderId: {}", orderId);
     }
 
     public Page<OrderResponseDto> searchOrders(OrderSearchCondition condition, Pageable pageable) {

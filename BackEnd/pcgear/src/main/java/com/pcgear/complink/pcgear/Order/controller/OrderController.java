@@ -61,7 +61,7 @@ public class OrderController {
     @PostMapping("/{orderId}/cancel")
     public ResponseEntity<OrderResponseDto> cancelOrder(@PathVariable(name = "orderId") Integer orderId) {
 
-        Order canceledOrder = orderService.processOrderCancellation(orderId);
+        Order canceledOrder = orderService.processOrderCancellation(orderId, "단순 변심에 의한 취소");
 
         return ResponseEntity.ok(new OrderResponseDto(canceledOrder));
     }

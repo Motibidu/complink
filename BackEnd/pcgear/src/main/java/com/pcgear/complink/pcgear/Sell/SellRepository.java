@@ -2,6 +2,7 @@ package com.pcgear.complink.pcgear.Sell;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -18,6 +19,8 @@ public interface SellRepository extends JpaRepository<Sell, Integer> {
                         @Param("endOfDay") LocalDateTime endOfDay);
 
         Optional<Sell> findByOrder_OrderId(Integer orderid);
+
+        List<Sell> findAllByOrder_OrderId(Integer orderId);
 
         @Query("SELECT s FROM Sell s " +
                         "JOIN FETCH s.order " +
