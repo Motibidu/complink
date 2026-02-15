@@ -227,40 +227,78 @@ public class OrderService {
 
     }
 
-    @Transactional
+    // 조립 상태 업데이트
     public AssemblyDetailRespDto processAssemblyStatus(Integer orderId, AssemblyDetailReqDto assemblyDetailReqDto) {
+        // 1. DB 업데이트 (트랜잭션 보호)
+        self.updateAssemblyInDB(orderId, assemblyDetailReqDto);
+
+        // 2. 완료 상태일 경우 외부 API 호출 (트랜잭션 밖)
+        if (assemblyDetailReqDto.getNextAssemblyStatus() == AssemblyStatus.COMPLETED) {
+            try {
+                String accessToken = deliveryService.getAccessToken();
+                log.info("accessToken: {}", accessToken);
+
+                TrackingNumberReq trackingNumberReq = TrackingNumberReq.builder()
+                        .orderId(orderId)
+                        .customerId(assemblyDetailReqDto.getCustomerId())
+                        .trackingNumber(assemblyDetailReqDto.getTrackingNumber())
+                        .carrierId(assemblyDetailReqDto.getCarrierId())
+                        .build();
+
+                ValidationResult result = deliveryService.registerWebhookIfValid(accessToken, trackingNumberReq);
+
+                if (!result.isValid()) {
+                    // 웹훅 등록 실패 시 DB 복구
+                    log.error("배송 추적 웹훅 등록 실패, DB 복구 시작: {}", result.getMessage());
+                    self.compensateAssemblyCompletion(orderId);
+                    throw new RuntimeException("운송장 유효성 검사 또는 웹훅 등록 실패: " + result.getMessage());
+                }
+            } catch (RuntimeException e) {
+                // 이미 로그와 복구 처리된 경우 재throw
+                if (e.getMessage().contains("운송장 유효성 검사")) {
+                    throw e;
+                }
+                // 그 외 예외는 복구 후 throw
+                log.error("배송 추적 등록 실패, DB 복구. OrderId: {}", orderId, e);
+                self.compensateAssemblyCompletion(orderId);
+                throw new RuntimeException("배송 추적 등록 실패", e);
+            }
+        }
+
+        return getAssemblyDetailRespDto(orderId);
+    }
+
+    @Transactional
+    public void updateAssemblyInDB(Integer orderId, AssemblyDetailReqDto assemblyDetailReqDto) {
         updateAssemblyStatus(orderId, assemblyDetailReqDto.getNextAssemblyStatus());
 
         // AssemblyStatus가 부품검수일 경우 OrderStatus 상품준비중으로 업데이트
         if (assemblyDetailReqDto.getNextAssemblyStatus() == AssemblyStatus.INSPECTING) {
             updateOrderStatus(orderId, OrderStatus.PREPARING_PRODUCT);
         }
-        // AssemblyStatus가 완료일 경우(운송장번호 입력한 경우) OrderStatus 배송대기로 업데이트
+
+        // AssemblyStatus가 완료일 경우 OrderStatus 배송대기로 업데이트
         if (assemblyDetailReqDto.getNextAssemblyStatus() == AssemblyStatus.COMPLETED) {
             updateOrderStatus(orderId, OrderStatus.SHIPPING_PENDING);
-
-            String accessToken = deliveryService.getAccessToken();
-            log.info("accessToken: {}", accessToken);
-
-            TrackingNumberReq trackingNumberReq = TrackingNumberReq.builder()
-                    .orderId(orderId)
-                    .customerId(assemblyDetailReqDto.getCustomerId())
-                    .trackingNumber(assemblyDetailReqDto.getTrackingNumber())
-                    .carrierId(assemblyDetailReqDto.getCarrierId())
-                    .build();
-
-            ValidationResult result = deliveryService
-                    .registerWebhookIfValid(accessToken, trackingNumberReq);
-
-            if (!result.isValid()) {
-                // 웹훅 등록 실패 시 예외 처리 또는 로그
-                log.error("Failed to register webhook: {}", result.getMessage());
-                // 비즈니스 예외를 던져 트랜잭션 롤백 및 에러 응답 유도
-                throw new RuntimeException("운송장 유효성 검사 또는 웹훅 등록 실패: " + result.getMessage());
-            }
         }
+
         setSerialNumber(orderId, assemblyDetailReqDto.getOrderItems());
-        return getAssemblyDetailRespDto(orderId);
+    }
+
+    @Transactional
+    public void compensateAssemblyCompletion(Integer orderId) {
+        log.info("조립 완료 상태 복구 시작. OrderId: {}", orderId);
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
+
+        // 주문 상태 복구: 배송대기 → 상품준비중
+        order.setOrderStatus(OrderStatus.PREPARING_PRODUCT);
+        // 조립 상태 복구: 완료 → 조립중
+        order.setAssemblyStatus(AssemblyStatus.SHIPPING_WAIT);
+
+        orderRepository.save(order);
+        log.info("조립 완료 상태 복구 완료. OrderId: {}", orderId);
     }
 
     public OrderResponseDto findOrderById(Integer orderId) {
