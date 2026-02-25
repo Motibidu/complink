@@ -22,7 +22,6 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
         @Lock(LockModeType.PESSIMISTIC_WRITE)
         @Query("select i from Item i where i.itemId in :itemIds")
         @QueryHints({ @QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000") })
-
         List<Item> findAllByItemIdInWithLock(@Param("itemIds") List<Integer> itemIds);
 
         @Lock(LockModeType.PESSIMISTIC_WRITE)

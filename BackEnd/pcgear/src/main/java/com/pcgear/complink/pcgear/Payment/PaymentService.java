@@ -144,8 +144,20 @@ public class PaymentService {
             // 4. [내부 DB] 트랜잭션 진입
             self.processWebhookTransaction(paymentId, paymentDetail);
 
+        } catch (PaymentVerificationException e) {
+            // 금액 불일치 등 검증 실패 → 결제 취소 필요
+            log.error("⛔ 결제 검증 실패, 결제 취소 시작: {}", e.getMessage());
+            try {
+                paymentLinkService.cancelPaymentByPaymentId(paymentId, "금액 검증 실패");
+                log.info("결제 취소 완료. PaymentId: {}", paymentId);
+            } catch (Exception cancelEx) {
+                log.error("결제 취소 실패 - 수동 처리 필요. PaymentId: {}", paymentId, cancelEx);
+            }
+            throw e;
+
         } catch (Exception e) {
-            log.error("웹훅 처리 중 오류 발생", e);
+            // 일시적 오류 → 웹훅 재시도 대기
+            log.error("웹훅 처리 중 오류 발생 (포트원이 재시도 예정)", e);
             throw new RuntimeException("웹훅 처리 실패", e);
         }
     }

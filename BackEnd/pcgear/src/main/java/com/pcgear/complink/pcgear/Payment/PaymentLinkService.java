@@ -135,6 +135,19 @@ public class PaymentLinkService {
                 return cancelPortonePayment(accessToken, impUid, reason);
         }
 
+        public PortoneV1CancelResp cancelPaymentByPaymentId(String paymentId, String reason) {
+                String accessToken = getAccessToken();
+
+                Payment payment = paymentRepository.findByPaymentId(paymentId)
+                                .orElseThrow(() -> new EntityNotFoundException("결제 정보를 찾을 수 없습니다. PaymentId: " + paymentId));
+
+                if (payment.getOrder() == null || payment.getOrder().getImpUid() == null) {
+                        throw new IllegalStateException("결제에 연결된 주문 또는 impUid가 없습니다.");
+                }
+
+                return cancelPortonePayment(accessToken, payment.getOrder().getImpUid(), reason);
+        }
+
         private PortoneV1CancelResp cancelPortonePayment(String accessToken, String impUid, String reason) {
                 PortoneV1CancelReq request = new PortoneV1CancelReq(impUid, reason);
 
@@ -236,12 +249,30 @@ public class PaymentLinkService {
                         log.error("⛔ 금액 불일치! 결제 취소 실행: {}", e.getMessage());
 
                         if (accessToken != null) {
-                                cancelPortonePayment(accessToken, webhookRequest.getImpUid(), "금액 불일치");
+                                try {
+                                        cancelPortonePayment(accessToken, webhookRequest.getImpUid(), "금액 불일치");
+                                        log.info("결제 취소 완료. ImpUid: {}", webhookRequest.getImpUid());
+                                } catch (Exception cancelEx) {
+                                        log.error("결제 취소 실패 - 수동 처리 필요. ImpUid: {}", webhookRequest.getImpUid(), cancelEx);
+                                }
                         } else {
                                 log.error("액세스 토큰이 없어 결제 취소를 수행할 수 없습니다.");
                         }
+                        throw e;
+
                 } catch (Exception e) {
-                        log.error("🔥 시스템 오류", e);
+                        log.error("🔥 시스템 오류 발생, 결제 취소 시작", e);
+
+                        if (accessToken != null) {
+                                try {
+                                        cancelPortonePayment(accessToken, webhookRequest.getImpUid(), "시스템 오류");
+                                        log.info("결제 취소 완료. ImpUid: {}", webhookRequest.getImpUid());
+                                } catch (Exception cancelEx) {
+                                        log.error("결제 취소 실패 - 수동 처리 필요. ImpUid: {}", webhookRequest.getImpUid(), cancelEx);
+                                }
+                        } else {
+                                log.error("액세스 토큰이 없어 결제 취소를 수행할 수 없습니다.");
+                        }
                         throw new RuntimeException(e);
                 }
         }
