@@ -41,6 +41,22 @@ public interface OrderRepository extends JpaRepository<Order, Integer>, OrderRep
                         @Param("itemId") Integer itemId,
                         @Param("statuses") List<OrderStatus> statuses);
 
+        /**
+         * 여러 품목의 예약된 수량을 한 번에 계산 (N+1 문제 해결)
+         * Map<itemId, reservedQuantity> 형태로 반환
+         */
+        @Query("""
+                SELECT oi.item.itemId, COALESCE(SUM(oi.quantity), 0)
+                FROM Order o
+                JOIN o.orderItems oi
+                WHERE oi.item.itemId IN :itemIds
+                AND o.orderStatus IN :statuses
+                GROUP BY oi.item.itemId
+                """)
+        List<Object[]> calculateReservedQuantitiesByItemIds(
+                        @Param("itemIds") List<Integer> itemIds,
+                        @Param("statuses") List<OrderStatus> statuses);
+
         // 복잡한 쿼리들은 OrderRepositoryCustom(QueryDSL)로 이전됨:
         // - getTodayNewOrdersCount
         // - findByIdWithItemsAndCustomer

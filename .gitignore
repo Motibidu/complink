@@ -6,3 +6,5 @@ mysql_data/*
 /logs/*
 /sql/*
 .claude/*
+/docs/*
+

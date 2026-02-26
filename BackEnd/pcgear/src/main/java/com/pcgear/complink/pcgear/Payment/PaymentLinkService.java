@@ -139,7 +139,8 @@ public class PaymentLinkService {
                 String accessToken = getAccessToken();
 
                 Payment payment = paymentRepository.findByPaymentId(paymentId)
-                                .orElseThrow(() -> new EntityNotFoundException("결제 정보를 찾을 수 없습니다. PaymentId: " + paymentId));
+                                .orElseThrow(() -> new EntityNotFoundException(
+                                                "결제 정보를 찾을 수 없습니다. PaymentId: " + paymentId));
 
                 if (payment.getOrder() == null || payment.getOrder().getImpUid() == null) {
                         throw new IllegalStateException("결제에 연결된 주문 또는 impUid가 없습니다.");
@@ -246,14 +247,20 @@ public class PaymentLinkService {
                         self.verifyPaidAmountAndProcessPayment(webhookRequest, paymentData);
 
                 } catch (PaymentVerificationException e) {
-                        log.error("⛔ 금액 불일치! 결제 취소 실행: {}", e.getMessage());
+                        log.error("⛔ 금액 불일치! 결제 취소 및 주문 취소 실행: {}", e.getMessage());
 
                         if (accessToken != null) {
                                 try {
+                                        // 1. 포트원 결제 취소
                                         cancelPortonePayment(accessToken, webhookRequest.getImpUid(), "금액 불일치");
-                                        log.info("결제 취소 완료. ImpUid: {}", webhookRequest.getImpUid());
+                                        log.info("포트원 결제 취소 완료. ImpUid: {}", webhookRequest.getImpUid());
+
+                                        orderService.cancelOrderInDB(order.getOrderId());
+                                        log.info("주문 취소 완료. OrderId: {}", order.getOrderId());
+
                                 } catch (Exception cancelEx) {
-                                        log.error("결제 취소 실패 - 수동 처리 필요. ImpUid: {}", webhookRequest.getImpUid(), cancelEx);
+                                        log.error("결제/주문 취소 실패 - 수동 처리 필요. ImpUid: {}", webhookRequest.getImpUid(),
+                                                        cancelEx);
                                 }
                         } else {
                                 log.error("액세스 토큰이 없어 결제 취소를 수행할 수 없습니다.");
@@ -261,14 +268,20 @@ public class PaymentLinkService {
                         throw e;
 
                 } catch (Exception e) {
-                        log.error("🔥 시스템 오류 발생, 결제 취소 시작", e);
+                        log.error("🔥 시스템 오류 발생, 결제 취소 및 주문 취소 시작", e);
 
                         if (accessToken != null) {
                                 try {
+                                        // 1. 포트원 결제 취소
                                         cancelPortonePayment(accessToken, webhookRequest.getImpUid(), "시스템 오류");
-                                        log.info("결제 취소 완료. ImpUid: {}", webhookRequest.getImpUid());
+                                        log.info("포트원 결제 취소 완료. ImpUid: {}", webhookRequest.getImpUid());
+
+                                        orderService.cancelOrderInDB(order.getOrderId());
+                                        log.info("주문 취소 완료. OrderId: {}", order.getOrderId());
+
                                 } catch (Exception cancelEx) {
-                                        log.error("결제 취소 실패 - 수동 처리 필요. ImpUid: {}", webhookRequest.getImpUid(), cancelEx);
+                                        log.error("결제/주문 취소 실패 - 수동 처리 필요. ImpUid: {}", webhookRequest.getImpUid(),
+                                                        cancelEx);
                                 }
                         } else {
                                 log.error("액세스 토큰이 없어 결제 취소를 수행할 수 없습니다.");

@@ -39,4 +39,29 @@ public class ItemEventListener {
                 }
         }
 
+        @Async
+        @EventListener
+        public void handleInventoryDiscrepancy(InventoryDiscrepancyEvent event) {
+                try {
+                        String notificationMessage = String.format(
+                                        "🔍 [재고 불일치] %s - 이전: %d개, 수정: %d개, 차이: %d개",
+                                        event.getItemName(),
+                                        event.getPreviousQuantity(),
+                                        event.getCorrectedQuantity(),
+                                        event.getDiscrepancy());
+
+                        sseEmitterManager.broadcast(notificationMessage);
+                        log.info("재고 불일치 알림 전송: itemId={}, itemName={}, 이전={}개, 수정={}개, 차이={}개",
+                                        event.getItemId(),
+                                        event.getItemName(),
+                                        event.getPreviousQuantity(),
+                                        event.getCorrectedQuantity(),
+                                        event.getDiscrepancy());
+
+                } catch (Exception e) {
+                        log.error("재고 불일치 알림 전송 실패: itemId={}, itemName={}, error={}",
+                                        event.getItemId(), event.getItemName(), e.getMessage());
+                }
+        }
+
 }

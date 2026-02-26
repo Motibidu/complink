@@ -37,7 +37,7 @@ public class InventoryReconciliationController {
      */
     @PostMapping("/{itemId}")
     @Operation(summary = "특정 품목 재고 정합성 검증", description = "특정 품목의 재고 정합성을 검증하고 자동 수정합니다.")
-    public ResponseEntity<String> reconcileSingleItem(@PathVariable Integer itemId) {
+    public ResponseEntity<String> reconcileSingleItem(@PathVariable(name = "itemId") Integer itemId) {
         log.info("수동 단일 품목 재고 정합성 검증 요청. ItemId: {}", itemId);
 
         boolean fixed = reconciliationService.reconcileSingleItem(itemId);
@@ -54,7 +54,7 @@ public class InventoryReconciliationController {
      */
     @GetMapping("/audit/{itemId}")
     @Operation(summary = "품목별 감사 로그 조회", description = "특정 품목의 재고 정합성 검증 이력을 조회합니다.")
-    public ResponseEntity<List<InventoryAudit>> getAuditLogs(@PathVariable Integer itemId) {
+    public ResponseEntity<List<InventoryAudit>> getAuditLogs(@PathVariable(name = "itemId") Integer itemId) {
         List<InventoryAudit> auditLogs = reconciliationService.getAuditLogs(itemId);
         return ResponseEntity.ok(auditLogs);
     }

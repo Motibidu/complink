@@ -17,5 +17,5 @@ public interface InventoryAuditRepository extends JpaRepository<InventoryAudit, 
     /**
      * 기간별 감사 로그 조회
      */
-    List<InventoryAudit> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+    //List<InventoryAudit> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

@@ -79,6 +79,8 @@ public class SecurityConfig {
                                                                 "/logout")
                                                 .permitAll()
 
+                                                .requestMatchers("/inventory/reconciliation/**").permitAll()
+
                                                 // swagger
                                                 .requestMatchers("/swagger-ui/**",
                                                                 "/v3/api-docs/**",
