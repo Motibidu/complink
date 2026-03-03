@@ -15,3 +15,5 @@ src/test
 /logs/**
 
 application-dev.properties
+
+src/main/resources/db/**

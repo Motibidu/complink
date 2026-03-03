@@ -47,6 +47,10 @@ dependencies {
     implementation 'net.nurigo:sdk:4.3.2'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+    // Spring Retry (보상 트랜잭션 재시도용)
+    implementation 'org.springframework.retry:spring-retry'
+    implementation 'org.springframework:spring-aspects'
+
     // 1. QueryDSL 라이브러리 (코드를 짜기 위해 필요)
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     

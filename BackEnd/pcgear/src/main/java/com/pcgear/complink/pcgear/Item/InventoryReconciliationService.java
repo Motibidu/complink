@@ -50,7 +50,9 @@ public class InventoryReconciliationService {
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void reconcileAllInventory() {
-        log.info("=== 전체 재고 정합성 검증 시작 ===");
+        long startTime = System.currentTimeMillis();
+        String threadName = Thread.currentThread().getName();
+        log.info("=== 전체 재고 정합성 검증 시작 === Thread: {}", threadName);
 
         List<Item> items = itemRepository.findAll();
         int totalCount = items.size();
@@ -81,7 +83,10 @@ public class InventoryReconciliationService {
             }
         }
 
-        log.info("=== 전체 재고 정합성 검증 완료 === 수정: {} / 전체: {}", fixedCount, totalCount);
+        long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+        log.info("=== 전체 재고 정합성 검증 완료 === 수정: {} / 전체: {}, 소요시간: {}ms ({}초)",
+                fixedCount, totalCount, duration, duration / 1000.0);
     }
 
     /**
