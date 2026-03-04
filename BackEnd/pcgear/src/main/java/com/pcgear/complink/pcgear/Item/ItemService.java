@@ -110,7 +110,8 @@ public class ItemService {
                         }
 
                         item.setQuantityOnHand(currentQuantity - orderedQuantity);
-                        itemRepository.save(item);
+
+                        // itemRepository.save(item);
                 }
         }
 

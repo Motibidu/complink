@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 // 1. React-Bootstrap에서 필요한 컴포넌트들을 import 합니다.
-import { Container, Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Card, Spinner, Alert, Table, Badge } from 'react-bootstrap';
 
 /**
  * [Bootstrap 적용]
@@ -12,7 +12,13 @@ const Dashboard = () => {
     // API 데이터 상태 (이전과 동일)
     const [summary, setSummary] = useState({
         totalSellsToday: 0,
-        newOrdersToday: 0
+        newOrdersToday: 0,
+        pendingPaymentCount: 0,
+        activeWorkloadCount: 0,
+        last7DaysSales: [],
+        categoryStockSummary: [],
+        topCustomers: [],
+        topItemSales: []
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -102,7 +108,7 @@ const Dashboard = () => {
                 </Col>
             </Row>
 
-            <h2 className="mb-4">처리할 작업 (To-Do)</h2>
+            <h2 className="mb-4 mt-5">처리할 작업 (To-Do)</h2>
             <Row xs={1} md={2} className="g-4">
                 {/* 결제 대기 카드 */}
                 <Col>
@@ -128,6 +134,156 @@ const Dashboard = () => {
                             <Card.Text className="display-4 fw-bold text-info">
                                 {summary.activeWorkloadCount} 건
                             </Card.Text>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+
+            {/* 최근 7일간 매출 통계 */}
+            <h2 className="mb-4 mt-5">📊 최근 7일 매출 추이</h2>
+            <Card className="shadow-sm mb-4">
+                <Card.Body>
+                    <Table striped hover responsive>
+                        <thead>
+                            <tr>
+                                <th>날짜</th>
+                                <th>주문 건수</th>
+                                <th>매출액</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {summary.last7DaysSales && summary.last7DaysSales.length > 0 ? (
+                                summary.last7DaysSales.map((day, index) => (
+                                    <tr key={index}>
+                                        <td>{day.date}</td>
+                                        <td><Badge bg="primary">{day.orderCount} 건</Badge></td>
+                                        <td className="fw-bold">{formatCurrency(day.totalSales)}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="3" className="text-center text-muted">데이터가 없습니다.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </Card.Body>
+            </Card>
+
+            {/* 카테고리별 재고 현황 */}
+            <h2 className="mb-4 mt-5">📦 카테고리별 재고 현황</h2>
+            <Card className="shadow-sm mb-4">
+                <Card.Body>
+                    <Table striped hover responsive>
+                        <thead>
+                            <tr>
+                                <th>카테고리</th>
+                                <th>품목 수</th>
+                                <th>총 재고</th>
+                                <th>가용 재고</th>
+                                <th>재고 가치</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {summary.categoryStockSummary && summary.categoryStockSummary.length > 0 ? (
+                                summary.categoryStockSummary.map((category, index) => (
+                                    <tr key={index}>
+                                        <td><Badge bg="secondary">{category.category}</Badge></td>
+                                        <td>{category.totalItems} 개</td>
+                                        <td>{category.totalStock.toLocaleString()} 개</td>
+                                        <td>{category.totalAvailable.toLocaleString()} 개</td>
+                                        <td className="fw-bold">{formatCurrency(category.totalValue)}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" className="text-center text-muted">데이터가 없습니다.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </Card.Body>
+            </Card>
+
+            {/* TOP 고객 및 TOP 품목 */}
+            <h2 className="mb-4 mt-5">🏆 판매 통계</h2>
+            <Row xs={1} lg={2} className="g-4">
+                {/* TOP 고객 */}
+                <Col>
+                    <Card className="shadow-sm h-100">
+                        <Card.Header className="bg-primary text-white">
+                            <h5 className="mb-0">🥇 TOP 5 고객</h5>
+                        </Card.Header>
+                        <Card.Body>
+                            <Table striped hover size="sm">
+                                <thead>
+                                    <tr>
+                                        <th>고객명</th>
+                                        <th>주문 건수</th>
+                                        <th>총 구매액</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {summary.topCustomers && summary.topCustomers.length > 0 ? (
+                                        summary.topCustomers.map((customer, index) => (
+                                            <tr key={index}>
+                                                <td>
+                                                    {index === 0 && '🥇 '}
+                                                    {index === 1 && '🥈 '}
+                                                    {index === 2 && '🥉 '}
+                                                    {customer.customerName}
+                                                </td>
+                                                <td>{customer.orderCount} 건</td>
+                                                <td className="fw-bold">{formatCurrency(customer.totalPurchase)}</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="3" className="text-center text-muted">데이터가 없습니다.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </Table>
+                        </Card.Body>
+                    </Card>
+                </Col>
+
+                {/* TOP 품목 */}
+                <Col>
+                    <Card className="shadow-sm h-100">
+                        <Card.Header className="bg-success text-white">
+                            <h5 className="mb-0">🏆 TOP 10 인기 품목</h5>
+                        </Card.Header>
+                        <Card.Body>
+                            <Table striped hover size="sm">
+                                <thead>
+                                    <tr>
+                                        <th>품목명</th>
+                                        <th>판매량</th>
+                                        <th>매출액</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {summary.topItemSales && summary.topItemSales.length > 0 ? (
+                                        summary.topItemSales.map((item, index) => (
+                                            <tr key={index}>
+                                                <td>
+                                                    {index === 0 && '🥇 '}
+                                                    {index === 1 && '🥈 '}
+                                                    {index === 2 && '🥉 '}
+                                                    {item.itemName}
+                                                </td>
+                                                <td>{item.quantitySold} 개</td>
+                                                <td className="fw-bold">{formatCurrency(item.totalRevenue)}</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="3" className="text-center text-muted">데이터가 없습니다.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </Table>
                         </Card.Body>
                     </Card>
                 </Col>
