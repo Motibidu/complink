@@ -68,6 +68,12 @@ dependencies {
 
     implementation 'jakarta.activation:jakarta.activation-api:2.1.2'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // Micrometer for cache metrics (히트율 측정)
+    implementation 'io.micrometer:micrometer-core'
+    // Prometheus 메트릭 수집
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    // AOP for cache metrics
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
 }
 
 tasks.named('test') {

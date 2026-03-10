@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s  # 15초마다 메트릭 수집
+  evaluation_interval: 15s  # 15초마다 룰 평가
+
+# 알림 규칙 파일 (옵션)
+rule_files:
+  - 'alerts.yml'
+
+# Prometheus 자체 모니터링
+scrape_configs:
+  # Prometheus 자체 메트릭
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # PCGear Spring Boot 애플리케이션
+  - job_name: 'pcgear-app'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s  # 애플리케이션은 10초마다 수집
+    static_configs:
+      - targets: ['backend:8080']  # 같은 Docker 네트워크의 backend 서비스
+        labels:
+          application: 'pcgear'
+          environment: 'prod'
+
+# 알림 매니저 설정 (옵션)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']

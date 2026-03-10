@@ -47,18 +47,15 @@ public class ItemService {
                 }
         }
 
-        @Cacheable("items_temp")
         public List<Item> findFirstThreeItems() {
                 PageRequest pageable = PageRequest.of(0, 3, Sort.by("itemId").ascending());
                 return itemRepository.findAll(pageable).getContent();
         }
 
-        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         public Item createItem(Item item) {
                 return itemRepository.save(item);
         }
 
-        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         @Transactional
         public void updateItem(Integer itemId, Item itemDetails) {
                 Item existingItem = itemRepository.findById(itemId)
@@ -73,13 +70,11 @@ public class ItemService {
                 itemRepository.save(existingItem);
         }
 
-        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         @Transactional
         public void deleteItems(List<Integer> itemIds) {
                 itemRepository.deleteAllByItemIdIn(itemIds);
         }
 
-        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         @Transactional
         public void updateItemQuantityOnHand(Order order) {
 
@@ -114,8 +109,6 @@ public class ItemService {
                         // itemRepository.save(item);
                 }
         }
-
-        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         @Transactional
         public void updateItemAvailableQuantity(Order order) {
                 log.info("가용재고 차감");
@@ -161,7 +154,6 @@ public class ItemService {
                 }
         }
 
-        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         @Transactional
         public void restoreItemQuantityOnHand(Integer orderId) {
                 Order order = orderRepository.findById(orderId)
@@ -196,7 +188,6 @@ public class ItemService {
                 // 5. [저장] save() 호출 불필요 (더티 체킹으로 트랜잭션 종료 시 자동 UPDATE)
         }
 
-        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         @Transactional
         public void restoreItemQuantityOnHand(Order order) {
                 List<OrderItem> itemsFromOrder = order.getOrderItems();
@@ -223,7 +214,6 @@ public class ItemService {
                 }
         }
 
-        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         @Transactional
         public void restoreItemAvailableQuantity(Integer orderId) {
                 Order order = orderRepository.findById(orderId)
@@ -257,7 +247,6 @@ public class ItemService {
                 // 5. 더티체킹으로 트랜잭션 종료 시 자동 UPDATE
         }
 
-        @CacheEvict(value = { "items", "items_temp" }, allEntries = true)
         @Transactional
         public void adjustInventory(Integer itemId, int newRealQuantity, String reason) {
                 // 1. 락 걸고 조회

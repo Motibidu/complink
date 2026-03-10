@@ -58,7 +58,44 @@ services:
       start_period: 10s
     restart: on-failure
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pcgear-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./BackEnd/pcgear/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./BackEnd/pcgear/monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pcgear-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./BackEnd/pcgear/monitoring/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
 
 volumes:
   mysql-data: {}
   redis-data: {}
+  prometheus-data: {}
+  grafana-data: {}

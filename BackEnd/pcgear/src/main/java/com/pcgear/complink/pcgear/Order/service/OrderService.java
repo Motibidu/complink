@@ -29,8 +29,10 @@ import com.pcgear.complink.pcgear.User.entity.UserEntity;
 import com.pcgear.complink.pcgear.User.repository.UserRepository;
 import com.pcgear.complink.pcgear.exception.PaymentProcessingException;
 
+import io.micrometer.core.instrument.Counter;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -62,6 +64,9 @@ public class OrderService {
     private final ItemService itemService;
     private final OrderService self;
 
+    private final Counter orderCreatedCounter;
+    private final Counter orderFailedCounter;
+
     private final ApplicationEventPublisher eventPublisher;
 
     public OrderService(
@@ -75,7 +80,9 @@ public class OrderService {
             @Lazy DeliveryService deliveryService,
             ItemService itemService,
             @Lazy OrderService self,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher,
+            @Qualifier("orderCreatedCounter") Counter orderCreatedCounter,
+            @Qualifier("orderFailedCounter") Counter orderFailedCounter) {
         this.paymentRepository = paymentRepository;
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
@@ -87,9 +94,10 @@ public class OrderService {
         this.itemService = itemService;
         this.self = self;
         this.eventPublisher = eventPublisher;
+        this.orderCreatedCounter = orderCreatedCounter;
+        this.orderFailedCounter = orderFailedCounter;
     }
 
-    @CacheEvict(value = { "dashboard-summary" }, allEntries = true)
     public Order createOrder(OrderRequestDto requestDto) {
         log.info("requestDto: {}", requestDto);
 
@@ -111,8 +119,10 @@ public class OrderService {
 
         // 4. Repository를 통해 DB에 저장
         try {
+            orderCreatedCounter.increment();
             return self.processOrderCreation(requestDto, merchantUid, paymentLink);
         } catch (Exception e) {
+            orderFailedCounter.increment();
             paymentLinkService.cancelPaymentLink(paymentLink);
             log.error("주문 생성 트랜잭션 롤백 및 결제 링크 취소: {}", e.getMessage());
             throw new RuntimeException("주문 생성 중 오류 발생 및 결제 링크 취소 완료", e);
@@ -176,7 +186,6 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    @CacheEvict(value = "dashboard-summary", allEntries = true)
     public Order updateOrderStatus(Integer orderId, OrderStatus newStatus) {
         Order order = orderRepository.findByOrderIdWithFetchJoin(orderId)
                 .orElseThrow(
@@ -274,7 +283,6 @@ public class OrderService {
         setSerialNumber(orderId, assemblyDetailReqDto.getOrderItems());
     }
 
-
     public OrderResponseDto findOrderById(Integer orderId) {
         return orderRepository.findById(orderId).map(OrderResponseDto::new)
                 .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
@@ -338,7 +346,6 @@ public class OrderService {
 
         return order;
     }
-
 
     public Page<OrderResponseDto> searchOrders(OrderSearchCondition condition, Pageable pageable) {
         return orderRepository.searchOrders(condition, pageable);

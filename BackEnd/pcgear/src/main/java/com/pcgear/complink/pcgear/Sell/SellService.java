@@ -31,7 +31,6 @@ public class SellService {
         // 1. 주문 상태를 'PAID'로 변경
         // 2. 재고 수량 변경
         // 3. Sell 데이터 생성
-        @CacheEvict(value = "dashboard-summary", allEntries = true)
         @Transactional
         public Sell createSell(Order order) {
                 // 3. 판매(Sell) 데이터 생성
@@ -99,12 +98,12 @@ public class SellService {
                 List<Sell> sells = sellRepository.findAllByOrder_OrderId(orderId);
 
                 sells.stream()
-                        .filter(sell -> sell.getGrandAmount().signum() < 0) // 음수인 매출만
-                        .forEach(negativeSell -> {
-                                log.info("네거티브 매출 삭제. SellId: {}, GrandAmount: {}",
-                                        negativeSell.getSellId(), negativeSell.getGrandAmount());
-                                sellRepository.delete(negativeSell);
-                        });
+                                .filter(sell -> sell.getGrandAmount().signum() < 0) // 음수인 매출만
+                                .forEach(negativeSell -> {
+                                        log.info("네거티브 매출 삭제. SellId: {}, GrandAmount: {}",
+                                                        negativeSell.getSellId(), negativeSell.getGrandAmount());
+                                        sellRepository.delete(negativeSell);
+                                });
 
                 log.info("네거티브 매출 제거 완료. OrderId: {}", orderId);
         }

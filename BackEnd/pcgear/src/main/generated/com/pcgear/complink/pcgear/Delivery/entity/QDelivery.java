@@ -41,6 +41,14 @@ public class QDelivery extends EntityPathBase<Delivery> {
 
     public final StringPath trackingNumber = createString("trackingNumber");
 
+    public final StringPath webhookErrorMessage = createString("webhookErrorMessage");
+
+    public final DateTimePath<java.time.LocalDateTime> webhookRegisteredAt = createDateTime("webhookRegisteredAt", java.time.LocalDateTime.class);
+
+    public final NumberPath<Integer> webhookRetryCount = createNumber("webhookRetryCount", Integer.class);
+
+    public final StringPath webhookStatus = createString("webhookStatus");
+
     public QDelivery(String variable) {
         super(Delivery.class, forVariable(variable));
     }
