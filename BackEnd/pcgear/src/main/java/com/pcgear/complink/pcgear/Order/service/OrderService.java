@@ -18,9 +18,7 @@ import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.pcgear.complink.pcgear.Order.model.AssemblyQueueRespDto;
 import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderItem;
-import com.pcgear.complink.pcgear.Order.model.FailedCompensationJob;
 import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
-import com.pcgear.complink.pcgear.Order.repository.FailedCompensationJobRepository;
 import com.pcgear.complink.pcgear.Payment.Payment;
 import com.pcgear.complink.pcgear.Payment.PaymentLinkService;
 import com.pcgear.complink.pcgear.Payment.PaymentRepository;
@@ -45,10 +43,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Recover;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,7 +55,6 @@ public class OrderService {
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final ItemRepository itemRepository;
-    private final FailedCompensationJobRepository failedJobRepository;
 
     private final PaymentLinkService paymentLinkService;
     private final SellService sellService;
@@ -77,7 +70,6 @@ public class OrderService {
             UserRepository userRepository,
             CustomerRepository customerRepository,
             ItemRepository itemRepository,
-            FailedCompensationJobRepository failedJobRepository,
             @Lazy PaymentLinkService paymentLinkService,
             SellService sellService,
             @Lazy DeliveryService deliveryService,
@@ -89,7 +81,6 @@ public class OrderService {
         this.userRepository = userRepository;
         this.customerRepository = customerRepository;
         this.itemRepository = itemRepository;
-        this.failedJobRepository = failedJobRepository;
         this.paymentLinkService = paymentLinkService;
         this.sellService = sellService;
         this.deliveryService = deliveryService;
@@ -257,9 +248,8 @@ public class OrderService {
                 log.info("배송 추적 등록 완료. OrderId: {}", orderId);
 
             } catch (DeliveryTrackingException e) {
-                // 배송 추적 등록 실패 시 비동기로 DB 복구 시도
-                log.error("배송 추적 등록 실패, 비동기 보상 트랜잭션 시작. OrderId: {}, Error: {}", orderId, e.getMessage());
-                self.compensateAssemblyCompletionAsync(orderId);
+                // 배송 추적 등록 실패 시 예외 발생 (상태는 PENDING으로 남아 수동 재시도 가능)
+                log.error("배송 추적 등록 실패. OrderId: {}, Error: {}", orderId, e.getMessage());
                 throw new RuntimeException("배송 추적 등록 실패: " + e.getMessage(), e);
             }
         }
@@ -284,55 +274,6 @@ public class OrderService {
         setSerialNumber(orderId, assemblyDetailReqDto.getOrderItems());
     }
 
-    /**
-     * 비동기 조립 완료 보상 트랜잭션
-     * - @Async로 별도 스레드에서 실행 (메인 스레드는 즉시 반환)
-     * - @Retryable로 3회 재시도 (2초, 4초, 8초 백오프)
-     * - 3회 모두 실패 시 @Recover 메서드 호출
-     */
-    @Async
-    @Retryable(
-        value = {Exception.class},
-        maxAttempts = 3,
-        backoff = @Backoff(delay = 2000, multiplier = 2)
-    )
-    public void compensateAssemblyCompletionAsync(Integer orderId) {
-        log.info("비동기 조립 완료 보상 트랜잭션 시작. OrderId: {}", orderId);
-        compensateAssemblyCompletion(orderId);
-        log.info("비동기 조립 완료 보상 트랜잭션 성공. OrderId: {}", orderId);
-    }
-
-    /**
-     * 조립 완료 보상 트랜잭션 최종 실패 처리
-     * - @Retryable 3회 모두 실패 시 자동 호출
-     * - 실패 기록을 DB에 저장하여 @Scheduled이 재시도하도록 함
-     */
-    @Recover
-    public void recoverFromAssemblyCompletionFailure(Exception e, Integer orderId) {
-        log.error("비동기 조립 완료 보상 트랜잭션 3회 모두 실패, DB 큐에 등록. OrderId: {}, Error: {}",
-            orderId, e.getMessage());
-        recordFailedCompensation(
-            orderId,
-            FailedCompensationJob.CompensationType.ASSEMBLY_COMPLETION,
-            e.getMessage()
-        );
-    }
-
-    @Transactional
-    public void compensateAssemblyCompletion(Integer orderId) {
-        log.info("조립 완료 상태 복구 시작. OrderId: {}", orderId);
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
-
-        // 주문 상태 복구: 배송대기 → 상품준비중
-        order.setOrderStatus(OrderStatus.PREPARING_PRODUCT);
-        // 조립 상태 복구: 완료 → 조립중
-        order.setAssemblyStatus(AssemblyStatus.SHIPPING_WAIT);
-
-        orderRepository.save(order);
-        log.info("조립 완료 상태 복구 완료. OrderId: {}", orderId);
-    }
 
     public OrderResponseDto findOrderById(Integer orderId) {
         return orderRepository.findById(orderId).map(OrderResponseDto::new)
@@ -359,15 +300,8 @@ public class OrderService {
         // 2. 결제 기록 확인 및 환불 처리
         Optional<Payment> paymentOpt = paymentRepository.findByOrder_OrderId(orderId);
         if (paymentOpt.isPresent()) {
-            try {
-                paymentLinkService.cancelPayment(orderId, reason);
-                log.info("환불 처리 완료. OrderId: {}", orderId);
-            } catch (Exception e) {
-                // 3. 환불 실패 시 → 비동기 보상 트랜잭션 (DB 복구)
-                log.error("환불 실패, 비동기 보상 트랜잭션 시작. OrderId: {}, Error: {}", orderId, e.getMessage());
-                self.compensateOrderCancellationAsync(orderId);
-                throw new PaymentProcessingException("결제 취소 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
-            }
+            paymentLinkService.cancelPayment(orderId, reason);
+            log.info("환불 처리 완료. OrderId: {}", orderId);
         }
 
         return order;
@@ -405,110 +339,6 @@ public class OrderService {
         return order;
     }
 
-    /**
-     * 비동기 주문 취소 보상 트랜잭션
-     * - @Async로 별도 스레드에서 실행 (메인 스레드는 즉시 반환)
-     * - @Retryable로 3회 재시도 (2초, 4초, 8초 백오프)
-     * - 3회 모두 실패 시 @Recover 메서드 호출
-     */
-    @Async
-    @Retryable(
-        value = {Exception.class},
-        maxAttempts = 3,
-        backoff = @Backoff(delay = 2000, multiplier = 2)
-    )
-    public void compensateOrderCancellationAsync(Integer orderId) {
-        log.info("비동기 주문 취소 보상 트랜잭션 시작. OrderId: {}", orderId);
-        compensateOrderCancellation(orderId);
-        log.info("비동기 주문 취소 보상 트랜잭션 성공. OrderId: {}", orderId);
-    }
-
-    /**
-     * 주문 취소 보상 트랜잭션 최종 실패 처리
-     * - @Retryable 3회 모두 실패 시 자동 호출
-     * - 실패 기록을 DB에 저장하여 @Scheduled이 재시도하도록 함
-     */
-    @Recover
-    public void recoverFromOrderCancellationFailure(Exception e, Integer orderId) {
-        log.error("비동기 주문 취소 보상 트랜잭션 3회 모두 실패, DB 큐에 등록. OrderId: {}, Error: {}",
-            orderId, e.getMessage());
-        recordFailedCompensation(
-            orderId,
-            FailedCompensationJob.CompensationType.ORDER_CANCELLATION,
-            e.getMessage()
-        );
-    }
-
-    /**
-     * 보상 트랜잭션: 환불 실패 시 DB를 원래 상태로 복구
-     */
-    @Transactional
-    public void compensateOrderCancellation(Integer orderId) {
-        log.info("보상 트랜잭션 시작 - 주문 취소를 되돌립니다. OrderId: {}", orderId);
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException("주문 정보를 찾을 수 없습니다. ID: " + orderId));
-
-        // 주문 상태를 결제완료로 복구
-        order.setOrderStatus(OrderStatus.PAID);
-
-        // 가용재고 다시 차감
-        itemService.updateItemAvailableQuantity(order);
-
-        paymentRepository.findByOrder_OrderId(orderId).ifPresent(payment -> {
-            // 결제 상태 복구
-            payment.setPaymentStatus(PaymentStatus.PAID);
-
-            // 판매기록 복구 (네거티브 매출 제거)
-            sellService.removeNegateSell(orderId);
-
-            // 실재고 다시 차감
-            itemService.updateItemQuantityOnHand(order);
-        });
-
-        orderRepository.save(order);
-        log.info("보상 트랜잭션 완료. OrderId: {}", orderId);
-    }
-
-    /**
-     * 보상 트랜잭션 실패 시 DB에 기록 (중복 방지)
-     * DB 저장 실패 시 로그 파일에 백업 (마지막 안전장치)
-     */
-    private void recordFailedCompensation(Integer orderId, FailedCompensationJob.CompensationType type, String errorMessage) {
-        try {
-            // 이미 해당 주문/타입의 PENDING 작업이 있는지 확인 (중복 방지)
-            boolean alreadyExists = failedJobRepository.existsByOrderIdAndCompensationTypeAndStatusNot(
-                orderId, type, FailedCompensationJob.JobStatus.COMPLETED
-            );
-
-            if (alreadyExists) {
-                log.warn("이미 재시도 큐에 등록된 작업입니다. OrderId: {}, Type: {}", orderId, type);
-                return;
-            }
-
-            FailedCompensationJob job = FailedCompensationJob.builder()
-                .orderId(orderId)
-                .compensationType(type)
-                .retryCount(0)
-                .nextRetryAt(LocalDateTime.now().plusMinutes(5)) // 5분 후 첫 재시도
-                .errorMessage(errorMessage)
-                .status(FailedCompensationJob.JobStatus.PENDING)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-            failedJobRepository.save(job);
-            log.info("보상 트랜잭션 실패 기록 저장 완료. OrderId: {}, Type: {}", orderId, type);
-
-        } catch (Exception dbError) {
-            // DB 저장 실패 시 로그 파일에 백업 (마지막 안전장치)
-            // 로그 파싱 스크립트로 복구 가능하도록 특별한 형식으로 기록
-            log.error("🚨🚨🚨 CRITICAL: DB 저장 실패! 로그 백업 - COMPENSATION_FAILED|orderId={}|type={}|error={}|timestamp={}|dbError={}",
-                orderId, type, errorMessage, LocalDateTime.now(), dbError.getMessage(), dbError);
-
-            // TODO: 긴급 알림 전송 (DB 장애 + 보상 실패 = 치명적)
-            // alertService.sendEmergencyAlert("DB 저장 실패 + 보상 트랜잭션 실패", orderId);
-        }
-    }
 
     public Page<OrderResponseDto> searchOrders(OrderSearchCondition condition, Pageable pageable) {
         return orderRepository.searchOrders(condition, pageable);

@@ -1,7 +1,9 @@
 package com.pcgear.complink.pcgear.Delivery;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -13,6 +15,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -107,10 +112,14 @@ public class DeliveryService {
         }
 
         /**
-         * 배송 추적 등록 (운송장 검증 + DB 저장 + 웹훅 등록)
+         * 배송 추적 등록 (상태 기반 접근)
+         * 1. 운송장 검증
+         * 2. 배송 정보만 저장 (webhookStatus=PENDING, 재고 차감 안 함)
+         * 3. 웹훅 등록 시도
+         *    - 성공: 재고 차감 + 주문 상태 변경 + webhookStatus=SUCCESS
+         *    - 실패: webhookStatus=FAILED (스케줄러가 재시도)
          *
          * @throws InvalidTrackingNumberException 운송장 번호 검증 실패
-         * @throws WebhookRegistrationException   웹훅 등록 실패
          * @throws DeliveryTrackingException      시스템 오류
          */
         public void registerDeliveryTracking(String accessToken, TrackingNumberReq request) {
@@ -120,24 +129,31 @@ public class DeliveryService {
                         // 1. 운송장 검증 (DB 건드리지 않음)
                         validateTrackingNumber(accessToken, request.getCarrierId(), request.getTrackingNumber());
 
-                        // 2. DB 저장 (트랜잭션)
-                        Delivery savedDelivery = self.processRegistrationTransaction(request);
+                        // 2. 배송 정보만 저장 (재고는 아직 차감 안 함)
+                        Delivery delivery = self.createDeliveryAsPending(request);
 
                         try {
                                 // 3. 웹훅 등록 (외부 API)
                                 registerWebhook(accessToken, request.getCarrierId(), request.getTrackingNumber(),
                                                 properties.getWebhookUrl() + "/delivery/webhook");
 
+                                // 4. 성공 시 재고 차감 + 상태 업데이트
+                                self.completeDeliveryRegistration(delivery.getDeliveryId(), request.getOrderId());
                                 log.info("배송 추적 등록 완료: OrderId={}", request.getOrderId());
+
                         } catch (WebhookRegistrationException e) {
-                                // 웹훅 등록 실패 시 보상 로직: DB 롤백
-                                log.error("웹훅 등록 실패, DB 롤백 시작: DeliveryId={}", savedDelivery.getDeliveryId());
-                                compensateDeliveryRegistration(savedDelivery, request.getOrderId());
+                                // 5. 실패 시 상태만 변경 (재고 차감 안 함)
+                                self.markWebhookAsFailed(delivery.getDeliveryId(), e.getMessage());
+                                log.warn("웹훅 등록 실패 (재시도 예정): DeliveryId={}, Error={}",
+                                                delivery.getDeliveryId(), e.getMessage());
                                 throw e;
                         }
 
-                } catch (InvalidTrackingNumberException | WebhookRegistrationException e) {
-                        // 비즈니스 예외는 그대로 전파
+                } catch (InvalidTrackingNumberException e) {
+                        log.error("잘못된 운송장 번호: ", e);
+                        throw e;
+                } catch (WebhookRegistrationException e) {
+                        // 웹훅 실패는 재시도 가능하므로 상세 정보 전달
                         throw e;
                 } catch (Exception e) {
                         log.error("배송 추적 등록 시스템 오류", e);
@@ -194,9 +210,21 @@ public class DeliveryService {
 
         /**
          * 배송 추적 웹훅 등록
+         * - Spring @Retryable: 네트워크 오류 시 최대 3회 자동 재시도 (1초 간격)
+         * - 재시도 대상: SocketTimeoutException, ConnectException, ResourceAccessException
+         * - 재시도 제외: InvalidTrackingNumberException (비즈니스 오류)
+         * - Recover: 3회 모두 실패 시 webhookRegistrationFallback 메서드 호출
          *
          * @throws WebhookRegistrationException 웹훅 등록 실패 시
          */
+        @Retryable(
+                value = {java.net.SocketTimeoutException.class,
+                         java.net.ConnectException.class,
+                         org.springframework.web.client.ResourceAccessException.class},
+                maxAttempts = 3,
+                backoff = @Backoff(delay = 1000),
+                recover = "webhookRegistrationFallback"
+        )
         private void registerWebhook(String accessToken, String carrierId, String trackingNumber,
                         String callbackUrl) {
                 log.info("웹훅 등록 시작: carrierId={}, trackingNumber={}", carrierId, trackingNumber);
@@ -243,46 +271,72 @@ public class DeliveryService {
                 throw new WebhookRegistrationException(errorMessage);
         }
 
+        /**
+         * 웹훅 등록 Recover 메서드
+         * - @Retryable로 3회 재시도 모두 실패 시 자동 호출
+         *
+         * @param e 마지막 발생한 예외
+         */
+        @Recover
+        private void webhookRegistrationFallback(Exception e, String accessToken, String carrierId,
+                                                String trackingNumber, String callbackUrl) {
+                log.error("웹훅 등록 3회 재시도 모두 실패. carrierId={}, trackingNumber={}, Error: {}",
+                                carrierId, trackingNumber, e.getMessage());
+
+                // WebhookRegistrationException으로 래핑하여 던짐
+                throw new WebhookRegistrationException(
+                        "웹훅 등록 실패 (3회 재시도 완료): " + e.getMessage(), e);
+        }
+
+        /**
+         * 배송 정보만 저장 (재고 차감 없음, webhookStatus=PENDING)
+         */
         @Transactional
-        public Delivery processRegistrationTransaction(TrackingNumberReq req) {
-                // 배송 정보 생성
+        public Delivery createDeliveryAsPending(TrackingNumberReq req) {
                 Delivery delivery = createDelivery(req);
-
-                // 주문 상태 변경 (배송 대기)
-                orderService.updateOrderStatus(req.getOrderId(), OrderStatus.SHIPPING_PENDING);
-
-                // 실재고 차감
-                Order order = orderRepository.findById(req.getOrderId())
-                                .orElseThrow(() -> new EntityNotFoundException("주문 없음: " + req.getOrderId()));
-                itemService.updateItemQuantityOnHand(order);
-
-                log.info("배송 등록 트랜잭션 완료");
+                delivery.setWebhookStatus("PENDING");
+                delivery.setWebhookRetryCount(0);
+                log.info("배송 정보 저장 완료 (PENDING): DeliveryId={}", delivery.getDeliveryId());
                 return delivery;
         }
 
         /**
-         * 웹훅 등록 실패 시 보상 로직 (DB 롤백)
+         * 웹훅 등록 성공 시 실행: 재고 차감 + 주문 상태 변경 + webhookStatus=SUCCESS
          */
         @Transactional
-        public void compensateDeliveryRegistration(Delivery delivery, Integer orderId) {
-                try {
-                        // 1. 배송 정보 삭제
-                        deliveryRepository.delete(delivery);
+        public void completeDeliveryRegistration(Integer deliveryId, Integer orderId) {
+                // 1. 배송 상태 업데이트
+                Delivery delivery = deliveryRepository.findById(deliveryId)
+                                .orElseThrow(() -> new EntityNotFoundException("배송 정보 없음: " + deliveryId));
+                delivery.setWebhookStatus("SUCCESS");
+                delivery.setWebhookRegisteredAt(LocalDateTime.now());
+                deliveryRepository.save(delivery);
 
-                        // 2. 주문 상태 복구 (배송 대기 -> 조립 완료)
-                        orderService.updateOrderStatus(orderId, OrderStatus.SHIPPING_PENDING);
+                // 2. 주문 상태 변경 (조립 완료 -> 배송 대기)
+                orderService.updateOrderStatus(orderId, OrderStatus.SHIPPING_PENDING);
 
-                        // 3. 실재고 복구
-                        Order order = orderRepository.findById(orderId)
-                                        .orElseThrow(() -> new EntityNotFoundException("주문 없음: " + orderId));
-                        itemService.restoreItemQuantityOnHand(order);
+                // 3. 실재고 차감
+                Order order = orderRepository.findById(orderId)
+                                .orElseThrow(() -> new EntityNotFoundException("주문 없음: " + orderId));
+                itemService.updateItemQuantityOnHand(order);
 
-                        log.info("DB 롤백 완료: DeliveryId={}, OrderId={}", delivery.getDeliveryId(), orderId);
-                } catch (Exception e) {
-                        log.error("DB 롤백 실패 - 수동 복구 필요: DeliveryId={}, OrderId={}", delivery.getDeliveryId(),
-                                        orderId, e);
-                        // 보상 로직 실패 시 예외는 던지지 않음 (원래 WebhookRegistrationException을 전파해야 하므로)
-                }
+                log.info("배송 등록 완료 (재고 차감 완료): DeliveryId={}, OrderId={}", deliveryId, orderId);
+        }
+
+        /**
+         * 웹훅 등록 실패 시 실행: webhookStatus=FAILED (재고 차감 안 함)
+         */
+        @Transactional
+        public void markWebhookAsFailed(Integer deliveryId, String errorMessage) {
+                Delivery delivery = deliveryRepository.findById(deliveryId)
+                                .orElseThrow(() -> new EntityNotFoundException("배송 정보 없음: " + deliveryId));
+                delivery.setWebhookStatus("FAILED");
+                delivery.setWebhookErrorMessage(errorMessage);
+                delivery.setWebhookRetryCount(delivery.getWebhookRetryCount() + 1);
+                deliveryRepository.save(delivery);
+
+                log.warn("웹훅 등록 실패 기록: DeliveryId={}, RetryCount={}, Error={}",
+                                deliveryId, delivery.getWebhookRetryCount(), errorMessage);
         }
 
         public String extractDeliveryStatus(TrackingResponse trackingResponse) {
@@ -347,6 +401,52 @@ public class DeliveryService {
                 return DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
                                 .withZone(java.time.ZoneOffset.UTC)
                                 .format(expirationInstant);
+        }
+
+        /**
+         * 웹훅 등록 수동 재시도 (사용자가 직접 호출)
+         * - PENDING 또는 FAILED 상태의 배송 정보에 대해 웹훅 재등록 시도
+         *
+         * @param deliveryId 재시도할 배송 ID
+         * @throws WebhookRegistrationException 웹훅 등록 실패 시
+         */
+        public void retryWebhookRegistration(Integer deliveryId) {
+                log.info("웹훅 등록 수동 재시도 시작: DeliveryId={}", deliveryId);
+
+                Delivery delivery = deliveryRepository.findById(deliveryId)
+                                .orElseThrow(() -> new EntityNotFoundException("배송 정보 없음: " + deliveryId));
+
+                // 이미 성공한 경우
+                if ("SUCCESS".equals(delivery.getWebhookStatus())) {
+                        log.warn("이미 웹훅 등록 완료된 배송: DeliveryId={}", deliveryId);
+                        throw new IllegalStateException("이미 웹훅 등록이 완료된 배송입니다.");
+                }
+
+                String accessToken = getAccessToken();
+
+                try {
+                        // 웹훅 등록 재시도
+                        registerWebhook(accessToken, delivery.getCarrierId(),
+                                        delivery.getTrackingNumber(),
+                                        properties.getWebhookUrl() + "/delivery/webhook");
+
+                        // 성공 시 재고 차감 + 상태 업데이트
+                        self.completeDeliveryRegistration(delivery.getDeliveryId(), delivery.getOrderId());
+                        log.info("웹훅 등록 재시도 성공: DeliveryId={}", deliveryId);
+
+                } catch (WebhookRegistrationException e) {
+                        // 실패 시 상태 업데이트
+                        self.markWebhookAsFailed(delivery.getDeliveryId(), e.getMessage());
+                        log.error("웹훅 등록 재시도 실패: DeliveryId={}, Error={}", deliveryId, e.getMessage());
+                        throw e;
+                }
+        }
+
+        /**
+         * PENDING/FAILED 상태인 배송 목록 조회 (재시도 대상)
+         */
+        public List<Delivery> getFailedWebhookRegistrations() {
+                return deliveryRepository.findPendingWebhookRegistrations();
         }
 
 }

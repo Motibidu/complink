@@ -42,6 +42,20 @@ public class Delivery {
         @Enumerated(EnumType.STRING)
         private DeliveryStatus deliveryStatus;
 
+        // 웹훅 등록 상태 추적
+        @Column(name = "webhook_status")
+        private String webhookStatus; // PENDING, SUCCESS, FAILED
+
+        @Column(name = "webhook_error_message")
+        private String webhookErrorMessage;
+
+        @Column(name = "webhook_retry_count")
+        @Builder.Default
+        private Integer webhookRetryCount = 0;
+
+        @Column(name = "webhook_registered_at")
+        private LocalDateTime webhookRegisteredAt;
+
         @Column(name = "created_at", updatable = false)
 
         private LocalDateTime createdAt;
@@ -54,6 +68,12 @@ public class Delivery {
                 this.createdAt = LocalDateTime.now();
                 if (this.deliveryStatus == null) {
                         this.deliveryStatus = DeliveryStatus.UNKNOWN; // 기본 상태
+                }
+                if (this.webhookStatus == null) {
+                        this.webhookStatus = "PENDING"; // 기본 웹훅 상태
+                }
+                if (this.webhookRetryCount == null) {
+                        this.webhookRetryCount = 0;
                 }
         }
 }

@@ -23,6 +23,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+import com.pcgear.complink.pcgear.Delivery.entity.Delivery;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -94,6 +98,32 @@ public class DelieveryController {
         Page<ShippingListDto> deliveryPage = deliveryService.getAllDeliveries(pageable);
 
         return ResponseEntity.ok(deliveryPage);
+    }
+
+    /**
+     * 웹훅 등록 실패한 배송 목록 조회
+     */
+    @GetMapping("/failed-webhooks")
+    public ResponseEntity<List<Delivery>> getFailedWebhookRegistrations() {
+        List<Delivery> failedDeliveries = deliveryService.getFailedWebhookRegistrations();
+        return ResponseEntity.ok(failedDeliveries);
+    }
+
+    /**
+     * 웹훅 등록 수동 재시도
+     */
+    @PostMapping("/retry-webhook/{deliveryId}")
+    public ResponseEntity<String> retryWebhookRegistration(@PathVariable Integer deliveryId) {
+        try {
+            deliveryService.retryWebhookRegistration(deliveryId);
+            return ResponseEntity.ok("웹훅 등록 재시도 성공");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            log.error("웹훅 재시도 실패: DeliveryId={}", deliveryId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("웹훅 등록 재시도 실패: " + e.getMessage());
+        }
     }
 
 }

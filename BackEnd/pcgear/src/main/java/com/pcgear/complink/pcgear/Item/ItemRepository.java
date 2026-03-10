@@ -19,8 +19,8 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
 
         Page<Item> findByItemNameContaining(String search, Pageable pageable);
 
-        @Lock(LockModeType.PESSIMISTIC_WRITE)
         @Query("select i from Item i where i.itemId in :itemIds")
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
         @QueryHints({ @QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000") })
         List<Item> findAllByItemIdInWithLock(@Param("itemIds") List<Integer> itemIds);
 
