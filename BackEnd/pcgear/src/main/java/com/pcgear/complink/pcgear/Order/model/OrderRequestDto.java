@@ -8,8 +8,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.pcgear.complink.pcgear.Item.ItemCategory;
-
 @Getter
 @Setter
 @ToString
@@ -32,10 +30,7 @@ public class OrderRequestDto {
     @ToString
     public static class OrderItemDto {
         private Integer itemId;
-        private ItemCategory itemCategory;
-        private String itemName;
         private int quantity;
-        private BigDecimal unitPrice;
-        private BigDecimal totalPrice;
+        private String serialNum;
     }
 }

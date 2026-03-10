@@ -1,7 +1,10 @@
 package com.pcgear.complink.pcgear.Order.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -25,6 +28,9 @@ import java.util.List;
 @Setter
 @Entity
 @ToString
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "orders", indexes = {
         @Index(name = "idx_order_created_at", columnList = "createdAt, orderStatus"),
         @Index(name = "idx_order_status", columnList = "orderStatus")
@@ -36,8 +42,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer orderId;
 
-    @Column(name = "order_date", nullable = false)
-    private LocalDate orderDate;
+    
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
@@ -46,6 +51,9 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id")
     private UserEntity manager;
+
+    @Column(name = "order_date", nullable = false)
+    private LocalDate orderDate;
 
     private String paymentLink;
 
@@ -82,10 +90,14 @@ public class Order {
     @JsonManagedReference
     @ToString.Exclude
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default  // Builder 사용 시 ArrayList 초기화 유지
     private List<OrderItem> orderItems = new ArrayList<>();
 
     // == 연관관계 편의 메서드 ==//
     public void addItem(OrderItem orderItem) {
+        if (orderItems == null) {
+            orderItems = new ArrayList<>();
+        }
         orderItems.add(orderItem);
         orderItem.setOrder(this);
     }

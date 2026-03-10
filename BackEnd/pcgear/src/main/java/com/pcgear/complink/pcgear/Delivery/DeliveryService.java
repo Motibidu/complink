@@ -388,9 +388,6 @@ public class DeliveryService {
                                 .trackingNumber(trackingNumberReq.getTrackingNumber())
                                 .orderId(trackingNumberReq.getOrderId())
                                 .customerId(trackingNumberReq.getCustomerId())
-                                .recipientName(customer.getCustomerName())
-                                .recipientPhone(customer.getPhoneNumber())
-                                .recipientAddr(customer.getAddress())
                                 .build();
                 return deliveryRepository.save(delivery);
         }

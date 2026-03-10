@@ -1,5 +1,7 @@
 package com.pcgear.complink.pcgear.Item;
 
+import java.math.BigDecimal;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -39,9 +41,9 @@ public class Item {
 
         @NotNull(message = "입고단가는 필수 입력 항목입니다.")
         @PositiveOrZero(message = "입고단가는 0 또는 양수여야 합니다.")
-        private Integer purchasePrice;
+        private BigDecimal purchasePrice;
 
         @NotNull(message = "출고단가는 필수 입력 항목입니다.")
         @PositiveOrZero(message = "출고단가는 0 또는 양수여야 합니다.")
-        private Integer sellingPrice;
+        private BigDecimal sellingPrice;
 }

@@ -1,7 +1,10 @@
 package com.pcgear.complink.pcgear.Order.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -15,6 +18,9 @@ import com.pcgear.complink.pcgear.Item.ItemCategory;
 @Setter
 @Entity
 @ToString
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "order_items")
 public class OrderItem {
 
@@ -32,15 +38,9 @@ public class OrderItem {
     @JoinColumn(name = "item_id") // DB 상의 외래 키 컬럼 이름
     private Item item;
 
-    @Enumerated(EnumType.STRING)
-    private ItemCategory itemCategory;
-
     private String serialNum;
 
     private Boolean serialNumRequired;
-
-    @Column(name = "item_name", nullable = false)
-    private String itemName;
 
     @Column(nullable = false)
     private int quantity;

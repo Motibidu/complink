@@ -33,11 +33,11 @@ public class Delivery {
 
         private String customerId;
 
-        private String recipientName;
+        //private String recipientName;
 
-        private String recipientPhone;
+        //private String recipientPhone;
 
-        private String recipientAddr;
+        //private String recipientAddr;
 
         @Enumerated(EnumType.STRING)
         private DeliveryStatus deliveryStatus;

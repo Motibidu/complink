@@ -6,6 +6,7 @@ import com.pcgear.complink.pcgear.Customer.CustomerRepository;
 import com.pcgear.complink.pcgear.Delivery.DeliveryService;
 import com.pcgear.complink.pcgear.Delivery.exception.DeliveryTrackingException;
 import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
+import com.pcgear.complink.pcgear.Item.Item;
 import com.pcgear.complink.pcgear.Item.ItemRepository;
 import com.pcgear.complink.pcgear.Item.ItemService;
 import com.pcgear.complink.pcgear.Order.event.OrderCreatedEvent;
@@ -34,6 +35,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -141,32 +143,41 @@ public class OrderService {
                 .orElseThrow(() -> new EntityNotFoundException("담당자 정보를 찾을 수 없습니다."));
 
         // 엔티티 생성
-        Order order = new Order();
-        order.setOrderDate(requestDto.getOrderDate());
-        order.setDeliveryDate(requestDto.getDeliveryDate());
-        order.setOrderStatus(OrderStatus.ORDER_RECEIVED);
-        order.setCustomer(customer);
-        order.setManager(manager);
-        order.setTotalAmount(requestDto.getTotalAmount());
-        order.setVatAmount(requestDto.getVatAmount());
-        order.setGrandAmount(requestDto.getGrandAmount());
-        order.setMerchantUid(merchantUid);
-        order.setPaymentLink(paymentLink);
+        Order order = Order.builder()
+                .orderDate(requestDto.getOrderDate())
+                .deliveryDate(requestDto.getDeliveryDate())
+                .orderStatus(OrderStatus.ORDER_RECEIVED)
+                .assemblyStatus(AssemblyStatus.QUEUE)
+                .customer(customer)
+                .manager(manager)
+                .totalAmount(requestDto.getTotalAmount())
+                .vatAmount(requestDto.getVatAmount())
+                .grandAmount(requestDto.getGrandAmount())
+                .merchantUid(merchantUid)
+                .paymentLink(paymentLink)
+                .build();
 
         // 주문 상품 추가
         for (OrderRequestDto.OrderItemDto itemDto : requestDto.getItems()) {
-            OrderItem orderItem = new OrderItem();
-            orderItem.setItemCategory(itemDto.getItemCategory());
-            orderItem.setSerialNumRequired(itemDto.getItemCategory().isSerialNumRequired());
-            orderItem.setItem(itemRepository.findById(itemDto.getItemId())
-                    .orElseThrow(() -> new EntityNotFoundException("품목 찾기 실패")));
-            orderItem.setItemName(itemDto.getItemName());
-            orderItem.setQuantity(itemDto.getQuantity());
-            orderItem.setUnitPrice(itemDto.getUnitPrice());
-            orderItem.setTotalPrice(itemDto.getTotalPrice());
+            // Item 조회
+            Item item = itemRepository.findById(itemDto.getItemId())
+                    .orElseThrow(() -> new EntityNotFoundException("품목 찾기 실패: ID " + itemDto.getItemId()));
+
+            // 백엔드에서 가격 계산 (보안: 프론트엔드 값 무시)
+            BigDecimal unitPrice = item.getSellingPrice();
+            BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(itemDto.getQuantity()));
+
+            // Builder 패턴으로 OrderItem 생성
+            OrderItem orderItem = OrderItem.builder()
+                    .item(item)
+                    .serialNum(itemDto.getSerialNum())
+                    .serialNumRequired(item.getItemCategory().isSerialNumRequired())
+                    .quantity(itemDto.getQuantity())
+                    .unitPrice(unitPrice)        // Item에서 자동 복사 (반정규화)
+                    .totalPrice(totalPrice)      // 백엔드에서 계산
+                    .build();
 
             order.addItem(orderItem);
-
         }
 
         // 가용재고 차감
