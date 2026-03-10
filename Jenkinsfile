@@ -59,7 +59,15 @@ pipeline {
             steps {
                 echo 'Stopping and removing old containers (if any)...'
                 sh 'docker-compose down'
-                
+
+                echo 'Re-cleaning Docker-created directories after down...'
+                sh '''
+                    # docker-compose down 후 다시 생성된 디렉토리 제거
+                    rm -rf BackEnd/pcgear/monitoring/prometheus/prometheus.yml
+                    rm -rf BackEnd/pcgear/monitoring/prometheus/alerts.yml
+                    rm -rf BackEnd/pcgear/monitoring/grafana
+                '''
+
                 echo 'Starting all services...'
                 sh 'docker-compose up -d'
             }
