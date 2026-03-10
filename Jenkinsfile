@@ -20,6 +20,45 @@ pipeline {
             }
         }
 
+        // 1-1. Verify monitoring files (Git checkout 검증)
+        stage('1-1. Verify Monitoring Files') {
+            steps {
+                echo "Verifying monitoring configuration files..."
+                sh '''
+                    # prometheus.yml이 파일인지 확인
+                    if [ ! -f BackEnd/pcgear/monitoring/prometheus/prometheus.yml ]; then
+                        echo "ERROR: prometheus.yml is missing or is a directory!"
+                        echo "Listing monitoring directory:"
+                        ls -la BackEnd/pcgear/monitoring/prometheus/ || true
+
+                        echo "Attempting to restore from git..."
+                        # Git에서 파일 복구 시도
+                        if [ -d .git ]; then
+                            git checkout HEAD -- BackEnd/pcgear/monitoring/
+                        else
+                            echo "ERROR: Not a git repository. Please check Jenkins SCM configuration."
+                            exit 1
+                        fi
+                    fi
+
+                    # alerts.yml 확인
+                    if [ ! -f BackEnd/pcgear/monitoring/prometheus/alerts.yml ]; then
+                        echo "ERROR: alerts.yml is missing!"
+                        exit 1
+                    fi
+
+                    # 파일 내용이 있는지 확인
+                    if [ ! -s BackEnd/pcgear/monitoring/prometheus/prometheus.yml ]; then
+                        echo "ERROR: prometheus.yml is empty!"
+                        exit 1
+                    fi
+
+                    echo "✓ All monitoring files verified successfully"
+                    cat BackEnd/pcgear/monitoring/prometheus/prometheus.yml | head -5
+                '''
+            }
+        }
+
         // 2. .env 파일 생성
         stage('2. Prepare Environment File') {
             steps {
