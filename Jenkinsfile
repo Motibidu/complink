@@ -6,9 +6,22 @@ pipeline {
     }
 
     stages {
-        
-        // 1. .env 파일 생성
-        stage('1. Prepare Environment File') {
+
+        // 1. Cleanup workspace (Docker가 생성한 디렉토리 제거)
+        stage('1. Cleanup Workspace') {
+            steps {
+                echo "Cleaning up Docker-created directories..."
+                sh '''
+                    # Docker가 자동 생성한 디렉토리 제거
+                    rm -rf BackEnd/pcgear/monitoring/prometheus/prometheus.yml
+                    rm -rf BackEnd/pcgear/monitoring/prometheus/alerts.yml
+                    rm -rf BackEnd/pcgear/monitoring/grafana
+                '''
+            }
+        }
+
+        // 2. .env 파일 생성
+        stage('2. Prepare Environment File') {
             steps {
                 echo "Loading production secrets..."
                 withCredentials([file(credentialsId: ENV_CREDENTIAL_ID, variable: 'ENV_FILE')]) {
@@ -18,7 +31,7 @@ pipeline {
         }
 
         // 📌 [추가된 단계] Spring Boot 앱(JAR 파일)을 빌드합니다.
-        stage('2. Build Spring Boot App') {
+        stage('3. Build Spring Boot App') {
             steps {
                 echo 'Building Spring Boot JAR file...'
                 
@@ -33,16 +46,16 @@ pipeline {
             }
         }
 
-        // 3. Docker 이미지 빌드 (이제 JAR 파일이 존재합니다)
-        stage('3. Build Docker Images') {
+        // 4. Docker 이미지 빌드 (이제 JAR 파일이 존재합니다)
+        stage('4. Build Docker Images') {
             steps {
                 echo 'Building backend and frontend Docker images...'
                 sh 'docker-compose build --no-cache'
             }
         }
 
-        // 4. 애플리케이션 배포
-        stage('4. Deploy Application Stack') {
+        // 5. 애플리케이션 배포
+        stage('5. Deploy Application Stack') {
             steps {
                 echo 'Stopping and removing old containers (if any)...'
                 sh 'docker-compose down'
@@ -52,8 +65,8 @@ pipeline {
             }
         }
         
-        // 5. (선택적) EC2 서버 용량 확보
-        stage('5. Clean Docker System') {
+        // 6. (선택적) EC2 서버 용량 확보
+        stage('6. Clean Docker System') {
             steps {
                 echo 'Cleaning up dangling Docker images...'
                 sh 'docker image prune -f'
@@ -61,7 +74,7 @@ pipeline {
         }
     }
     
-    // 6. (보안 필수) 작업 완료 후 항상 실행
+    // 7. (보안 필수) 작업 완료 후 항상 실행
     post {
         always {
             echo 'Cleaning up secrets...'
