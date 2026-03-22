@@ -40,8 +40,7 @@ public class InventoryReconciliationService {
             OrderStatus.ORDER_RECEIVED,
             OrderStatus.PAYMENT_PENDING,
             OrderStatus.PAID,
-            OrderStatus.PREPARING_PRODUCT
-    );
+            OrderStatus.PREPARING_PRODUCT);
 
     /**
      * 매일 새벽 3시에 전체 재고 정합성 검증
@@ -129,8 +128,7 @@ public class InventoryReconciliationService {
                     item.getItemName(),
                     currentAvailable,
                     calculatedAvailable,
-                    discrepancy
-            ));
+                    discrepancy));
 
             log.info("재고 수정 완료. ItemId: {}", item.getItemId());
             return true;
@@ -145,8 +143,7 @@ public class InventoryReconciliationService {
     private Map<Integer, Integer> getReservedQuantitiesMap(List<Integer> itemIds) {
         List<Object[]> results = orderRepository.calculateReservedQuantitiesByItemIds(
                 itemIds,
-                RESERVED_STATUSES
-        );
+                RESERVED_STATUSES);
 
         // List<Object[]>를 Map<itemId, reservedQuantity>로 변환
         Map<Integer, Integer> map = new HashMap<>();
@@ -186,8 +183,7 @@ public class InventoryReconciliationService {
                     item.getItemName(),
                     currentAvailable,
                     calculatedAvailable,
-                    discrepancy
-            ));
+                    discrepancy));
 
             log.info("재고 수정 완료. ItemId: {}", item.getItemId());
             return true;
@@ -205,8 +201,7 @@ public class InventoryReconciliationService {
 
         Integer reservedQuantity = orderRepository.calculateReservedQuantityByItemId(
                 item.getItemId(),
-                RESERVED_STATUSES
-        );
+                RESERVED_STATUSES);
 
         return quantityOnHand - reservedQuantity;
     }

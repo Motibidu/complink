@@ -1,4 +1,4 @@
-package com.pcgear.complink.pcgear.Delivery.model;
+package com.pcgear.complink.pcgear.Delivery.model.resp;
 
 import lombok.Getter;
 import lombok.Setter;

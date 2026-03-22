@@ -5,7 +5,7 @@ import com.pcgear.complink.pcgear.Customer.Customer;
 import com.pcgear.complink.pcgear.Customer.CustomerRepository;
 import com.pcgear.complink.pcgear.Delivery.DeliveryService;
 import com.pcgear.complink.pcgear.Delivery.exception.DeliveryTrackingException;
-import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
+import com.pcgear.complink.pcgear.Delivery.model.req.TrackingNumberReq;
 import com.pcgear.complink.pcgear.Item.Item;
 import com.pcgear.complink.pcgear.Item.ItemRepository;
 import com.pcgear.complink.pcgear.Item.ItemService;

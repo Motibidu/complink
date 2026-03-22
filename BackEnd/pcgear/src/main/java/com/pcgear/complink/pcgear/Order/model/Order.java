@@ -32,8 +32,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "orders", indexes = {
-        @Index(name = "idx_order_created_at", columnList = "createdAt, orderStatus"),
-        @Index(name = "idx_order_status", columnList = "orderStatus")
+        @Index(name = "idx_orders_order_status", columnList = "order_status"),
+        @Index(name = "idx_orders_date_status", columnList = "order_date, order_status"),
+        @Index(name = "idx_orders_customer_status", columnList = "customer_id, order_status")
 })
 @EntityListeners(AuditingEntityListener.class) // 생성/수정 시간 자동 감지를 위한 리스너
 public class Order {
@@ -41,8 +42,6 @@ public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer orderId;
-
-    
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
@@ -63,26 +62,22 @@ public class Order {
 
     private LocalDate deliveryDate;
 
-    @Column(name = "total_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(name = "vat_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal vatAmount;
 
-    @Column(name = "grand_amount", nullable = false, precision = 18, scale = 2)
     private BigDecimal grandAmount;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
-    private AssemblyStatus assemblyStatus = AssemblyStatus.QUEUE; // 기본값 '작업 대기'
+    @Enumerated(EnumType.STRING)
+    private AssemblyStatus assemblyStatus;
 
     @CreatedDate
-    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     private LocalDateTime paidAt;
@@ -90,7 +85,7 @@ public class Order {
     @JsonManagedReference
     @ToString.Exclude
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default  // Builder 사용 시 ArrayList 초기화 유지
+    @Builder.Default // Builder 사용 시 ArrayList 초기화 유지
     private List<OrderItem> orderItems = new ArrayList<>();
 
     // == 연관관계 편의 메서드 ==//

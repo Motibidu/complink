@@ -3,18 +3,14 @@ package com.pcgear.complink.pcgear.Delivery;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.pcgear.complink.pcgear.Delivery.model.TrackingResponse;
-import com.pcgear.complink.pcgear.Delivery.model.ValidationResult;
-import com.pcgear.complink.pcgear.Delivery.model.WebhookReq;
-import com.pcgear.complink.pcgear.Delivery.model.DeliveryStatus;
+import com.pcgear.complink.pcgear.Delivery.model.resp.TrackingResp;
 import com.pcgear.complink.pcgear.Delivery.model.ShippingListDto;
-import com.pcgear.complink.pcgear.Delivery.model.TrackingNumberReq;
+import com.pcgear.complink.pcgear.Delivery.model.req.TrackingNumberReq;
+import com.pcgear.complink.pcgear.Delivery.model.req.WebhookReq;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -23,7 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import com.pcgear.complink.pcgear.Delivery.enums.DeliveryStatus;
 
 import com.pcgear.complink.pcgear.Delivery.entity.Delivery;
 import java.util.List;
@@ -63,8 +59,7 @@ public class DelieveryController {
             String accessToken = deliveryService.getAccessToken();
 
             // 2. 배송 조회 (API 호출)
-            // [변경] .block() 제거! (Service가 TrackingResponse 객체를 바로 반환함)
-            TrackingResponse trackingResponse = deliveryService.trackDelivery(
+            TrackingResp trackingResponse = deliveryService.trackDelivery(
                     webhookReq.getCarrierId(),
                     webhookReq.getTrackingNumber(),
                     accessToken);
@@ -103,27 +98,28 @@ public class DelieveryController {
     /**
      * 웹훅 등록 실패한 배송 목록 조회
      */
-    @GetMapping("/failed-webhooks")
-    public ResponseEntity<List<Delivery>> getFailedWebhookRegistrations() {
-        List<Delivery> failedDeliveries = deliveryService.getFailedWebhookRegistrations();
-        return ResponseEntity.ok(failedDeliveries);
-    }
+    // @GetMapping("/failed-webhooks")
+    // public ResponseEntity<List<Delivery>> getFailedWebhookRegistrations() {
+    //     List<Delivery> failedDeliveries = deliveryService.getFailedWebhookRegistrations();
+    //     return ResponseEntity.ok(failedDeliveries);
+    // }
 
     /**
      * 웹훅 등록 수동 재시도
      */
-    @PostMapping("/retry-webhook/{deliveryId}")
-    public ResponseEntity<String> retryWebhookRegistration(@PathVariable Integer deliveryId) {
-        try {
-            deliveryService.retryWebhookRegistration(deliveryId);
-            return ResponseEntity.ok("웹훅 등록 재시도 성공");
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            log.error("웹훅 재시도 실패: DeliveryId={}", deliveryId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("웹훅 등록 재시도 실패: " + e.getMessage());
-        }
-    }
+    // @PostMapping("/retry-webhook/{deliveryId}")
+    // public ResponseEntity<String> retryWebhookRegistration(@PathVariable Integer
+    // deliveryId) {
+    // try {
+    // deliveryService.retryWebhookRegistration(deliveryId);
+    // return ResponseEntity.ok("웹훅 등록 재시도 성공");
+    // } catch (IllegalStateException e) {
+    // return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    // } catch (Exception e) {
+    // log.error("웹훅 재시도 실패: DeliveryId={}", deliveryId, e);
+    // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    // .body("웹훅 등록 재시도 실패: " + e.getMessage());
+    // }
+    // }
 
 }

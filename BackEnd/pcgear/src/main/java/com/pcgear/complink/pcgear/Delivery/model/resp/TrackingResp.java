@@ -1,4 +1,4 @@
-package com.pcgear.complink.pcgear.Delivery.model;
+package com.pcgear.complink.pcgear.Delivery.model.resp;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,7 +13,7 @@ import java.util.Map;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TrackingResponse {
+public class TrackingResp {
         private TrackingData data;
         private List<Error> errors;
 

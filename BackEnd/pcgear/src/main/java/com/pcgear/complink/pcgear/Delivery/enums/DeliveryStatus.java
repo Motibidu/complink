@@ -1,10 +1,9 @@
-package com.pcgear.complink.pcgear.Delivery.model;
+package com.pcgear.complink.pcgear.Delivery.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 
 public enum DeliveryStatus {
-        UNKNOWN("알 수 없음"),
+        UNKNOWN("알 수 없는 상태"),
 
         /**
          * 상품 준비중 (API Value: INFORMATION_RECEIVED)

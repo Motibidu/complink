@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class TopItemSalesDto {
     private Integer itemId;
     private String itemName;
-    private Long quantitySold;
+    private Integer quantitySold;
     private Long totalRevenue;
-    private Long currentStock;
+    private Integer currentStock;
 }

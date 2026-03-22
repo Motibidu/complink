@@ -2,6 +2,7 @@ package com.pcgear.complink.pcgear.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
@@ -20,6 +21,7 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
  */
 @Slf4j
 @Configuration
+@Profile("!dev")
 public class SchedulerConfig implements SchedulingConfigurer {
 
     private static final int POOL_SIZE = 3; // 스케줄러 개수 2개 + 여유 1개

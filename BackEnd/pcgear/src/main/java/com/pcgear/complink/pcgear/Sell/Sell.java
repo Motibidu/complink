@@ -45,7 +45,7 @@ public class Sell {
 
         private LocalDateTime sellDate;
 
-        @ManyToOne(fetch = FetchType.LAZY)
+        @OneToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "order_id") // 실제 DB 컬럼명
         private Order order;
 

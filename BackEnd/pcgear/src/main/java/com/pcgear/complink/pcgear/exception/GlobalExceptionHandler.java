@@ -124,4 +124,35 @@ public class GlobalExceptionHandler {
         // 로그조차 남길 필요 없습니다. (정상적인 이탈이므로)
     }
 
+    /**
+     * 배송 관련 예외 처리
+     */
+
+    // 잘못된 운송장 번호 (400 Bad Request)
+    @ExceptionHandler(com.pcgear.complink.pcgear.Delivery.exception.InvalidTrackingNumberException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTrackingNumberException(
+            com.pcgear.complink.pcgear.Delivery.exception.InvalidTrackingNumberException ex) {
+        log.error("잘못된 운송장 번호: {}", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // 배송 추적 시스템 오류 (500 Internal Server Error)
+    @ExceptionHandler(com.pcgear.complink.pcgear.Delivery.exception.DeliveryTrackingException.class)
+    public ResponseEntity<ErrorResponse> handleDeliveryTrackingException(
+            com.pcgear.complink.pcgear.Delivery.exception.DeliveryTrackingException ex) {
+        log.error("배송 추적 시스템 오류: {}", ex.getMessage(), ex);
+        ErrorResponse errorResponse = new ErrorResponse("배송 추적 등록 중 시스템 오류가 발생했습니다.");
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // 웹훅 등록 실패 (503 Service Unavailable)
+    @ExceptionHandler(com.pcgear.complink.pcgear.Delivery.exception.WebhookRegistrationException.class)
+    public ResponseEntity<ErrorResponse> handleWebhookRegistrationException(
+            com.pcgear.complink.pcgear.Delivery.exception.WebhookRegistrationException ex) {
+        log.warn("웹훅 등록 실패 (재시도 예정): {}", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("배송 추적 등록이 일시적으로 실패했습니다. 잠시 후 자동으로 재시도됩니다.");
+        return new ResponseEntity<>(errorResponse, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
 }

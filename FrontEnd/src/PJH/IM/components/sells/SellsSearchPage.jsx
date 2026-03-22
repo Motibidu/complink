@@ -302,7 +302,7 @@ const SellsSearchPage = () => {
                     <td>{sell.customerName}</td>
                     <td>{sell.managerName || "-"}</td>
                     <td className="text-end">
-                      {sell.grandAmount.toLocaleString()}원
+                      {sell?.grandAmount?.toLocaleString()}원
                     </td>
                     {/* <td> ... (배송 버튼 로직) ... </td> */}
                   </tr>

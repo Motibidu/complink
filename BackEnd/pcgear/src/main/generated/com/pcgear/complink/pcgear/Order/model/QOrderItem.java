@@ -24,10 +24,6 @@ public class QOrderItem extends EntityPathBase<OrderItem> {
 
     public final com.pcgear.complink.pcgear.Item.QItem item;
 
-    public final EnumPath<com.pcgear.complink.pcgear.Item.ItemCategory> itemCategory = createEnum("itemCategory", com.pcgear.complink.pcgear.Item.ItemCategory.class);
-
-    public final StringPath itemName = createString("itemName");
-
     public final QOrder order;
 
     public final NumberPath<Integer> orderItemId = createNumber("orderItemId", Integer.class);

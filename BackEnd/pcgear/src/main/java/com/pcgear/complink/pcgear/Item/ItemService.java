@@ -18,7 +18,9 @@ import com.pcgear.complink.pcgear.Order.model.Order;
 import com.pcgear.complink.pcgear.Order.model.OrderItem;
 import com.pcgear.complink.pcgear.Order.repository.OrderRepository;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +32,9 @@ public class ItemService {
         private final ItemRepository itemRepository;
         private final OrderRepository orderRepository;
         private final ApplicationEventPublisher eventPublisher;
+
+        @PersistenceContext
+        private EntityManager entityManager;
 
         // @Cacheable(value = "items", condition = "#p0 == null", key =
         // "#p1.toString()")
@@ -75,16 +80,22 @@ public class ItemService {
                 itemRepository.deleteAllByItemIdIn(itemIds);
         }
 
+        /**
+         * 재고 차감 (최적화 버전 - 일괄 조회 + Batch Update)
+         * N+1 문제 해결: IN 절로 한번에 조회하고 Dirty Checking으로 batch update
+         */
         @Transactional
         public void updateItemQuantityOnHand(Order order) {
 
                 List<Integer> itemIds = order.getOrderItems().stream()
                                 .map(orderItem -> orderItem.getItem().getItemId())
+                                .sorted()
                                 .collect(Collectors.toList());
 
                 if (itemIds.isEmpty())
                         return;
 
+                // 일괄 조회 (1번의 쿼리)
                 List<Item> items = itemRepository.findAllByItemIdInWithLock(itemIds);
 
                 Map<Integer, Item> itemMap = items.stream()
@@ -105,10 +116,40 @@ public class ItemService {
                         }
 
                         item.setQuantityOnHand(currentQuantity - orderedQuantity);
-
-                        // itemRepository.save(item);
+                        // Dirty Checking으로 트랜잭션 종료 시 자동 batch update
                 }
         }
+
+        /**
+         * 재고 차감 (N+1 문제 발생 버전 - 개별 조회 + 개별 Update)
+         * 성능 비교용: OrderItem마다 개별 SELECT + 개별 UPDATE 발생
+         */
+        @Transactional
+        public void updateItemQuantityOnHandWithNPlusOne(Order order) {
+
+                for (OrderItem orderItem : order.getOrderItems()) {
+                        // N+1 문제: OrderItem 개수만큼 SELECT 쿼리 발생
+                        Item item = itemRepository.findById(orderItem.getItem().getItemId())
+                                        .orElseThrow(() -> new EntityNotFoundException(
+                                                        "품목을 찾을 수 없습니다: " + orderItem.getItem().getItemId()));
+
+                        int orderedQuantity = orderItem.getQuantity();
+                        int currentQuantity = item.getQuantityOnHand();
+
+                        if (currentQuantity < orderedQuantity) {
+                                throw new IllegalStateException(
+                                                "재고 부족: 품목 '" + item.getItemName() + "'의 재고가 충분하지 않습니다. (현재 재고: "
+                                                                + currentQuantity + ", 주문 수량: " + orderedQuantity
+                                                                + ")");
+                        }
+
+                        item.setQuantityOnHand(currentQuantity - orderedQuantity);
+
+                        // N+1 문제: OrderItem 개수만큼 UPDATE 쿼리 발생
+                        itemRepository.save(item);
+                }
+        }
+
         @Transactional
         public void updateItemAvailableQuantity(Order order) {
                 log.info("가용재고 차감");

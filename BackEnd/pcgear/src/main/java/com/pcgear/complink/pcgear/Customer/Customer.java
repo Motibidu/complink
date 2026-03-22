@@ -1,6 +1,8 @@
 package com.pcgear.complink.pcgear.Customer;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -15,6 +17,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Setter
 @Entity
 @ToString
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "customers")
 @EntityListeners(AuditingEntityListener.class)

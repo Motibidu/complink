@@ -21,7 +21,10 @@ import com.pcgear.complink.pcgear.Item.ItemCategory;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "order_items")
+@Table(name = "order_items", indexes = {
+        @Index(name = "idx_order_items_order_id", columnList = "order_id"),
+        @Index(name = "idx_order_items_item_order", columnList = "item_id, order_id")
+})
 public class OrderItem {
 
     @Id
@@ -42,13 +45,10 @@ public class OrderItem {
 
     private Boolean serialNumRequired;
 
-    @Column(nullable = false)
-    private int quantity;
+    private Integer quantity;
 
-    @Column(name = "unit_price", nullable = false, precision = 18, scale = 2)
     private BigDecimal unitPrice;
 
-    @Column(name = "total_price", nullable = false, precision = 18, scale = 2)
     private BigDecimal totalPrice;
 
 }

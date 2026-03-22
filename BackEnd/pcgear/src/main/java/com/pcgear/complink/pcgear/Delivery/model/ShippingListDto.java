@@ -1,5 +1,6 @@
 package com.pcgear.complink.pcgear.Delivery.model;
 
+import com.pcgear.complink.pcgear.Delivery.enums.DeliveryStatus;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
