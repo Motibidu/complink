@@ -1,6 +1,6 @@
 # 🚀 PCGear
 > 쇼핑몰 운영 환경을 가정하여 만든 PC 부품 주문/재고/배송 통합 관리 시스템입니다.<br>
-> **Access**: https://pcgear.store                **ID**: staff  **PW**: 123  
+> **Access**: https://pcgear.store                **ID**: guest_user  **PW**: visit@pcgear 
 
 ## 개요
 - **목적**: 결제, 배송 웹훅 연동을 통해 상태 전이를 자동화하고, 동시성 제어, 성능 개선, 데이터 정합성에 중점을 두어 개발했습니다. 
