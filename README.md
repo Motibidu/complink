@@ -22,6 +22,7 @@
 | **Database** | MySQL / Redis(Caching) |
 | **FrontEnd** | React | 
 | **Infra** | AWS EC2, Docker Compose, Jekkins(CI/CD) | Nginx |
+| **etc** | PortOne, CoolSMS, Delivery Tracker |
 
 
 
