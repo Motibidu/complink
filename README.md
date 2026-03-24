@@ -5,7 +5,7 @@
 > 주문 생성부터 배송 완료까지의 라이프 사이클을 상태 기반으로 관리합니다. 결제, 배송은 웹훅 연동을 통해 상태 전이를 자동화시켰고, 동시성 제어, 성능 개선, 데이터 정합성에 중점을 두어 개발했습니다. 
  
 ## ERD
-<img width="1450" height="1180" alt="erd" src="https://github.com/user-attachments/assets/acf8e577-a17c-4800-b74d-9be11a6d9a5a" />
+<img width="1450" height="1180" alt="pcgear erd" src="https://github.com/user-attachments/assets/8105a21c-3ccc-4cfb-a1fb-010c5ce8c8c8" />
 
 | Table | Description |
 | :--- | :--- |
@@ -22,7 +22,11 @@
 | **Database** | MySQL / Redis(Caching) |
 | **FrontEnd** | React | 
 | **Infra** | AWS EC2, Docker Compose, Jekkins(CI/CD) | Nginx |
-| **etc** | Server-Sent-Events, PortOne, CoolSMS, Delivery Tracker |
+
+- **PortOne**: 결제 링크를 생성합니다. 결제 완료 시 백엔드에서 웹훅을 수신하고, 멱등성 검사 및 금액 위변조를 검증합니다.
+- **CoolSMS**: 포트원에서 생성한 결제링크를 고객에게 문자로 전송합니다.
+- **Delivery Tracker**: 배송 상태 변동마다 웹훅으로 수신하고 상태를 업데이트 합니다.
+- **Server-Sent-Events**: 주문 접수, 결제 완료, 배송 정보 변동 마다 실시간 알림을 발신합니다.
 
 
 
