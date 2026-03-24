@@ -1,30 +1,36 @@
-# PC Gear - PC 부품 쇼핑몰 ERP 시스템
+# 🚀 PCGear
+> 쇼핑몰 운영 환경을 가정하여 만든 PC 부품 주문/재고/배송 통합 관리 시스템입니다.<br>
+> **Access**: https://pcgear.store                **ID**: staff  **PW**: 123  
 
-PC 부품 주문/재고/배송을 통합 관리하는 웹 기반 ERP 시스템<br>
-**Access**: https://pcgear.store  
-**ID**: staff  
-**PW**: 123  
+## 1. 개요
+- **목적**: 결제, 배송 웹훅 연동을 통해 상태 전이를 자동화하고, 동시성 제어, 성능 개선, 데이터 정합성에 중점을 두어 개발했습니다. 
+- **주요 기능**:
+  - 사용자 인증 및 권한 관리 (JWT/OAuth)
+  - RESTful API 설계 및 제공
+  - 데이터 지속성 및 트랜잭션 관리
 
-## 🛠 Tech Stack
-**Backend**: Spring Boot, Spring Data JPA, QueryDSL, MySQL  
-**Frontend**: React  
-**Infra**: AWS EC2, Docker, Jenkins  
+## 2. 기술 스택
+| Category | Tech Stack |
+| :--- | :--- |
+| **Backend** | Spring Boot / Spring Security / Spring Data JPA / QueryDSL |
+| **Database** | MySQL / Redis(Caching) |
+| **FrontEnd** | React | 
+| **Infra** | AWS EC2, Docker Compose, Jekkins(CI/CD) | Nginx |
+
+## 3. ERD
+<img width="1450" height="1180" alt="erd" src="https://github.com/user-attachments/assets/acf8e577-a17c-4800-b74d-9be11a6d9a5a" />
+
+| Table | Description |
+| :--- | :--- |
+| **top_items_sales** | 대시보드에서 품목 판매량 순위를 별도 관리하여 조회 성능을 개선합니다. |
+| **inventory audit** | 실재고/가용재고/예약재고 불일치 시 정과 함께 전/후 수량을 기록합니다.  |
+
+## 4. 아키텍처
+<img width="550" height="700" alt="아키텍처 drawio" src="https://github.com/user-attachments/assets/586fc496-3bb7-4bf2-8e5e-f6b110d15dff" />
 
 
-## ✨ Main Features
-### 📦 재고 관리
-- 실시간 재고 현황 조회
-- 동시 요청 100건 시 재고 오차 0건 (비관적 락)
- <img width="1407" height="745" alt="스크린샷 2026-03-04 211727" src="https://github.com/user-attachments/assets/20ba6c34-3597-4724-8caa-a15851c0ddeb" />
-
-### 📊 대시보드
-- Redis 캐싱 적용 응답 속도 99% 개선 (1,408ms → 1ms)
-- N+1 문제 해결 (쿼리 2N회 → 2회)
-<img width="1396" height="935" alt="스크린샷 2026-03-04 211654" src="https://github.com/user-attachments/assets/a8ec96c1-3e13-4cd7-92da-a30172426e34" />
 
 
-### 🚚 주문/배송 관리
-- 주문 → 결제 → 조립 → 배송 통합 관리
-- 배송 추적 API 연동
-- 조립 프로세스 단계별 기록
-<img width="1395" height="848" alt="스크린샷 2026-03-04 211900" src="https://github.com/user-attachments/assets/bdb79a38-ca0b-4ee1-a2da-1465e01f1181" />
+
+
+
