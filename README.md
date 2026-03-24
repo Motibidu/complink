@@ -3,7 +3,7 @@
 > **Access**: https://pcgear.store                **ID**: guest_user  **PW**: visit@pcgear 
 
 ## 개요
-- **목적**: 결제, 배송 웹훅 연동을 통해 상태 전이를 자동화하고, 동시성 제어, 성능 개선, 데이터 정합성에 중점을 두어 개발했습니다. 
+- **목적**: 주문 생성부터 배송 완료까지의 라이프 사이클을 상태 기반으로 관리합니다. 결제, 배송 웹훅 연동을 통해 상태 전이를 자동화하고, 동시성 제어, 성능 개선, 데이터 정합성에 중점을 두어 개발했습니다. 
  
 ## ERD
 <img width="1450" height="1180" alt="erd" src="https://github.com/user-attachments/assets/acf8e577-a17c-4800-b74d-9be11a6d9a5a" />
