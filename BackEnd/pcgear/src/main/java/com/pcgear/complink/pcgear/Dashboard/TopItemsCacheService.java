@@ -18,7 +18,7 @@ public class TopItemsCacheService {
     /**
      * 30분마다 TOP 10 판매 아이템 캐시 갱신
      */
-    //@Scheduled(cron = "0 */30 * * * *")
+    @Scheduled(cron = "0 */30 * * * *")
     @Transactional
     public void refreshTopItemsCache() {
         log.info("Starting TOP 10 items sales cache refresh");

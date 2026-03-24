@@ -28,7 +28,7 @@ public class TopItemSalesCache {
 
     private String itemName;
 
-    private Long totalQuantity;
+    private Integer totalQuantity;
 
     private Long totalRevenue;
 
@@ -38,4 +38,17 @@ public class TopItemSalesCache {
 
     @Column(name = "cached_at")
     private LocalDateTime cachedAt;
+
+    /**
+     * Entity를 DTO로 변환
+     */
+    public TopItemSalesDto toDto() {
+        return new TopItemSalesDto(
+                this.itemId,
+                this.itemName,
+                this.totalQuantity,
+                this.totalRevenue,
+                this.availableQuantity
+        );
+    }
 }

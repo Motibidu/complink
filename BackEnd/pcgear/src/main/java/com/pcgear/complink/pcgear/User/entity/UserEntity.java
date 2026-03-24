@@ -48,12 +48,6 @@ public class UserEntity extends BaseTimeEntity implements UserDetails {
 
 	private String tel;
 
-	//private String address;
-
-	// private String billingKey;
-
-	// @Enumerated(EnumType.STRING)
-	// private SubscriptionStatus subscriptionStatus;
 
 	@Enumerated(EnumType.STRING) // Enum 타입을 DB에 String으로 저장
 	@Column(nullable = false)
@@ -69,7 +63,6 @@ public class UserEntity extends BaseTimeEntity implements UserDetails {
 		this.password = password;
 		this.name = name;
 		this.tel = tel;
-		//this.address = address;
 		this.role = role;
 		this.isActive = true;
 	}
