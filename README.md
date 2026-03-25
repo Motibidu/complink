@@ -1,30 +1,38 @@
-# PC Gear - PC 부품 쇼핑몰 ERP 시스템
+# 🚀 PCGear
+> **Access**: https://pcgear.store                **ID**: guest_user  **PW**: visit@pcgear 
 
-PC 부품 주문/재고/배송을 통합 관리하는 웹 기반 ERP 시스템<br>
-**Access**: https://pcgear.store  
-**ID**: staff  
-**PW**: 123  
+## 개요
+> 주문 생성부터 배송 완료까지의 라이프 사이클을 상태 기반으로 관리합니다. 결제, 배송은 웹훅 연동을 통해 상태 전이를 자동화시켰고, 동시성 제어, 성능 개선, 데이터 정합성에 중점을 두어 개발했습니다. 
+ 
+## ERD
+<img width="1450" height="1180" alt="pcgear erd" src="https://github.com/user-attachments/assets/8105a21c-3ccc-4cfb-a1fb-010c5ce8c8c8" />
 
-## 🛠 Tech Stack
-**Backend**: Spring Boot, Spring Data JPA, QueryDSL, MySQL  
-**Frontend**: React  
-**Infra**: AWS EC2, Docker, Jenkins  
+| Table | Description |
+| :--- | :--- |
+| **top_items_sales** | 품목 판매량 순위를 별도 관리하여 대시보드 조회 성능을 개선합니다. |
+| **inventory audit** | 실재고/가용재고/예약재고 수량 불일치 시 수정과 함께 전/후 수량을 기록하여 원인을 파악하도록 돕습니다.  |
+
+## 아키텍처
+<img width="550" height="700" alt="아키텍처 drawio" src="https://github.com/user-attachments/assets/586fc496-3bb7-4bf2-8e5e-f6b110d15dff" />
+
+## 기술 스택
+| Category | Tech Stack |
+| :--- | :--- |
+| **Backend** | Spring Boot / Spring Security / Spring Data JPA / QueryDSL |
+| **Database** | MySQL / Redis(Caching) |
+| **FrontEnd** | React | 
+| **Infra** | AWS EC2, Docker Compose, Jekkins(CI/CD) | Nginx |
+
+- **PortOne**: 결제 링크를 생성합니다. 결제 완료 시 백엔드에서 웹훅을 수신하고, 멱등성 검사 및 금액 위변조를 검증합니다.
+- **CoolSMS**: 포트원에서 생성한 결제링크를 고객에게 문자로 전송합니다.
+- **Delivery Tracker**: 배송 상태 변동마다 웹훅으로 수신하고 상태를 업데이트 합니다.
+- **Server-Sent-Events**: 주문 접수, 결제 완료, 배송 정보 변동 마다 실시간 알림을 발신합니다.
 
 
-## ✨ Main Features
-### 📦 재고 관리
-- 실시간 재고 현황 조회
-- 동시 요청 100건 시 재고 오차 0건 (비관적 락)
- <img width="1407" height="745" alt="스크린샷 2026-03-04 211727" src="https://github.com/user-attachments/assets/20ba6c34-3597-4724-8caa-a15851c0ddeb" />
-
-### 📊 대시보드
-- Redis 캐싱 적용 응답 속도 99% 개선 (1,408ms → 1ms)
-- N+1 문제 해결 (쿼리 2N회 → 2회)
-<img width="1396" height="935" alt="스크린샷 2026-03-04 211654" src="https://github.com/user-attachments/assets/a8ec96c1-3e13-4cd7-92da-a30172426e34" />
 
 
-### 🚚 주문/배송 관리
-- 주문 → 결제 → 조립 → 배송 통합 관리
-- 배송 추적 API 연동
-- 조립 프로세스 단계별 기록
-<img width="1395" height="848" alt="스크린샷 2026-03-04 211900" src="https://github.com/user-attachments/assets/bdb79a38-ca0b-4ee1-a2da-1465e01f1181" />
+
+
+
+
+
