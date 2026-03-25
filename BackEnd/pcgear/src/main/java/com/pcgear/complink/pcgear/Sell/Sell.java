@@ -1,6 +1,7 @@
 package com.pcgear.complink.pcgear.Sell;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.CreatedDate;
@@ -17,6 +18,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -35,7 +37,9 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "sells")
+@Table(name = "sells", indexes= {
+        @Index(name = "idx_sell_date_grand_amount", columnList = "sell_date")
+})
 @EntityListeners(AuditingEntityListener.class)
 public class Sell {
 

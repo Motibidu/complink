@@ -104,6 +104,7 @@ public class DeliveryService {
          * @throws InvalidTrackingNumberException 운송장 번호 검증 실패 (GlobalExceptionHandler 처리)
          * @throws WebhookRegistrationException   웹훅 등록 실패 (GlobalExceptionHandler 처리)
          */
+        @Transactional
         public void registerDeliveryTracking(String accessToken, TrackingNumberReq request) {
                 log.info("배송 추적 등록 시작: {}", request);
 

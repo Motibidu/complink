@@ -2,6 +2,8 @@ package com.pcgear.complink.pcgear.Dashboard;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Repository;
 import com.pcgear.complink.pcgear.Item.ItemCategory;
 import com.pcgear.complink.pcgear.Order.model.OrderStatus;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import jakarta.persistence.EntityManager;
@@ -20,6 +23,7 @@ import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 
 import static com.pcgear.complink.pcgear.Order.model.QOrder.order;
+import static com.pcgear.complink.pcgear.Sell.QSell.sell;
 import static com.pcgear.complink.pcgear.Order.model.QOrderItem.orderItem;
 import static com.pcgear.complink.pcgear.Item.QItem.item;
 import static com.pcgear.complink.pcgear.Customer.QCustomer.customer;
@@ -42,28 +46,24 @@ public class DashboardRepositoryImpl implements DashboardRepository {
          */
         @Override
         public List<DailySalesDto> findLast7DaysSales() {
-                LocalDate endDate = LocalDate.now();
-                LocalDate startDate = endDate.minusDays(6);
 
-                List<Tuple> results = queryFactory
-                                .select(
-                                                order.orderDate,
-                                                order.orderId.count(),
-                                                order.grandAmount.sum())
-                                .from(order)
+                LocalDate now = LocalDate.now();
+
+                LocalDateTime startDateTime = now.minusDays(6).atStartOfDay();
+                LocalDateTime endDateTime = now.atTime(LocalTime.MAX);
+
+                List<DailySalesDto> results = queryFactory
+                                .select(Projections.constructor(DailySalesDto.class,
+                                                sell.sellDate,
+                                                sell.sellId.count(),
+                                                sell.grandAmount.sum()))
+                                .from(sell)
                                 .where(
-                                                order.orderDate.between(startDate, endDate),
-                                                order.orderStatus.ne(OrderStatus.CANCELLED))
-                                .groupBy(order.orderDate)
-                                .orderBy(order.orderDate.asc())
+                                                sell.sellDate.between(startDateTime, endDateTime))
+                                .groupBy(sell.sellDate)
+                                .orderBy(sell.sellDate.asc())
                                 .fetch();
-
-                return results.stream()
-                                .map(row -> new DailySalesDto(
-                                                row.get(0, LocalDate.class),
-                                                row.get(1, Long.class),
-                                                row.get(2, BigDecimal.class).longValue()))
-                                .collect(Collectors.toList());
+                return results;
         }
 
         /**
@@ -120,8 +120,8 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                                 .from(order)
                                 .join(order.customer, customer)
                                 .where(order.orderStatus.ne(OrderStatus.CANCELLED))
-                                .groupBy(customer.customerId, customer.customerName)
-                                .orderBy(order.grandAmount.sum().desc())
+                                .groupBy(customer.customerId)
+                                // .orderBy(order.grandAmount.sum().desc())
                                 .limit(limit)
                                 .fetch();
 
@@ -142,21 +142,6 @@ public class DashboardRepositoryImpl implements DashboardRepository {
          */
         @Override
         public List<TopItemSalesDto> findTopItemSales(int limit) {
-                // List<TopItemSalesDto> dtoList = queryFactory
-                // .select(constructor(TopItemSalesDto.class,
-                // item.itemId,
-                // item.itemName,
-                // orderItem.quantity.sum(),
-                // orderItem.quantity.multiply(item.sellingPrice).sum().longValue(),
-                // item.AvailableQuantity))
-                // .from(orderItem)
-                // .join(orderItem.item, item)
-                // .join(orderItem.order, order)
-                // .where(order.orderStatus.ne(OrderStatus.CANCELLED))
-                // .groupBy(item.itemId, item.itemName, item.AvailableQuantity)
-                // .orderBy(orderItem.quantity.sum().desc())
-                // .limit(limit)
-                // .fetch();
                 List<TopItemSalesDto> dtoList = queryFactory
                                 .select(constructor(TopItemSalesDto.class,
                                                 item.itemId,
@@ -167,7 +152,6 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                                 .from(orderItem)
                                 .join(orderItem.item, item)
                                 .join(orderItem.order, order)
-                                // .where(order.orderStatus.ne(OrderStatus.CANCELLED))
                                 .where(order.orderStatus.in(OrderStatus.PAID, OrderStatus.PREPARING_PRODUCT,
                                                 OrderStatus.SHIPPING_PENDING, OrderStatus.SHIPPING,
                                                 OrderStatus.DELIVERED))

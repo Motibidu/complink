@@ -156,7 +156,7 @@ const Dashboard = () => {
                                 summary.last7DaysSales.map((day, index) => (
                                     <tr key={index}>
                                         <td>{day.date}</td>
-                                        <td><Badge bg="primary">{day.orderCount} 건</Badge></td>
+                                        <td><Badge bg="primary">{day.salesCount} 건</Badge></td>
                                         <td className="fw-bold">{formatCurrency(day.totalSales)}</td>
                                     </tr>
                                 ))
