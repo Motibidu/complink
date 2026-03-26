@@ -5,13 +5,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class DailySalesDto {
-    private LocalDateTime date;
+    private LocalDate date;
     private Long salesCount;
     private BigDecimal totalSales;
 }

@@ -37,17 +37,25 @@ public class DashboardService {
          *
          * @return 기본 통계 + 복잡한 통계 (5분 캐싱)
          */
-        //@Cacheable(value = "dashboard-summary", key = "'summary'")
+        // @Cacheable(value = "dashboard-summary", key = "'summary'")
         public TodaySummary getTodaySummary() {
-
-                entityManager.clear();
+                long startTime;
+                long endTime;
 
                 LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
                 LocalDateTime endOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
 
+                LocalDate startDate = LocalDate.now();
+                LocalDate endDate = LocalDate.now();
+
                 // === 기본 통계 ===
-                Integer totalSales = sellRepository.getTodayTotalSales(startOfDay, endOfDay);
+                startTime = System.currentTimeMillis();
+                Integer totalSales = sellRepository.getTodayTotalSales(startDate, endDate);
+                endTime = System.currentTimeMillis();
+                log.info("totalSales: {}ms", (endTime - startTime));
+
                 Integer newOrdersCount = orderRepository.getTodayNewOrdersCount(startOfDay, endOfDay);
+
                 Integer paymentPendingOrdersCount = orderRepository.countByOrderStatus(OrderStatus.PAYMENT_PENDING);
 
                 List<OrderStatus> activeStatuses = List.of(
@@ -58,18 +66,21 @@ public class DashboardService {
                 Integer activeWorkloadCount = orderRepository.countByOrderStatusIn(activeStatuses);
 
                 // === 복잡한 통계 ===
-                List<DailySalesDto> last7DaysSales = dashboardRepository.findLast7DaysSales();
+                startTime = System.currentTimeMillis();
+                List<DailySalesDto> last7DaysSales = dashboardRepository.findLast7DatesSales();
+                endTime = System.currentTimeMillis();
+                log.info("last7DaysSales: {}m", (endTime - startTime));
                 List<CategoryStockDto> categoryStockSummary = dashboardRepository.findCategoryStockSummary();
+                startTime = System.currentTimeMillis();
                 List<TopCustomerDto> topCustomers = dashboardRepository.findTopCustomers(5);
+                endTime = System.currentTimeMillis();
+                log.info("topCustomers: {}m", (endTime - startTime));
 
                 // 성능 측정 - 캐시에서 조회
-                long startTime = System.currentTimeMillis();
                 List<TopItemSalesDto> topItemSales = topItemSalesCacheRepository.findTop10ByOrderByRankPosition()
                                 .stream()
                                 .map(TopItemSalesCache::toDto)
                                 .toList();
-                long endTime = System.currentTimeMillis();
-                log.info("TOP 10 items 조회 시간: {}ms (캐시 테이블 사용)", (endTime - startTime));
 
                 return TodaySummary.builder()
                                 .totalSellsToday(totalSales)
@@ -83,8 +94,7 @@ public class DashboardService {
                                 .build();
         }
 
-
-        @Cacheable(value = "dashboard-summary")
+        //@Cacheable(value = "dashboard-summary")
         public TodaySummary getTodaySummary2() {
 
                 entityManager.clear();
@@ -92,8 +102,11 @@ public class DashboardService {
                 LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
                 LocalDateTime endOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
 
+                LocalDate startDate = LocalDate.now();
+                LocalDate endDate = LocalDate.now();
+
                 // === 기본 통계 ===
-                Integer totalSales = sellRepository.getTodayTotalSales(startOfDay, endOfDay);
+                Integer totalSales = sellRepository.getTodayTotalSales(startDate, endDate);
                 Integer newOrdersCount = orderRepository.getTodayNewOrdersCount(startOfDay, endOfDay);
                 Integer paymentPendingOrdersCount = orderRepository.countByOrderStatus(OrderStatus.PAYMENT_PENDING);
 
@@ -105,7 +118,7 @@ public class DashboardService {
                 Integer activeWorkloadCount = orderRepository.countByOrderStatusIn(activeStatuses);
 
                 // === 복잡한 통계 (캐싱 효과 측정용) ===
-                List<DailySalesDto> last7DaysSales = dashboardRepository.findLast7DaysSales();
+                List<DailySalesDto> last7DaysSales = dashboardRepository.findLast7DatesSales();
                 List<CategoryStockDto> categoryStockSummary = dashboardRepository.findCategoryStockSummary();
                 List<TopCustomerDto> topCustomers = dashboardRepository.findTopCustomers(5);
                 List<TopItemSalesDto> topItemSales = dashboardRepository.findTopItemSales(10);

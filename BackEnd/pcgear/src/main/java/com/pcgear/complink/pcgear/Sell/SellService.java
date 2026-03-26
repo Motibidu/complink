@@ -57,7 +57,7 @@ public class SellService {
                                 .grandAmount(order.getGrandAmount())
 
                                 // 판매 관련 고유 값 설정
-                                .sellDate(LocalDateTime.now()) // 판매가 완료된 시점 (현재 시간)
+                                .dateTime(LocalDateTime.now()) // 판매가 완료된 시점 (현재 시간)
                                 .memo(null) // 초기 메모는 비워둠
 
                                 .build();
@@ -76,7 +76,7 @@ public class SellService {
                 sellRepository.findByOrder_OrderId(orderId)
                                 .ifPresent(sell -> {
                                         Sell newSell = Sell.builder()
-                                                        .sellDate(LocalDateTime.now())
+                                                        .dateTime(LocalDateTime.now())
                                                         .customer(sell.getCustomer())
                                                         .manager(sell.getManager())
                                                         .vatAmount(sell.getVatAmount().negate())

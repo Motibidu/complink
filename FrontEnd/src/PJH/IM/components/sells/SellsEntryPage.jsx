@@ -29,7 +29,7 @@ function SellsEntryPage() {
   const handleSubmitSalesEntry = async (orderId) => {
     const payload = {
       orderId: selectedOrder.orderId,
-      sellDate: new Date().toISOString(),
+      dateTime: new Date().toISOString(),
       customerId: selectedOrder.customer.customerId,
       customerName: selectedOrder.customer.customerName,
       managerId: selectedOrder.manager.managerId,

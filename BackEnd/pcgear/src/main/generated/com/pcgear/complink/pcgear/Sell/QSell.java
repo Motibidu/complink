@@ -26,6 +26,10 @@ public class QSell extends EntityPathBase<Sell> {
 
     public final com.pcgear.complink.pcgear.Customer.QCustomer customer;
 
+    public final DatePath<java.time.LocalDate> date = createDate("date", java.time.LocalDate.class);
+
+    public final DateTimePath<java.time.LocalDateTime> dateTime = createDateTime("dateTime", java.time.LocalDateTime.class);
+
     public final NumberPath<java.math.BigDecimal> grandAmount = createNumber("grandAmount", java.math.BigDecimal.class);
 
     public final com.pcgear.complink.pcgear.User.entity.QUserEntity manager;
@@ -33,8 +37,6 @@ public class QSell extends EntityPathBase<Sell> {
     public final StringPath memo = createString("memo");
 
     public final com.pcgear.complink.pcgear.Order.model.QOrder order;
-
-    public final DateTimePath<java.time.LocalDateTime> sellDate = createDateTime("sellDate", java.time.LocalDateTime.class);
 
     public final NumberPath<Integer> sellId = createNumber("sellId", Integer.class);
 

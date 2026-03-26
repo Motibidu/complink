@@ -31,7 +31,7 @@ public class SellResponseDto {
                                 .totalAmount(sell.getTotalAmount())
                                 .vatAmount(sell.getVatAmount())
                                 .grandAmount(sell.getGrandAmount())
-                                .sellDate(sell.getSellDate())
+                                .sellDate(sell.getDateTime())
                                 .build();
         }
 }

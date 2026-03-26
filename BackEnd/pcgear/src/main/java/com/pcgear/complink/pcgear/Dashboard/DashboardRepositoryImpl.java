@@ -40,28 +40,42 @@ public class DashboardRepositoryImpl implements DashboardRepository {
         private final JPAQueryFactory queryFactory;
         private final EntityManager entityManager;
 
-        /**
-         * 최근 7일간 일별 매출 통계 조회
-         * - 복잡한 쿼리: JOIN + GROUP BY + 날짜 범위 필터링
-         */
         @Override
-        public List<DailySalesDto> findLast7DaysSales() {
+        public List<DailySalesDto> findLast7DatesSales() {
 
-                LocalDate now = LocalDate.now();
-
-                LocalDateTime startDateTime = now.minusDays(6).atStartOfDay();
-                LocalDateTime endDateTime = now.atTime(LocalTime.MAX);
+                LocalDate startDate = LocalDate.now().minusDays(6);
+                LocalDate endDate = LocalDate.now();
 
                 List<DailySalesDto> results = queryFactory
                                 .select(Projections.constructor(DailySalesDto.class,
-                                                sell.sellDate,
+                                                sell.date,
                                                 sell.sellId.count(),
                                                 sell.grandAmount.sum()))
                                 .from(sell)
                                 .where(
-                                                sell.sellDate.between(startDateTime, endDateTime))
-                                .groupBy(sell.sellDate)
-                                .orderBy(sell.sellDate.asc())
+                                                sell.date.between(startDate, endDate))
+                                .groupBy(sell.date)
+                                .orderBy(sell.date.asc())
+                                .fetch();
+                return results;
+        }
+
+        @Override
+        public List<DateTimesDto> findLast7DateTimesSales() {
+
+                LocalDateTime startDateTime = LocalDateTime.of(LocalDate.now().minusDays(6), LocalTime.MIN);
+                LocalDateTime endDateTime = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
+
+                List<DateTimesDto> results = queryFactory
+                                .select(Projections.constructor(DateTimesDto.class,
+                                                sell.dateTime,
+                                                sell.sellId.count(),
+                                                sell.grandAmount.sum()))
+                                .from(sell)
+                                .where(
+                                                sell.dateTime.between(startDateTime, endDateTime))
+                                .groupBy(sell.dateTime)
+                                .orderBy(sell.dateTime.asc())
                                 .fetch();
                 return results;
         }
@@ -110,29 +124,22 @@ public class DashboardRepositoryImpl implements DashboardRepository {
          */
         @Override
         public List<TopCustomerDto> findTopCustomers(int limit) {
-                List<Tuple> results = queryFactory
-                                .select(
+                List<TopCustomerDto> results = queryFactory
+                                .select(Projections.constructor(TopCustomerDto.class, 
                                                 customer.customerId,
                                                 customer.customerName,
                                                 order.orderId.count(),
                                                 order.grandAmount.sum(),
-                                                order.grandAmount.avg())
+                                                order.grandAmount.avg()))
                                 .from(order)
                                 .join(order.customer, customer)
                                 .where(order.orderStatus.ne(OrderStatus.CANCELLED))
                                 .groupBy(customer.customerId)
-                                // .orderBy(order.grandAmount.sum().desc())
+                                .orderBy(order.grandAmount.sum().desc())
                                 .limit(limit)
                                 .fetch();
 
-                return results.stream()
-                                .map(row -> new TopCustomerDto(
-                                                row.get(0, String.class),
-                                                row.get(1, String.class),
-                                                row.get(2, Long.class),
-                                                row.get(3, BigDecimal.class).longValue(),
-                                                row.get(4, Double.class).longValue()))
-                                .collect(Collectors.toList());
+                return results;
         }
 
         /**

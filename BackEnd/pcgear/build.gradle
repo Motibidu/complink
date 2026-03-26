@@ -74,6 +74,9 @@ dependencies {
     implementation 'io.micrometer:micrometer-registry-prometheus'
     // AOP for cache metrics
     implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
 tasks.named('test') {

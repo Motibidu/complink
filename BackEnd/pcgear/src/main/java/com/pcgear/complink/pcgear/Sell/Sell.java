@@ -37,8 +37,8 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "sells", indexes= {
-        @Index(name = "idx_sell_date_grand_amount", columnList = "sell_date")
+@Table(name = "sells", indexes = {
+                @Index(name = "idx_date_grand_amount", columnList = "sell_date, grand_amount")
 })
 @EntityListeners(AuditingEntityListener.class)
 public class Sell {
@@ -46,8 +46,6 @@ public class Sell {
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Integer sellId;
-
-        private LocalDateTime sellDate;
 
         @OneToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "order_id") // 실제 DB 컬럼명
@@ -72,4 +70,8 @@ public class Sell {
 
         @CreatedDate
         private LocalDateTime createdAt;
+
+        private LocalDateTime dateTime;
+
+        private LocalDate date;
 }

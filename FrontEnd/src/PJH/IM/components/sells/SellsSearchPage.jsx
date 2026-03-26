@@ -97,7 +97,7 @@ const SellsSearchPage = () => {
   const filteredsells = useMemo(() => {
     return sells.filter((sell) => {
       // sellDate는 그대로 둡니다.
-      const sellDate = new Date(sell.sellDate);
+      const dateTime = new Date(sell.dateTime);
       const startDate = dateRange.start ? new Date(dateRange.start) : null;
 
       let endDate = null;
@@ -106,8 +106,8 @@ const SellsSearchPage = () => {
         endDate.setHours(23, 59, 59, 999);
       }
 
-      if (startDate && sellDate < startDate) return false;
-      if (endDate && sellDate > endDate) return false;
+      if (startDate && dateTime < startDate) return false;
+      if (endDate && dateTime > endDate) return false;
 
       const lowercasedSearchTerm = searchTerm.toLowerCase();
 
@@ -296,7 +296,7 @@ const SellsSearchPage = () => {
                     data-bs-target="#sellDetailModal"
                     style={{ cursor: "pointer" }}
                   >
-                    <td>{sell.sellDate.split("T")[0]}</td>
+                    <td>{sell.dateTime.split("T")[0]}</td>
                     <td>{sell.orderId}</td>
                     <td>{sell.sellId}</td>
                     <td>{sell.customerName}</td>
@@ -465,7 +465,7 @@ const SellsSearchPage = () => {
                 <div>
                   <p>
                     <strong>판매일:</strong>{" "}
-                    {selectedSell.sellDate.split("T")[0]}
+                    {selectedSell.dateTime.split("T")[0]}
                   </p>
                   <p>
                     <strong>거래처:</strong> {selectedSell.customerName} (
